@@ -1,0 +1,149 @@
+﻿@inject MainViewModel VM
+
+<div class="pa-3">
+    <MudDateRangePicker Label="Период" @bind-DateRange="DateRange" />
+
+    <MudNumericField T="decimal?" Label="Мин сумма" @bind-Value="MinAmount" Class="mt-3" />
+    <MudNumericField T="decimal?" Label="Макс сумма" @bind-Value="MaxAmount" Class="mt-2" />
+
+    @* Фильтр по Описанию (Текст из СМС) *@
+    <MudTextField T="string" Label="Поиск по описанию"
+                  @bind-Value="Description"
+                  Class="mt-3"
+                  Clearable="true"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@Icons.Material.Filled.Search" />
+
+    @* Фильтр по Категории (MCC Description) *@
+    <MudAutocomplete T="string" Label="Категория"
+                     @bind-Value="MccDescription"
+                     SearchFunc="@SearchMccCategories"
+                     ResetValueOnEmptyText="true"
+                     CoerceText="true"
+                     Clearable="true"
+                     Class="mt-3" />
+
+    @* Фильтр по Тегам (Из Title) *@
+    <MudAutocomplete T="string" Label="Тэг"
+                     @bind-Value="Tag"
+                     SearchFunc="@SearchTags"
+                     ResetValueOnEmptyText="true"
+                     CoerceText="true"
+                     Clearable="true"
+                     Class="mt-3" />
+
+    <div class="d-flex justify-end mt-4">
+        <MudButton Variant="Variant.Text" OnClick="Clear">Сбросить</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Apply" Class="ml-2">Применить</MudButton>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    [Parameter] public DateRange DateRange { get; set; }
+    [Parameter] public EventCallback<DateRange> DateRangeChanged { get; set; }
+
+    [Parameter] public decimal? MinAmount { get; set; }
+    [Parameter] public EventCallback<decimal?> MinAmountChanged { get; set; }
+
+    [Parameter] public decimal? MaxAmount { get; set; }
+    [Parameter] public EventCallback<decimal?> MaxAmountChanged { get; set; }
+
+    // --- Новые параметры ---
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public EventCallback<string?> DescriptionChanged { get; set; }
+
+    [Parameter] public string? MccDescription { get; set; }
+    [Parameter] public EventCallback<string?> MccDescriptionChanged { get; set; }
+
+    [Parameter] public string? Tag { get; set; }
+    [Parameter] public EventCallback<string?> TagChanged { get; set; }
+    // -----------------------
+
+    [Parameter] public EventCallback OnApply { get; set; }
+    [Parameter] public EventCallback OnClear { get; set; }
+
+    // Кэш для списков, чтобы не дергать базу/VM при каждом нажатии клавиши
+    private List<string> _allTags = new();
+    private List<string> _allMccDescriptions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+       
+    }
+
+    // Поиск для Autocomplete Категорий
+    private async Task<IEnumerable<string>> SearchMccCategories(string value, CancellationToken token)
+    {
+        // Загружаем актуальный список категорий прямо сейчас
+        var allMccDescriptions = VM.AllItems
+            .Where(x => !string.IsNullOrEmpty(x.MccDescription))
+            .Select(x => x.MccDescription!)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
+        if (string.IsNullOrEmpty(value))
+            return allMccDescriptions;
+
+        // Фильтруем
+        return allMccDescriptions.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    // 2. Метод поиска тегов (Title/Tags)
+    private async Task<IEnumerable<string>> SearchTags(string value, CancellationToken token)
+    {
+        // Загружаем актуальный список тегов прямо сейчас
+        // Этот метод внутри VM должен каждый раз пересчитывать теги из текущих данных
+        var allTags = await VM.GetTags();
+
+        if (string.IsNullOrEmpty(value))
+            return allTags;
+
+        // Фильтруем
+        return allTags.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private Task Close() => OpenChanged.InvokeAsync(false);
+
+    private async Task Apply()
+    {
+        // Обновляем биндинги перед отправкой
+        await DateRangeChanged.InvokeAsync(DateRange);
+        await MinAmountChanged.InvokeAsync(MinAmount);
+        await MaxAmountChanged.InvokeAsync(MaxAmount);
+        await DescriptionChanged.InvokeAsync(Description);
+        await MccDescriptionChanged.InvokeAsync(MccDescription);
+        await TagChanged.InvokeAsync(Tag);
+
+        // Передаем все параметры в VM
+        VM.SetAdvancedFilters(DateRange, MinAmount, MaxAmount, Description, MccDescription, Tag);
+
+        await OnApply.InvokeAsync();
+    }
+
+    private async Task Clear()
+    {
+        VM.ClearAdvancedFilters();
+
+        // Сбрасываем локальные значения UI
+        DateRange = null;
+        MinAmount = null;
+        MaxAmount = null;
+        Description = null;
+        MccDescription = null;
+        Tag = null;
+
+        // Уведомляем родителя об очистке
+        await DateRangeChanged.InvokeAsync(null);
+        await MinAmountChanged.InvokeAsync(null);
+        await MaxAmountChanged.InvokeAsync(null);
+        await DescriptionChanged.InvokeAsync(null);
+        await MccDescriptionChanged.InvokeAsync(null);
+        await TagChanged.InvokeAsync(null);
+
+        await OnClear.InvokeAsync();
+    }
+}

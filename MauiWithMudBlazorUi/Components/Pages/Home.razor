@@ -1,0 +1,179 @@
+﻿@page "/home"
+@using MauiAppWithMudBlazor.Components.Models
+@using EfcToXamarinAndroid.Core.ViewModels
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject MainViewModel VM
+@inject ISmsReader SmsReader
+
+@if (isLoading)
+{
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="64px" Width="100%" />
+    @for (int i = 0; i < 5; i++)
+    {
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderAvatar>
+                    <MudSkeleton SkeletonType="SkeletonType.Circle" Width="50px" Height="50px" />
+                </CardHeaderAvatar>
+                <CardHeaderContent>
+                    <MudSkeleton />
+                    <MudSkeleton Animation="Animation.False" />
+                    <MudSkeleton Animation="Animation.Wave" />
+                </CardHeaderContent>
+            </MudCardHeader>
+        </MudCard>
+        <MudDivider />
+    }
+}
+else
+{
+    <MudScrollToTop TopOffset="100"
+                    OnScroll="OnScroll"
+                    Selector="#scrollSection"
+                    VisibleCssClass="visible absolute"
+                    HiddenCssClass="invisible">
+        <MudFab Color="Color.Primary" Icon="@Icons.Material.Filled.ArrowUpward"
+                Class="@($"mud-fab-size-large mud-ripple {scrolVisible}")"
+                OnClick="OnFabButtonClick" />
+    </MudScrollToTop>
+
+    <MudTabs @bind-ActivePanelIndex="activeTab" KeepPanelsAlive="true" Position="Position.Bottom" Elevation="0">
+        <MudTabPanel Text="Tab One">
+            <MudTable id="scrollSection"
+                      Style="@tableStyle"
+                      T="WeatherForecast"
+                      Items="forecasts"
+                      Virtualize="true"
+                      Hover="true"
+                      OnRowClick="RowClickEvent"
+                      OverscanCount="16">
+                <RowTemplate>
+                    <MyItem Icon="@Icons.Material.Filled.Payment"
+                            ItemTitle="@itemTitle"
+                            ItemLabel="@itemLabel"
+                            infoTitle="@infoTitle"
+                            infoLabel="@infoLabel" />
+                </RowTemplate>
+            </MudTable>
+        </MudTabPanel>
+       
+            <MudTabPanel Text="Tab Two">
+            @if (activeTab == 1)@* рендерить таблицу только когда вкладка активна *@
+            {
+                <MudTable id="scrollSection"
+                          Style="@tableStyle"
+                          T="FinanceItem"
+                          Items="VM.AllItems"
+                          Virtualize="true"
+                          Hover="true"
+                          OverscanCount="16">
+                    <RowTemplate>
+                        <MyItem Icon="@GetIconForOperation(context.OperationType.ToString())"
+                                ItemTitle="@context.DisplayTitle"
+                                ItemLabel="@context.DisplayDescription"
+                                infoTitle="@context.FormattedSum"
+                                infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
+                    </RowTemplate>
+                </MudTable>
+            }
+            </MudTabPanel>
+        
+    </MudTabs>
+}
+
+@code {
+    private int activeTab;
+    private List<WeatherForecast> forecasts = [];
+    private bool isLoading = true;
+    private string tableStyle = "height:calc(100vh - 98px); overflow-y:auto;";
+    private string scrolVisible = string.Empty;
+    private readonly DialogOptions _fullScreen = new() { FullScreen = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 1️⃣ Выполняем инициализацию последовательно
+            await VM.InitializeAsync();
+
+            if (await VM.CheckPermissionsAsync())
+            {
+                var cfg = EfcToXamarinAndroid.Core.Configs.ManagerCore.ConfigurationManager.ConfigManager.BankConfigurationFromJson;
+                SmsReader.StartListening(cfg.Banks);
+                await VM.ProcessSmsDataAsync();
+            }
+
+            // 2️⃣ Подписка на обновление данных
+            VM.DataUpdated += async (_, __) => await InvokeAsync(StateHasChanged);
+
+            // 3️⃣ Загрузка данных
+            forecasts.AddRange(await GetData(100));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Home] Init error: {ex}");
+            // можно добавить snackbar/log
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+        MessagingCenter.Subscribe<MainPage, string>(this, "ShowToTop", (_, arg) =>
+        {
+            scrolVisible = arg;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private async Task<WeatherForecast[]> GetData(int count)
+    {
+        var startDate = DateOnly.FromDateTime(DateTime.Now);
+        var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
+
+        await Task.Delay(200); // симулируем загрузку
+        return Enumerable.Range(1, count).Select(index => new WeatherForecast
+            {
+                Id = index,
+                Date = startDate.AddDays(index),
+                TemperatureC = Random.Shared.Next(-20, 55),
+                Summary = summaries[Random.Shared.Next(summaries.Length)]
+            }).ToArray();
+    }
+
+    private async Task RowClickEvent(TableRowClickEventArgs<WeatherForecast> args)
+    {
+        var parameters = new DialogParameters<FullScreenDialog> { { x => x.WItem, args.Item } };
+        var dialog = await DialogService.ShowAsync<FullScreenDialog>("Details", parameters, _fullScreen);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            // Обработка результата
+        }
+    }
+
+    private void OnScroll(ScrollEventArgs e)
+    {
+        scrolVisible = e.FirstChildBoundingClientRect.Top < -100 ? "visible" : "hidden";
+    }
+
+    private void OnFabButtonClick() =>
+        JSRuntime.InvokeVoidAsync("scrollToTop");
+
+    private string GetIconForOperation(string operationType) => operationType switch
+    {
+        "OPLATA" => Icons.Material.Filled.Payment,
+        "ZACHISLENIE" => Icons.Material.Filled.AccountBalance,
+        "NALICHNYE" => Icons.Material.Filled.AttachMoney,
+        "UNREACHABLE" => Icons.Material.Filled.QuestionMark,
+        _ => Icons.Material.Filled.Payment
+    };
+
+    // UI sample data
+    string itemTitle = "Первая строка, которая не переносится";
+    string itemLabel = "Вторая строка, максимум две строки";
+    string infoTitle = "+234,32 млн.";
+    string infoLabel = "10.10.2032\n22:12:33";
+}

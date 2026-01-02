@@ -1,0 +1,136 @@
+﻿@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using MauiAppWithMudBlazor.Components.Models
+
+<style>
+    .noInputClass {
+        pointer-events: none;
+    }
+
+    .yesInputClass {
+        pointer-events: auto;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Style=" padding: 0px; ">
+    <MudGrid Class="pt-4">
+        <MudItem xs="12" sm="12">
+          
+            <MudForm @ref="form" @bind-IsValid="@success" @bind-Errors="@errors">
+                <MudTextField Variant="Variant.Outlined" T="string" Label="Operation Type" Value="@OperationType" class="@inputClass" />
+                <MudTextField Variant="Variant.Outlined" T="string" Label="Summa" Value="@Summa" class="@inputClass" />
+                <MudGrid>
+                    <MudItem xs="6">
+                        <MudDatePicker Variant="Variant.Outlined" PickerVariant="PickerVariant.Dialog" For="@(() => Date)" Label="Date" class="@inputClass" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTimePicker Variant="Variant.Outlined" PickerVariant="PickerVariant.Dialog" Label="Time" For="@(()=>Time)" class="@inputClass" />
+                    </MudItem>
+                </MudGrid>
+                <MudSelect Variant="Variant.Outlined" Dense="true" T="string" Label="Discriptoin" Value="@Discriptions[1]" class="@inputClass">
+                    @foreach (var i in Discriptions)
+                    {
+                        <MudSelectItem Value="@(i)" />
+                    }
+                </MudSelect>
+                <MudSelect Variant="Variant.Outlined" Dense="true" T="string" Label="MCC-Code" Value="@MCCCode[1]" class="@inputClass">
+                    @foreach (var i in MCCCode)
+                    {
+                        <MudSelectItem Value="@(i)" />
+                    }
+                </MudSelect>
+                <MudSelect Variant="Variant.Outlined" Dense="true" T="string" Label="MCC-Description" Value="@MCCDescription[1]" class="@inputClass">
+                    @foreach (var i in MCCDescription)
+                    {
+                        <MudSelectItem Value="@(i)" />
+                    }
+                </MudSelect>
+@*                 <AddChipElement Editable="@(!Editable)" ChipValues="ChipValues"></AddChipElement> *@
+            </MudForm>
+            
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+@code {
+    [Parameter]
+    public string Summa { get; set; } = string.Empty;
+    [Parameter]
+    public string OperationType { get; set; } = string.Empty;
+    [Parameter]
+    public List<string> Discriptions { get; set; } = new List<string>();
+    [Parameter]
+    public List<string> MCCCode { get; set; } = new List<string>();
+    [Parameter]
+    public List<string> MCCDescription { get; set; } = new List<string>();
+    [Parameter]
+    public List<string> ChipValues { get; set; } = new List<string>();
+    [Parameter]
+    public WeatherForecast Item { get; set; } = new WeatherForecast();
+    [Parameter]
+    public bool Editable
+    {
+        get => editable;
+        set
+        {
+            editable = value;
+            if (editable)
+                inputClass = "yesInputClass";
+            else
+                inputClass = "noInputClass";
+        }
+    }
+    private bool editable = false;
+    string inputClass = "noInputClass";
+
+   
+
+    bool success;
+    string[] errors = { };
+    MudTextField<string> pwField1;
+    MudForm form;
+
+    public DateTime? Date { get; set; }
+    public TimeSpan? Time { get; set; }
+
+    private IEnumerable<string> PasswordStrength(string pw)
+    {
+        if (string.IsNullOrWhiteSpace(pw))
+        {
+            yield return "Password is required!";
+            yield break;
+        }
+        if (pw.Length < 8)
+            yield return "Password must be at least of length 8";
+        if (!Regex.IsMatch(pw, @"[A-Z]"))
+            yield return "Password must contain at least one capital letter";
+        if (!Regex.IsMatch(pw, @"[a-z]"))
+            yield return "Password must contain at least one lowercase letter";
+        if (!Regex.IsMatch(pw, @"[0-9]"))
+            yield return "Password must contain at least one digit";
+    }
+
+    private string PasswordMatch(string arg)
+    {
+        if (pwField1.Value != arg)
+            return "Passwords don't match";
+        return null;
+    }
+    public void Add() => ChipValues.Add("Value ");
+    public void ClosedChip(MudChip<string> chip) => ChipValues.Remove(chip.Text);
+
+
+
+    protected override Task OnInitializedAsync()
+    {
+
+        Summa = Item.TemperatureC.ToString();
+        OperationType = Item.Summary;
+        Discriptions = new List<string> { "disk1", "disk2" };
+        MCCCode = new List<string> { "1234", "2345" };
+        MCCDescription = new List<string> { "mccdisk1", "mccdisk2" };
+        ChipValues = new List<string> { "val1", "val2", "val3" };
+
+        return base.OnInitializedAsync();
+    }
+
+}

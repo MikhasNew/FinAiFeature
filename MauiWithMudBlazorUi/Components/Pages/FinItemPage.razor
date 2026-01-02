@@ -1,0 +1,191 @@
+﻿@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using MauiAppWithMudBlazor.Components.Models
+
+
+<style>
+    .noInputClass {
+        pointer-events: none;
+    }
+
+    .yesInputClass {
+        pointer-events: auto;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Style=" padding: 0px; ">
+    <MudGrid Class="pt-4">
+        <MudItem xs="12" sm="12">
+            <MudForm @ref="form" @bind-IsValid="@success" @bind-Errors="@errors">
+                <MudSelect Variant="Variant.Outlined"
+                           T="OperacionTyps"
+                           Dense="true"
+                           Label="Operation Type"
+                           @bind-Value=Item.OperationType
+                           class="@inputClass">
+                    @foreach (var i in (Enum.GetValues<OperacionTyps>()))
+                    {
+                        <MudSelectItem Value="@i">@i</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTextField Variant="Variant.Outlined" T="float" Label="Summa" @bind-Value="@Item.Sum" class="@inputClass" />
+                <MudGrid>
+                    <MudItem xs="6">
+                        <MudDatePicker Variant="Variant.Outlined"
+                                       PickerVariant="PickerVariant.Dialog"
+                                       @bind-Date="OnlyDate"
+                                       Label="Date"
+                                       class="@inputClass" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTimePicker Variant="Variant.Outlined"
+                                       PickerVariant="PickerVariant.Dialog"
+                                       Label="Time"
+                                       @bind-Time="OnlyTime"
+                                       class="@inputClass" />
+                    </MudItem>
+                </MudGrid>
+                <MudSelect Variant="Variant.Outlined"
+                           Dense="true" T="string"
+                           Label="Discriptoin"
+                           @bind-Value=Item.Description
+                           class="@inputClass">
+                    @foreach (var i in VM.GetDeskriptions(Item.OperationType))
+                    {
+                        <MudSelectItem Value="@(i)" />
+                    }
+                </MudSelect>
+                <MudSelect Variant="Variant.Outlined"
+                           Dense="true"
+                           T="Int32"
+                           Label="MCC-Code"
+                           @bind-Value=@Item.MCC
+                           class="@inputClass">
+                    @foreach (var i in VM.GetMccCodes(Item.OperationType))
+                    {
+                        <MudSelectItem Value="@i">@i</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect Variant="Variant.Outlined"
+                           Dense="true"
+                           T="string"
+                           Label="MCC-Description"
+                           @bind-Value=Item.MccDescription
+                           class="@inputClass">
+                    @foreach (var i in VM.GetMccDeskriptons(Item.OperationType))
+                    {
+                        <MudSelectItem Value="@(i)" />
+                    }
+                </MudSelect>
+                <AddChipElement Editable="@(Editable)" @bind-ChipValues="ChipValues"></AddChipElement>
+            </MudForm>
+
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+@code {
+    private string SelectedOperationType { get; set; }
+    private string SelectedDiscription { get; set; }
+    private string SelectedMCCCode { get; set; }
+    private string SelectedMCCDescription { get; set; }
+
+    [Parameter]
+    public MainViewModel VM { get; set; }
+    [Parameter]
+    public string Summa { get; set; } = string.Empty;
+    [Parameter]
+    public OperacionTyps OperationType { get; set; }
+    [Parameter]
+    public List<string> Discriptions { get; set; } = new List<string>();
+    [Parameter]
+    public List<int> MCCCode { get; set; } = new List<int>();
+    [Parameter]
+    public List<string> MCCDescription { get; set; } = new List<string>();
+    [Parameter]
+    public FinanceItem Item { get; set; }
+    [Parameter]
+    public bool Editable
+    {
+        get => editable;
+        set
+        {
+            editable = value;
+            if (editable)
+                inputClass = "yesInputClass";
+            else
+                inputClass = "noInputClass";
+        }
+    }
+
+    private bool editable = false;
+    string inputClass = "noInputClass";
+
+    bool success;
+    string[] errors = { };
+    MudTextField<string> pwField1;
+    MudForm form;
+
+    //public void Add() => ChipValues.Add("Value ");
+    public void ClosedChip(MudChip<string> chip) => ChipValues.Remove(chip.Text);
+
+    private DateTime DateTimeValue
+    {
+        get => Item.Date;
+        set => Item.Date = value;
+    }
+
+    private DateTime? OnlyDate
+    {
+        get => DateTimeValue.Date;
+        set
+        {
+            if (value.HasValue)
+                DateTimeValue = value.Value.Date + DateTimeValue.TimeOfDay;
+        }
+    }
+
+    private TimeSpan? OnlyTime
+    {
+        get => DateTimeValue.TimeOfDay;
+        set
+        {
+            if (value.HasValue)
+                DateTimeValue = DateTimeValue.Date + value.Value;
+        }
+    }
+
+    [Parameter]
+    public Dictionary<string,bool> ChipValues
+    {
+        get
+        {
+            var dict = new Dictionary<string, bool>();
+            if(Editable)
+            {
+                foreach(var it in VM.GetTags().Result)
+                    dict.TryAdd(it,false);
+            }
+            if (!string.IsNullOrEmpty(Item.Title))
+            {
+                var list = Item.Title.Split(" ").ToList().Distinct();
+                foreach(var i in list)
+                {
+                    if(!dict.TryAdd(i,true))
+                        dict[i]=true;
+                }
+                return dict;
+            }
+            else
+                return dict;
+        }
+        set
+        {
+            Item.Title = string.Join(" ", value.Where(x=>x.Value==true).Select(x=>x.Key));
+        }
+    }
+
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+}

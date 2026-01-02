@@ -1,0 +1,41 @@
+﻿@using MauiAppWithMudBlazor.Components.Models
+<MudContainer Class="align-center" MaxWidth="MaxWidth.ExtraLarge" Style="padding:0px;">
+    <MudDialog Style="padding:0px;">
+        <TitleContent>
+            <MudAppBar Dense="true" Elevation="0">
+                <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack" Color="Color.Inherit" OnClick="Cancel" />
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Outlined.Edit" OnClick="Edit" />
+                <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+            </MudAppBar>
+        </TitleContent>
+        <DialogContent >
+            <ItemPage Item="@WItem" Editable="@IsEditanle" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+        </DialogActions>
+    </MudDialog>
+</MudContainer>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public WeatherForecast WItem { get; set; }
+
+    bool IsEditanle;
+
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(WItem));
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Edit() => IsEditanle = !IsEditanle;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+}

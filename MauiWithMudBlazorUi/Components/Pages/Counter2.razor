@@ -1,0 +1,244 @@
+﻿@page "/counter2"
+@using MauiAppWithMudBlazor.Components.Models
+@using EfcToXamarinAndroid.Core.Repository
+@using EfcToXamarinAndroid.Core
+@using EfcToXamarinAndroid.Core.ViewModels
+@using EfcToXamarinAndroid.Core.Services
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject MainViewModel VM
+@inject ISmsReader SmsReader
+@inject IFileService FileService
+
+<div class="page-container">
+
+
+    @* This container will grow to fill available space and become scrollable *@
+    <div id="scroll-area" class="content-container">
+        @if (VM.AllItems.Count == 0)
+        {
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="64px" Width="100%" />
+            @for (int i = 0; i < 15; i++)
+            {
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderAvatar>
+                                    <MudSkeleton SkeletonType="SkeletonType.Circle" Width="50px" Height="50px" />
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudSkeleton />
+                                    <MudSkeleton Animation="Animation.False" />
+                                    <MudSkeleton Animation="Animation.Wave" />
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                        </MudCard>
+                        <MudDivider />
+            }
+        }
+        else
+        {
+
+            @if (activeTabIndex == 1)
+            {
+                        <MudTable T="FinanceItem"
+                        Items="VM.AllItems"
+                        Virtualize="true"
+                        Hover="true"
+                        OverscanCount="16"
+                        Height="100%"
+                        Style="overflow: auto;">
+                            <RowTemplate>
+                                <MyItem ItemTitle="@context.DisplayTitle"
+                                ItemLabel="@context.DisplayDescription"
+                                infoTitle="@context.FormattedSum"
+                                infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
+                            </RowTemplate>
+                        </MudTable>
+            }
+            else if (activeTabIndex == 0)
+            {
+                <MudTable T="FinanceItem"
+                         
+                          Items="VM.GetFilteredItems(OperacionTyps.OPLATA)"
+                          Virtualize="true"
+                          Hover="true"
+                          OverscanCount="16"
+                          Height="100%"
+                          Style="overflow: auto;">
+                    <RowTemplate>
+                        <MyItem ItemTitle="@context.DisplayTitle"
+                                ItemLabel="@context.DisplayDescription"
+                                infoTitle="@context.FormattedSum"
+                                infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
+                    </RowTemplate>
+                </MudTable>
+            }
+            else if (activeTabIndex == 2)
+            {
+                <MudTable T="FinanceItem"
+                          
+                          Items="VM.GetFilteredItems(OperacionTyps.NALICHNYE)"
+                          Virtualize="true"
+                          Hover="true"
+                          OverscanCount="16"
+                          Height="100%"
+                          Style="overflow: auto;">
+                    <RowTemplate>
+                        <MyItem ItemTitle="@context.DisplayTitle"
+                                ItemLabel="@context.DisplayDescription"
+                                infoTitle="@context.FormattedSum"
+                                infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
+                    </RowTemplate>
+                </MudTable>
+            }
+            else if (activeTabIndex == 3)
+            {
+                <MudTable T="FinanceItem"
+                          
+                          Items="VM.GetFilteredItems(OperacionTyps.ZACHISLENIE)"
+                          Virtualize="true"
+                          Hover="true"
+                          OverscanCount="16"
+                          Height="100%"
+                          Style="overflow: auto;">
+                    <RowTemplate>
+                        <MyItem ItemTitle="@context.DisplayTitle"
+                                ItemLabel="@context.DisplayDescription"
+                                infoTitle="@context.FormattedSum"
+                                infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
+                    </RowTemplate>
+                </MudTable>
+            }
+            else if (activeTabIndex == 4)
+            {
+                <MudTable T="FinanceItem"
+                          Items="VM.GetFilteredItems(OperacionTyps.UNREACHABLE)"
+                          Virtualize="true"
+                          Hover="true"
+                          OverscanCount="16"
+                          Height="100%"
+                          Style="overflow: auto;">
+                    <RowTemplate>
+                        <MyItem ItemTitle="@context.DisplayTitle"
+                                ItemLabel="@context.DisplayDescription"
+                                infoTitle="@context.FormattedSum"
+                                infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
+                    </RowTemplate>
+                </MudTable>
+            }
+
+        }
+    </div>
+    <MudTabs Centered="true"
+    Position="Position.Bottom"
+    Elevation="2"
+    MinimumTabWidth="9px"
+    @bind-ActivePanelIndex="activeTabIndex">
+        <MudTabPanel Icon="@Icons.Material.Filled.List" />
+        <MudTabPanel Icon="@Icons.Material.Filled.Payment" />
+        <MudTabPanel Icon="@Icons.Material.Filled.AccountBalance" />
+        <MudTabPanel Icon="@Icons.Material.Filled.AttachMoney" />
+        <MudTabPanel Icon="@Icons.Material.Filled.QuestionMark" />
+    </MudTabs>
+    @* This button now correctly targets the scrollable container *@
+    <MudScrollToTop TopOffset="150"
+    Selector="#scroll-area"
+    VisibleCssClass="visible"
+    HiddenCssClass="invisible">
+        <button type="button"
+        class="mud-button-root mud-fab mud-fab-primary mud-fab-size-large mud-ripple scroll-top-btn"
+        @onclick="OnFabButtonClick">
+            <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowUp" />
+        </button>
+    </MudScrollToTop>
+</div>
+
+<style>
+    /* Это основной контейнер для всего представления страницы */
+    .page-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--mud-appbar-height) + 1rem);
+    }
+
+    /* Этот контейнер содержит таблицу */
+    .content-container {
+    display: flex;
+    flex-direction: column; /* или row */
+    overflow: hidden;
+
+    }
+</style>
+
+
+@code {
+    private DotNetObjectReference<Counter2> dotnetHelper;
+    private string TableHeight = "calc(100vh - var(--mud-appbar-height) + 1rem);";
+
+    //private string TableStyle = $"height:{TableHeight}; overflow-y: auto;";
+    private int activeTabIndex = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        VM.DataUpdated += async (_, __) => await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
+        _ = Task.Run(async () =>
+        {
+            await VM.InitializeAsync();
+            var granted = await VM.CheckPermissionsAsync();
+            if (granted)
+            {
+                var cfg = EfcToXamarinAndroid.Core.Configs.ManagerCore.ConfigurationManager.ConfigManager.BankConfigurationFromJson;
+                SmsReader.StartListening(cfg.Banks);
+                await VM.ProcessSmsDataAsync();
+            }
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private async Task RowClickEvent(TableRowClickEventArgs<FinanceItem> e)
+    {
+        var item = e.Item;
+        System.Diagnostics.Debug.WriteLine($"Операция: {item.DisplayTitle} — {item.FormattedSum}");
+    }
+
+    void OnFabButtonClick()
+    {
+        JSRuntime.InvokeVoidAsync("scrollToTop", "#scroll-area"); // Pass selector for better targeting
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var height = await JSRuntime.InvokeAsync<double>("getAvailableHeight", "#scroll-area");  // ID вашего контейнера
+            if ($"{height}px" != TableHeight)
+            {
+                TableHeight = $"{height}px";
+                await InvokeAsync(StateHasChanged);
+            }
+            // Установка resize listener
+            dotnetHelper = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("setupResizeListener", dotnetHelper);
+        }
+    }
+    [JSInvokable]
+    public async Task OnWindowResize()
+    {
+        var height = await JSRuntime.InvokeAsync<double>("getAvailableHeight", "#scroll-area");  // ID вашего контейнера
+        if ($"{height}px" != TableHeight)
+        {
+            TableHeight = $"{height}px";
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    // Метод Dispose для очистки
+    public async ValueTask DisposeAsync()
+    {
+        if (dotnetHelper != null)
+        {
+            await JSRuntime.InvokeVoidAsync("removeResizeListener");  // Вызываем удаление listener
+            dotnetHelper.Dispose();  // Очищаем ссылку на .NET-объект
+        }
+    }
+}

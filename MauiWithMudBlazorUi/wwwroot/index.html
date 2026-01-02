@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>MauiAppWithMudBlazor</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="MauiAppWithMudBlazor.styles.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+</head>
+
+<body>
+
+    <div class="status-bar-safe-area"></div>
+
+    <div id="app">Loading...</div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.webview.js" autostart="false"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+
+    <script>
+
+        function scrollToTop() {
+            document.documentElement.scrollTop = 3000;
+            document.documentElement.scrollTop = 0;
+        }
+
+        // Добавленная функция для вычисления доступной высоты (для таблицы с виртуализацией)
+        window.getAvailableHeight = function (selector) {
+            var container = document.querySelector(selector);
+            if (container) {
+                return container.clientHeight;  // Или window.innerHeight - appbar.offsetHeight - tabs.offsetHeight
+            }
+            return 500;
+        };
+        window.setupResizeListener = function (dotnetHelper) {
+            window.addEventListener('resize', function () {
+                dotnetHelper.invokeMethodAsync('OnWindowResize');  // Вызываем метод Blazor
+            });
+        };
+        // Функция для удаления resize listener
+        window.removeResizeListener = function () {
+            if (resizeListener) {
+                window.removeEventListener('resize', resizeListener);
+                resizeListener = null;  // Очищаем переменную
+            }
+        };
+
+    </script>
+
+</body>
+
+</html>

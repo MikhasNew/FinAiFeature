@@ -1,0 +1,46 @@
+﻿@using MauiAppWithMudBlazor.Components.Models
+<div class="finance-table-container" style="overflow-y: hidden; height: 100%;">
+    <MudTable id="unique_id_scroll_section"
+              T="FinanceItem"
+              Items="Items"
+              Virtualize="true"
+              Hover="true"
+              OnRowClick="OnRowClick"
+              Elevation="0"
+              OverscanCount="10"
+              Height=@TableHeight>
+        <RowTemplate>
+            <MyItem Icon="@GetIconForOperation(context.OperationType.ToString())"
+                    ItemTitle="@context.DisplayTitle"
+                    ItemLabel="@context.DisplayDescription"
+                    infoTitle="@context.FormattedSum"
+                    infoLabel=@($"{@context.FormattedTime}\n{@context.FormattedDate}") />
+        </RowTemplate>
+    </MudTable>
+</div>
+<style>
+    .finance-table-container {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        overflow: hidden;  /* Предотвращаем двойную прокрутку */
+    }
+</style>
+@code {
+    [Parameter] public IEnumerable<FinanceItem> Items { get; set; } = [];
+    [Parameter] public EventCallback<TableRowClickEventArgs<FinanceItem>> OnRowClick { get; set; }
+    [Parameter] public String ItemIcon { get; set; } = String.Empty;
+    [Parameter] public String TableHeight { get; set; } = String.Empty;
+
+    private string GetIconForOperation(string operationType)
+    {
+        return operationType switch
+        {
+            "OPLATA" => Icons.Material.Filled.Payment,
+            "ZACHISLENIE" => Icons.Material.Filled.AccountBalance,
+            "NALICHNYE" => Icons.Material.Filled.AttachMoney,
+            "UNREACHABLE" => Icons.Material.Filled.QuestionMark,
+            _ => Icons.Material.Filled.Payment
+        };
+    }
+}

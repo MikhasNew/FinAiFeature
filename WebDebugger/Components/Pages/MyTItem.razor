@@ -1,0 +1,34 @@
+@typeparam TItem
+<div class="transaction-item" @onclick="() => OnItemClick.InvokeAsync(Item)">
+    <div class="icon-container">
+        @if (infoTitleColor == "green")
+        {
+            <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Success" Size="Size.Medium" />
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Error" Size="Size.Medium" />
+        }
+    </div>
+    
+    <div class="item-details">
+        <p class="item-title">@ItemTitle</p>
+        <p class="item-subtitle">@ItemLabel</p>
+    </div>
+
+    <div class="amount-details">
+        <p class="amount-text" style="color:@infoTitleColor">@infoTitle</p>
+        <p class="date-text">@infoLabel</p>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = string.Empty;
+    [Parameter] public string ItemTitle { get; set; } = string.Empty;
+    [Parameter] public string ItemLabel { get; set; } = string.Empty;
+    [Parameter] public string infoTitle { get; set; } = string.Empty;
+    [Parameter] public string infoTitleColor { get; set; } = string.Empty;
+    [Parameter] public string infoLabel { get; set; } = string.Empty;
+    [Parameter] public TItem Item { get; set; }
+    [Parameter] public EventCallback<TItem> OnItemClick { get; set; }
+}

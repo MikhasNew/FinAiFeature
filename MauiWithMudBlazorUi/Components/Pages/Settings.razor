@@ -1,0 +1,11 @@
+﻿ @page "/settings"
+ @using EfcToXamarinAndroid.Core.Configs.ManagerCore
+
+ <MudContainer Class="pa-4">
+   <MudText Typo="Typo.h5">Настройки</MudText>
+   <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4">Сохранить</MudButton>
+ </MudContainer>
+
+@code {
+    private void Save() => ConfigurationManager.ConfigManager.Save();
+ }

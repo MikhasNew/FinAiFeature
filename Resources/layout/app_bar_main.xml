@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+     <!-- android:theme="@style/AppTheme.AppBarOverlay"-->
+    <com.google.android.material.appbar.AppBarLayout
+         android:id="@id/appBarlayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay" >
+      
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fitsSystemWindows="true"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed"
+            app:titleEnabled="false">
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="?attr/actionBarSize"
+                android:padding="2dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/Balance"
+                    style="@style/App.TextInputLayout.OutlinedBox"
+                    android:layout_width="100dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="0.0dp"
+                    android:layout_marginBottom="0.0dp"
+                    android:layout_marginRight="1.0dp"
+                    android:layout_marginLeft="1.0dp"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:hint="Баланс">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/texstInput_Balance"
+                        android:textSize="15dp"
+                        android:padding="4dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:maxLines="1"
+                        android:inputType="none"
+                        android:editable="false"
+                         android:enabled="false"
+                       />
+                </com.google.android.material.textfield.TextInputLayout>
+              <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/Recomendet"
+                    style="@style/App.TextInputLayout.OutlinedBox"
+                    android:layout_toRightOf="@+id/Balance"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0.0dp"
+                    android:layout_marginBottom="0.0dp"
+                    android:layout_marginRight="1.0dp"
+                    android:layout_marginLeft="1.0dp"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:hint="Рекомендации">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/texstInput_recom_speid"
+                        android:textSize="15dp"
+                        android:padding="4dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:maxLines="1"
+                        android:inputType="none"
+                        android:editable="false"
+                          android:enabled="false"/>
+                </com.google.android.material.textfield.TextInputLayout>
+                  
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/Rezerve"
+                    style="@style/App.TextInputLayout.OutlinedBox"
+                    android:layout_toRightOf="@+id/Recomendet"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0.0dp"
+                    android:layout_marginBottom="0.0dp"
+                    android:layout_marginRight="1.0dp"
+                    android:layout_marginLeft="1.0dp"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:hint="Резерв">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/texstInput_reserve"
+                        android:textSize="15dp"
+                        android:padding="4dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:maxLines="1"
+                        android:inputType="none"
+                        android:editable="false"
+                          android:enabled="false"/>
+                </com.google.android.material.textfield.TextInputLayout>
+              
+              
+
+            </RelativeLayout>
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:elevation="0dp"
+                android:layout_height="?attr/actionBarSize"
+                style="@style/Widget.MaterialComponents.Toolbar.Primary"
+                android:layout_gravity="top"
+                app:layout_collapseMode="pin"
+                tools:ignore="MissingPrefix" />
+
+
+
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+
+    <include layout="@layout/content_main" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
+        app:srcCompat="@android:drawable/ic_input_add" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,0 +1,77 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider @ref="@_mudThemeProvider" @bind-IsDarkMode="@_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+
+    @*  <MudAppBar Style="position: relative;" Elevation="0"> *@
+    <MudAppBar Dense="true" Elevation="4">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Inherit" Link="https://mudblazor.com/" Target="_blank" />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/arbems/.NET-MAUI-Blazor-Hybrid-app-with-MudBlazor" Target="_blank" />
+        <MudToggleIconButton @bind-Toggled="@_isDarkMode" Icon="@Icons.Material.Filled.DarkMode" ToggledIcon="@Icons.Material.Filled.LightMode" Color="Color.Inherit" Target="_blank" />
+        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Inherit" Edge="Edge.End" OnClick="@((e) => DrawerSearchToggle())" />
+    
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">MyApplication</MudText>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+    <MudDrawer @bind-Open="_drawerSearchOpen" Elevation="1" Anchor="Anchor.Right">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">MyApplication</MudText>
+        </MudDrawerHeader>
+        <MauiAppWithMudBlazor.Components.Pages.FilterDrawer />
+    </MudDrawer>
+    @* Включение/отключения прокрутки в контейнере *@
+    <MudMainContent Style="overscroll-behavior: none;">
+        <MudContainer Class="align-center" MaxWidth="MaxWidth.ExtraLarge" Style=" padding-left: 4px; padding-right: 0px; ">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    string styleCurrent = string.Empty;
+    string styleAndroid = "margin-left:5px; padding-left: 0px; padding-right: 0px";
+    string styleDefault = "padding-left: 4px; padding-right: 2px";
+    bool _drawerOpen = true;
+    bool _drawerSearchOpen = false;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+    void DrawerSearchToggle()
+    {
+        _drawerSearchOpen = !_drawerSearchOpen;
+    }
+    private MudThemeProvider _mudThemeProvider;
+    private bool _isDarkMode { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+            StateHasChanged();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+#if ANDROID
+      styleCurrent = styleAndroid;
+#else
+        styleCurrent = styleDefault;
+      #endif
+
+    }
+}

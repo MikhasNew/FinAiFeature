@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "NewRepoFinreporter Docs": {
+      "type": "sse",
+      "url": "https://gitmcp.io/MikhasNew/NewRepoFinreporter"
+    }
+  }
+}

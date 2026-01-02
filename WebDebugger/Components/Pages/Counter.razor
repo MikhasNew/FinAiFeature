@@ -1,0 +1,304 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using System.Linq
+
+@using WebDebugger.Components.Models
+@using EfcToXamarinAndroid.Core.Repository
+@using EfcToXamarinAndroid.Core
+@using EfcToXamarinAndroid.Core.ViewModels
+@using EfcToXamarinAndroid.Core.Services
+@using WebDebugger.Services
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject MainViewModel VM
+
+<div class="page-layout">
+
+    @* --- СЛОЙ 1: Статистика (Закреплена сзади) --- *@
+    <div class="backdrop-header">
+        <MudCarousel Class="stats-carousel"
+                     @bind-SelectedIndex="selectedIndex"
+                     ShowArrows="false"
+                     ShowBullets="false" 
+                     AutoCycle="false"
+                     TData="object"
+                     Style="height: 100%;">
+
+            @* СЛАЙД 0: Чистый денежный поток (Баланс) *@
+            <MudCarouselItem Transition="Transition.Slide">
+                <div class="stats-card">
+                    <MudText Typo="Typo.subtitle2" Style="color: rgba(255,255,255,0.7);">@TitleNetBalance.ToUpper()</MudText>
+                    <MudText Typo="Typo.h3" Style="font-weight:900; color: white;">
+                         @((VM.FlowStats.TotalIncome - VM.FlowStats.TotalExpense).ToString("N0"))
+                    </MudText>
+                    
+                    <div class="d-flex gap-6 mt-4 justify-center w-100 px-4">
+                        @* Доход *@
+                        <div class="text-center">
+                            <MudText Typo="Typo.caption" Style="color: #81C784;">@LabelIncome</MudText>
+                            <MudText Typo="Typo.body2" Style="color: white; font-weight: bold;">@VM.FlowStats.TotalIncome.ToString("N0")</MudText>
+                        </div>
+                        
+                        @* Расход *@
+                        <div class="text-center">
+                            <MudText Typo="Typo.caption" Style="color: #FF8A80;">@LabelExpense</MudText>
+                            <MudText Typo="Typo.body2" Style="color: white; font-weight: bold;">@VM.FlowStats.TotalExpense.ToString("N0")</MudText>
+                        </div>
+
+                        @* Лимит/День (восстановлено из оригинала) *@
+                        <div class="text-center">
+                            <MudText Typo="Typo.caption" Style="color: #64B5F6;">@LabelPerDay</MudText>
+                             @if (VM.FlowStats.CalculatedDailyLimit > 0)
+                            {
+                                <MudText Typo="Typo.body2" Style="color: white; font-weight: bold;">@VM.FlowStats.CalculatedDailyLimit.ToString("N0")</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Warning" Style="font-weight:bold;">Перерасход</MudText>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </MudCarouselItem>
+
+            @* СЛАЙД 1: Динамика (Bar Chart) *@
+            <MudCarouselItem Transition="Transition.Slide">
+                <div class="stats-card pa-4">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color: rgba(255,255,255,0.7);">@VM.DynamicsGroupingTitle</MudText>
+                    
+                    @* Summary Numbers *@
+                    @{
+                        var avgIncome = VM.DynamicsStats.DailyIncomeData.DefaultIfEmpty(0).Average();
+                        var avgExpense = VM.DynamicsStats.DailyExpenseData.DefaultIfEmpty(0).Average();
+                    }
+
+                    @* Summary Numbers *@
+                    <div class="d-flex w-100 justify-space-between px-4 mb-2">
+                        @* INCOME STATS *@
+                        <div class="d-flex flex-column align-start" style="min-height: 40px;"> 
+                            @if (avgIncome > 0)
+                            {
+                                 <MudText Typo="Typo.caption" Style="color: #66BB6A; opacity: 0.9; font-size:10px;">ДОХОД (МАКС / СР)</MudText>
+                                 <div class="d-flex gap-1 align-baseline">
+                                    <MudText Typo="Typo.subtitle2" Style="color: #66BB6A; font-weight:700;">@VM.DynamicsStats.DailyIncomeData.DefaultIfEmpty(0).Max().ToString("N0")</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #66BB6A; opacity:0.7;">/</MudText>
+                                    <MudText Typo="Typo.subtitle2" Style="color: #66BB6A;">@avgIncome.ToString("N0")</MudText>
+                                 </div>
+                            }
+                        </div>
+
+                        @* EXPENSE STATS *@
+                        <div class="d-flex flex-column align-end" style="min-height: 40px;">
+                            @if (avgExpense > 0)
+                            {
+                                 <MudText Typo="Typo.caption" Style="color: #EF5350; opacity: 0.9; font-size:10px;">РАСХОД (МАКС / СР)</MudText>
+                                 <div class="d-flex gap-1 align-baseline">
+                                    <MudText Typo="Typo.subtitle2" Style="color: #EF5350; font-weight:700;">@VM.DynamicsStats.DailyExpenseData.DefaultIfEmpty(0).Max().ToString("N0")</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #EF5350; opacity:0.7;">/</MudText>
+                                    <MudText Typo="Typo.subtitle2" Style="color: #EF5350;">@avgExpense.ToString("N0")</MudText>
+                                 </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div style="height: 140px; width: 100%;">
+                        @if (VM.DynamicsStats.DailyChartLabels.Any())
+                        {
+                            <MudChart ChartType="ChartType.Line" 
+                                      ChartSeries="@(new List<ChartSeries> { 
+                                          new ChartSeries { Name = LabelIncome, Data = VM.DynamicsStats.DailyIncomeData },
+                                          new ChartSeries { Name = LabelExpense, Data = VM.DynamicsStats.DailyExpenseData } 
+                                      })"
+                                      XAxisLabels="@VM.DynamicsStats.DailyChartLabels"
+                                      Width="100%" Height="100%"
+                                      ChartOptions="@(new ChartOptions { 
+                                          ChartPalette = new[] { "#66BB6A", "#EF5350" },
+                                          YAxisTicks = 0,
+                                          YAxisFormat = "N0"
+                                      })" />
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5);">Нет данных за период</MudText>
+                        }
+                    </div>
+                </div>
+            </MudCarouselItem>
+
+            @* СЛАЙД 2: Категории (Pie Chart) *@
+            <MudCarouselItem Transition="Transition.Slide">
+                <div class="stats-card pa-4">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="color: rgba(255,255,255,0.7);">@TitleTopCategories.ToUpper()</MudText>
+                    <div style="height: 180px; width: 100%; display: flex; justify-content: center; align-items: center;">
+                         @if (VM.CategoryStats.TopCategories.Any())
+                        {
+                            <MudChart ChartType="ChartType.Pie" 
+                                      ChartData="@(VM.CategoryStats.TopCategories.Select(x => (double)x.Amount).ToArray())" 
+                                      ChartLabels="@(VM.CategoryStats.TopCategories.Select(x => x.Name).ToArray())"
+                                      Width="160px" Height="160px"
+                                      ChartOptions="@(new ChartOptions { ChartPalette = new string[] { "#4CAF50", "#2196F3", "#FFC107", "#F44336", "#9C27B0" } })" />
+                        }
+                        else
+                        {
+                             <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                        }
+                    </div>
+                </div>
+            </MudCarouselItem>
+
+            @* СЛАЙД 3: Аномалии *@
+            <MudCarouselItem Transition="Transition.Slide">
+                <div class="stats-card pa-6">
+                    <MudText Typo="Typo.subtitle2" Class="mb-4" Style="color: rgba(255,255,255,0.7);">АНАЛИЗ ОПЕРАЦИЙ</MudText>
+                    <div class="w-100 px-4">
+                         @foreach (var item in VM.CurrentStats.Anomalies.Take(3))
+                        {
+                            <div class="d-flex justify-space-between align-center mb-2 pa-2 rounded" style="background: rgba(255,255,255,0.1);">
+                                <MudText Typo="Typo.caption" Style="color: white;">@item.Description</MudText>
+                                <MudText Typo="Typo.body2" Style="font-weight:bold; color: white;">@item.Sum.ToString("N0")</MudText>
+                            </div>
+                        }
+                        @if (!VM.CurrentStats.Anomalies.Any())
+                        {
+                             <MudText Typo="Typo.body2" Style="color: white; opacity: 0.7">Нет аномалий</MudText>
+                        }
+                    </div>
+                </div>
+            </MudCarouselItem>
+
+        </MudCarousel>
+    </div>
+
+    @* --- СЛОЙ 2: Скроллящаяся область (Лежит поверх статистики) --- *@
+    <div id="scroll-area" class="scroll-layer">
+        
+        @* Прозрачный блок, через который мы управляем каруселью *@
+        <div class="header-spacer">
+            <MudSwipeArea OnSwipeEnd="SwipeEndAsync" Class="swipe-catcher" />
+            
+            @* Кастомные индикаторы (4 точки) *@
+            <div class="custom-bullets">
+                @for (int i = 0; i < 4; i++)
+                {
+                    var index = i;
+                    <div class="bullet @(selectedIndex == index ? "active" : "")" 
+                         @onclick="@(() => SetSlide(index))"></div>
+                }
+            </div>
+        </div>
+
+        <div class="content-sheet">
+             <div class="d-flex justify-space-between align-center mb-6 px-2">
+                <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1a1a1a;">@LabelTransactions (@curentItems.Count())</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Tune" Size="Size.Small" />
+            </div>
+
+            <div class="transaction-list">
+                 @if (curentItems == null || !curentItems.Any())
+                {
+                     <MudText Typo="Typo.body1" Class="text-center mt-4">Нет данных</MudText>
+                }
+                else 
+                {
+                    @foreach (var item in curentItems)
+                    {
+                        <MyTItem @key="item.Id"
+                                 TItem="FinanceItem"
+                                 Item="@item"
+                                 ItemTitle="@item.DisplayTitle"
+                                 ItemLabel="@item.DisplayDescription"
+                                 infoTitle="@item.FormattedSum"
+                                 infoTitleColor="@item.AmountColor"
+                                 infoLabel=@($"{item.FormattedTime} · {item.FormattedDate}")
+                                 OnItemClick="ItemClicked" />
+                    }
+                }
+            </div>
+            <div style="height: 100px;"></div>
+        </div>
+    </div>
+
+     @* --- СЛОЙ 3: Нижняя навигация (Иконки как в оригинале) --- *@
+    <div class="bottom-nav">
+        <MudIconButton Icon="@Icons.Material.Filled.List" Color="@(activeTabIndex == 0 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(0))" />
+        <MudIconButton Icon="@Icons.Material.Filled.Payment" Color="@(activeTabIndex == 1 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(1))" />
+        <MudIconButton Icon="@Icons.Material.Filled.AccountBalance" Color="@(activeTabIndex == 2 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(2))" />
+        <MudIconButton Icon="@Icons.Material.Filled.AttachMoney" Color="@(activeTabIndex == 3 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(3))" />
+        <MudIconButton Icon="@Icons.Material.Filled.QuestionMark" Color="@(activeTabIndex == 4 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(4))" />
+    </div>
+
+</div>
+
+@code {
+    private int selectedIndex = 0;
+    private int activeTabIndex = 0;
+    private IEnumerable<FinanceItem> curentItems = Enumerable.Empty<FinanceItem>();
+    
+    private string TitleNetBalance => L10n.TitleNetBalance;
+    private string LabelIncome => L10n.LabelIncome;
+    private string LabelExpense => L10n.LabelExpense;
+    private string LabelPerDay => L10n.LabelPerDay;
+    private string TitleTopCategories => L10n.TitleTopCategories;
+    private string LabelTransactions => L10n.LabelTransactions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        VM.DataUpdated += async (_, __) => await InvokeAsync(StateHasChanged);
+        VM.DataFiltred += async (_, __) => await FilterChangedAsync();
+        
+        await VM.InitializeAsync();
+        await VM.LoadFinanceItemsAsync(); 
+        await TabChangedAsync(0);
+    }
+
+    private void SetSlide(int index)
+    {
+        selectedIndex = index;
+        _ = JSRuntime.InvokeVoidAsync("window.dispatchEvent", new { type = "resize" });
+    }
+
+    private void SwipeEndAsync(SwipeEventArgs args)
+    {
+        if (args.SwipeDirection == SwipeDirection.RightToLeft)
+        {
+            if (selectedIndex < 3) selectedIndex++; // Теперь 3 - это максимальный индекс (4 слайда)
+        }
+        else if (args.SwipeDirection == SwipeDirection.LeftToRight)
+        {
+            if (selectedIndex > 0) selectedIndex--;
+        }
+        SetSlide(selectedIndex);
+    }
+
+    private async Task TabChangedAsync(int index)
+    {
+        activeTabIndex = index;
+        curentItems = GetActiveItems();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private IEnumerable<FinanceItem> GetActiveItems()
+    {
+        return activeTabIndex switch
+        {
+            0 => VM.GetFilteredItems(OperacionTyps.None),
+            1 => VM.GetFilteredItems(OperacionTyps.OPLATA),
+            2 => VM.GetFilteredItems(OperacionTyps.NALICHNYE),
+            3 => VM.GetFilteredItems(OperacionTyps.ZACHISLENIE),
+            4 => VM.GetFilteredItems(OperacionTyps.UNREACHABLE),
+            _ => Enumerable.Empty<FinanceItem>()
+        };
+    }
+
+    private async Task ItemClicked(FinanceItem item)
+    {
+        var parameters = new DialogParameters<FullScreenFinItemDialog> { { x => x.Item, item.ThisFinanceItem }, { x => x.VM, VM } };
+        await DialogService.ShowAsync<FullScreenFinItemDialog>("Details", parameters, new DialogOptions { FullScreen = true });
+    }
+
+    private async Task FilterChangedAsync()
+    {
+        curentItems = GetActiveItems();
+        await InvokeAsync(StateHasChanged);
+    }
+}

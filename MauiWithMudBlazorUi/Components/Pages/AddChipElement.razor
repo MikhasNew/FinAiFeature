@@ -1,0 +1,81 @@
+﻿<MudChipSet T="string" 
+            SelectionMode="SelectionMode.MultiSelection"
+            CheckMark="true"
+            OnClose="@ClosedChip"
+            SelectedValuesChanged="@_selectedChanged">
+    @foreach (KeyValuePair<string,bool> value in ChipValues)
+    {
+        if (value.Key != string.Empty)
+        {
+            <MudChip SelectedColor=Color.Primary Disabled="@(!Editable)" Text="@value.Key" Selected="@ChipValues[value.Key]"></MudChip>
+        }
+    }
+    @if (addChipVisible)
+    {
+        <div class="mud-chip mud-chip-text mud-chip-size-medium mud-chip-color-info mud-clickable mud-ripple">
+            <input class="mud-chip-content no-border" @bind="@Labeltext" @onblur="HandleInputBlur" @oninput="UpdateText" />
+            <button onclick="@SaveChip" aria-label="Delete Chip" type="button" class="mud-button-root mud-icon-button mud-ripple mud-ripple-icon mud-icon-button-size-small mud-chip-close-button" _bl_64="">
+                <span class="mud-icon-button-label"><svg class="mud-icon-root mud-svg-icon mud-icon-size-small mud-chip-icon" focusable="false" viewBox="0 0 24 24" aria-hidden="true" role="img"><!--!--><path d="M0 0h24v24H0z" fill="none"></path><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path></svg></span>
+            </button>
+        </div>
+    }
+    <div class="d-flex flex-column align-center">
+        <MudButton Disabled="@(!Editable)" StartIcon="@Icons.Material.Filled.Add" OnClick="Add">Add chip</MudButton>
+    </div>
+</MudChipSet>
+
+@code {
+    bool addChipVisible = false;
+    [CascadingParameter]
+    string Labeltext { get; set; } = string.Empty;
+    public EventCallback<int> CurrentLabelValueChanged { get; set; }
+    [Parameter]
+    public Dictionary<string,bool> ChipValues { get; set; }
+    [Parameter]
+    public EventCallback<Dictionary<string, bool>> ChipValuesChanged { get; set; }
+    private bool editable;
+    [Parameter]
+    public bool Editable
+    {
+        get => editable;
+        set
+        {
+            editable = value;
+        }
+    }
+    private void SaveChip()
+    {
+        if (!string.IsNullOrEmpty(Labeltext))
+            ChipValues.Add(Labeltext, true);
+        ChipValuesChanged.InvokeAsync(ChipValues);
+        Labeltext = string.Empty;
+        addChipVisible = false;
+    }
+    private void HandleInputBlur(FocusEventArgs args)
+    {
+        SaveChip();
+    }
+    private void UpdateText(ChangeEventArgs e)
+    {
+        Labeltext = e.Value.ToString();
+    }
+    public void Add()
+    {
+        addChipVisible = true;
+    }
+    public void ClosedChip(MudChip<string> chip)
+    {
+        ChipValues.Remove(chip.Text);
+        ChipValuesChanged.InvokeAsync(ChipValues);
+    }
+    private void _selectedChanged(IReadOnlyCollection<string> selectedValues)
+    {
+        foreach (var key in ChipValues.Keys.ToList())
+            ChipValues[key] = selectedValues.Contains(key);
+
+        ChipValuesChanged.InvokeAsync(ChipValues);
+    }
+
+   
+    
+}
