@@ -1,4 +1,4 @@
-﻿using ObjCRuntime;
+using ObjCRuntime;
 using UIKit;
 
 namespace MauiAppWithMudBlazor
@@ -14,3 +14,4 @@ namespace MauiAppWithMudBlazor
         }
     }
 }
+

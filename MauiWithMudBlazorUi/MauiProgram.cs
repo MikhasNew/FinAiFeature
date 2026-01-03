@@ -1,4 +1,4 @@
-п»їusing Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using EfcToXamarinAndroid.Core.Services;
 using CommunityToolkit.Maui;
@@ -36,14 +36,14 @@ namespace MauiAppWithMudBlazor
     		builder.Logging.AddDebug();
 #endif
 
-            // DI: СЏРґСЂРѕ
+            // DI: ядро
             builder.Services.AddScoped<IDataService, DataService>();
-            // UI Рё РїР»Р°С‚С„РѕСЂРјРµРЅРЅС‹Рµ СЂРµР°Р»РёР·Р°С†РёРё РґРѕР±Р°РІРёРј РЅРёР¶Рµ (СЃРј. СЂР°Р·РґРµР» 3)
-            // ViewModel РєР°Рє СЃРµСЂРІРёСЃ
+            // UI и платформенные реализации добавим ниже (см. раздел 3)
+            // ViewModel как сервис
             builder.Services.AddSingleton<EfcToXamarinAndroid.Core.ViewModels.MainViewModel>();
 
 
-            // ISmsReader: Android вЂ” СЂРµР°Р»СЊРЅР°СЏ СЂРµР°Р»РёР·Р°С†РёСЏ; РїСЂРѕС‡РёРµ вЂ” Р·Р°РіР»СѓС€РєР°
+            // ISmsReader: Android — реальная реализация; прочие — заглушка
             
 #if ANDROID
             builder.Services.AddSingleton<ISmsReader, AndroidSmsReader>();
@@ -64,3 +64,5 @@ namespace MauiAppWithMudBlazor
         }
     }
 }
+
+

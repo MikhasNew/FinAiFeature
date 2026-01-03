@@ -15,3 +15,5 @@ namespace MauiAppWithMudBlazor
         }
     }
 }
+
+

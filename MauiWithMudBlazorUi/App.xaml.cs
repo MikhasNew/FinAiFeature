@@ -1,4 +1,4 @@
-﻿namespace MauiAppWithMudBlazor
+namespace MauiAppWithMudBlazor
 {
     public partial class App : Application
     {
@@ -10,3 +10,5 @@
         }
     }
 }
+
+

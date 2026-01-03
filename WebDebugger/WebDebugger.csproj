@@ -8,12 +8,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
-    <PackageReference Include="MudBlazor" Version="8.13.0" />
+    <PackageReference Include="MudBlazor" Version="8.15.0" />
     <PackageReference Include="MudBlazor.ThemeManager" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\EfcToXamarinAndroid\EfcToXamarinAndroid.Core.csproj" />
+    <ProjectReference Include="..\EfcToXamarinAndroid.UI\EfcToXamarinAndroid.UI.csproj" />
   </ItemGroup>
 
 </Project>

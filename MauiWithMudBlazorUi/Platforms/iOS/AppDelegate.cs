@@ -1,4 +1,4 @@
-﻿using Foundation;
+using Foundation;
 
 namespace MauiAppWithMudBlazor
 {
@@ -8,3 +8,5 @@ namespace MauiAppWithMudBlazor
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
     }
 }
+
+

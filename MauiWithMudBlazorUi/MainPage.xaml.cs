@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.WebView.Maui;
+using Microsoft.AspNetCore.Components.WebView.Maui;
 
 namespace MauiAppWithMudBlazor
 {
@@ -71,3 +71,5 @@ namespace MauiAppWithMudBlazor
 
     }
 }
+
+

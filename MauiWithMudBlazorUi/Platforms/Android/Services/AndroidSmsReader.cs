@@ -1,4 +1,4 @@
-﻿using Android.Content;
+using Android.Content;
 using Android.OS;
 using Android.Provider;
 using EfcToXamarinAndroid.Core.Configs.ManagerCore;
@@ -114,3 +114,5 @@ namespace MauiAppWithMudBlazor.Platforms.Android.Services
         }
     }
 }
+
+

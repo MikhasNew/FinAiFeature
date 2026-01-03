@@ -1,8 +1,8 @@
-using WebDebugger.Components;
+using EfcToXamarinAndroid.UI.Components;
 using MudBlazor.Services;
 using EfcToXamarinAndroid.Core.Services;
 using EfcToXamarinAndroid.Core.ViewModels;
-using WebDebugger.Services;
+using EfcToXamarinAndroid.UI.Services;
 using EfcToXamarinAndroid.Core;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,7 +25,7 @@ builder.Services.AddScoped<IUIService, WebUIService>();
 builder.Services.AddSingleton<IPermissionService, WebPermissionService>();
 
 // Seed Mock Data for Debugging
-WebDebugger.Services.MockDataHelper.SeedMockData();
+EfcToXamarinAndroid.UI.Services.MockDataHelper.SeedMockData();
 
 var app = builder.Build();
 
@@ -38,6 +38,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
@@ -45,4 +46,5 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
 
