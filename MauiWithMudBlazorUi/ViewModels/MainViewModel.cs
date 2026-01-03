@@ -47,6 +47,8 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         /// Данные второго слайда.
         /// </summary>
         public DynamicsStatisticsDto DynamicsStats { get; private set; } = new();
+        public string DynamicsGroupingTitle { get; private set; } = "ДИНАМИКА";
+        public double ChartYAxisMax { get; private set; } = 1000;
 
         public DynamicsStatisticsDto CategoryStats { get; private set; } = new();
 
@@ -466,42 +468,97 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 DateTime minDate = _activeDateRange?.Start?.Date ?? currentItems.Min(x => x.Date).Date;
                 DateTime maxDate = _activeDateRange?.End?.Date ?? currentItems.Max(x => x.Date).Date;
 
-                // Если период завершился, берем весь период. Если активен, обрезаем по сегодня.
                 DateTime today = DateTime.Now.Date;
                 if (maxDate > today) maxDate = today;
 
-            
+                var totalDays = (maxDate - minDate).TotalDays;
 
-                // 2. Группируем данные в словари для быстрого поиска
-                var incomeByDate = currentItems
-                    .Where(i => i.OperationType == OperacionTyps.ZACHISLENIE)
-                    .GroupBy(i => i.Date.Date)
-                    .ToDictionary(g => g.Key, g => g.Sum(i => i.Sum));
-
-                var expenseByDate = currentItems
-                    .Where(i => i.OperationType != OperacionTyps.ZACHISLENIE)
-                    .Where(i => i.OperationType != OperacionTyps.UNREACHABLE)
-                    .GroupBy(i => i.Date.Date)
-                    .ToDictionary(g => g.Key, g => g.Sum(i => i.Sum));
-
-                // 3. Цикл по всем дням для создания непрерывного графика (с заполнением нулями)
                 var labels = new List<string>();
                 var incomeData = new List<double>();
                 var expenseData = new List<double>();
 
-                for (DateTime date = minDate; date <= maxDate; date = date.AddDays(1))
+                if (totalDays > 60) // Более 2 месяцев -> Группировка по месяцам
                 {
-                    // Используем только день для подписи, если это не полный год
-                    labels.Add(date.ToString("dd.MM"));
+                    DynamicsGroupingTitle = "ПО МЕСЯЦАМ";
+                    var current = new DateTime(minDate.Year, minDate.Month, 1);
+                    var end = new DateTime(maxDate.Year, maxDate.Month, 1);
 
-                    // Заполняем нулем, если нет данных за этот день
-                    incomeData.Add(incomeByDate.ContainsKey(date) ? (double)incomeByDate[date] : 0.0);
-                    expenseData.Add(expenseByDate.ContainsKey(date) ? (double)expenseByDate[date] : 0.0);
+                    while (current <= end)
+                    {
+                        labels.Add(current.ToString("MMM yy"));
+
+                        // Берем данные за весь месяц
+                        var monthEnd = current.AddMonths(1).AddSeconds(-1);
+                        var chunk = currentItems.Where(x => x.Date >= current && x.Date <= monthEnd).ToList();
+
+                        incomeData.Add(chunk.Where(i => i.OperationType == OperacionTyps.ZACHISLENIE).Sum(i => i.Sum));
+                        expenseData.Add(chunk.Where(i => i.OperationType != OperacionTyps.ZACHISLENIE && i.OperationType != OperacionTyps.UNREACHABLE).Sum(i => i.Sum));
+
+                        current = current.AddMonths(1);
+                    }
+                }
+                else if (totalDays > 21) // От 3 недель до 2 месяцев -> Группировка по неделям
+                {
+                    DynamicsGroupingTitle = "ПО НЕДЕЛЯМ";
+                    var current = minDate;
+                    while (current <= maxDate)
+                    {
+                        var weekEnd = current.AddDays(6);
+                        if (weekEnd > maxDate) weekEnd = maxDate;
+
+                        labels.Add($"{current:dd.MM}");
+
+                        var chunk = currentItems.Where(x => x.Date.Date >= current && x.Date.Date <= weekEnd).ToList();
+
+                        incomeData.Add(chunk.Where(i => i.OperationType == OperacionTyps.ZACHISLENIE).Sum(i => i.Sum));
+                        expenseData.Add(chunk.Where(i => i.OperationType != OperacionTyps.ZACHISLENIE && i.OperationType != OperacionTyps.UNREACHABLE).Sum(i => i.Sum));
+
+                        current = current.AddDays(7);
+                    }
+                }
+                else // Менее 3 недель -> По дням
+                {
+                    DynamicsGroupingTitle = "ПО ДНЯМ";
+
+                    for (DateTime date = minDate; date <= maxDate; date = date.AddDays(1))
+                    {
+                        labels.Add(date.ToString("dd.MM"));
+
+                        double income = currentItems.Where(i => i.Date.Date == date && i.OperationType == OperacionTyps.ZACHISLENIE).Sum(x => x.Sum);
+                        double expense = currentItems.Where(i => i.Date.Date == date && i.OperationType != OperacionTyps.ZACHISLENIE && i.OperationType != OperacionTyps.UNREACHABLE).Sum(x => x.Sum);
+
+                        incomeData.Add(income);
+                        expenseData.Add(expense);
+                    }
                 }
 
                 dynamicsStats.DailyChartLabels = labels.ToArray();
                 dynamicsStats.DailyIncomeData = incomeData.ToArray();
                 dynamicsStats.DailyExpenseData = expenseData.ToArray();
+
+                // Calculate "Nice" Max for Y-Axis
+                double maxVal = 0;
+                if (expenseData.Any()) maxVal = expenseData.Max();
+                if (incomeData.Any()) maxVal = Math.Max(maxVal, incomeData.Max());
+
+                if (maxVal > 0)
+                {
+                    // Round up to nice number
+                    double magnitude = Math.Pow(10, Math.Floor(Math.Log10(maxVal)));
+                    double normalized = maxVal / magnitude;
+
+                    double niceNormalized;
+                    if (normalized <= 1.0) niceNormalized = 1.0;
+                    else if (normalized <= 2.0) niceNormalized = 2.0;
+                    else if (normalized <= 5.0) niceNormalized = 5.0;
+                    else niceNormalized = 10.0;
+
+                    ChartYAxisMax = niceNormalized * magnitude;
+                }
+                else
+                {
+                    ChartYAxisMax = 1000; // Default
+                }
             }
 
             // Присваиваем результат

@@ -596,13 +596,14 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 if (totalForCalc == 0) totalForCalc = 1; // Защита от деления на 0
 
                 categoryStats.TopCategories = currentItems
-                    .Where(x => !string.IsNullOrEmpty(x.MccDescription))
-                    .GroupBy(x => x.MccDescription)
+                    .Where(x => !string.IsNullOrEmpty(x.Description))
+                    .GroupBy(x => x.Description)
                     .Select(g => new CategoryStat
                     {
                         Name = g.Key!,
                         Amount = g.Sum(x => x.Sum),
-                        Percentage = (g.Sum(x => x.Sum) / totalForCalc) * 100
+                        Percentage = (g.Sum(x => x.Sum) / totalForCalc) * 100,
+                        IsExpense = !(g.Select(x=>x.OperationType).FirstOrDefault() is OperacionTyps.ZACHISLENIE)
                     })
                     .OrderByDescending(x => x.Amount)
                     .Take(5)

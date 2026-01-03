@@ -11,5 +11,6 @@ namespace WebDebugger.Components.Models
         public string Name { get; set; } = string.Empty;
         public float Amount { get; set; }
         public double Percentage { get; set; }
+        public bool IsExpense { get; set; }
     }
 }

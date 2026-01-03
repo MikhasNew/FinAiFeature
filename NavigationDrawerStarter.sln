@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EfcToXamarinAndroid.Core", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiAppWithMudBlazor", "MauiWithMudBlazorUi\MauiAppWithMudBlazor.csproj", "{D54420EA-7742-4347-9B59-5A5EF8FC7E8F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDebugger", "WebDebugger\WebDebugger.csproj", "{E220A7F2-4FD4-E3FE-ACEB-AD48C11C5C80}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +25,10 @@ Global
 		{D54420EA-7742-4347-9B59-5A5EF8FC7E8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D54420EA-7742-4347-9B59-5A5EF8FC7E8F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D54420EA-7742-4347-9B59-5A5EF8FC7E8F}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{E220A7F2-4FD4-E3FE-ACEB-AD48C11C5C80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E220A7F2-4FD4-E3FE-ACEB-AD48C11C5C80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E220A7F2-4FD4-E3FE-ACEB-AD48C11C5C80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E220A7F2-4FD4-E3FE-ACEB-AD48C11C5C80}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
