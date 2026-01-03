@@ -96,6 +96,13 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
         #endregion
 
+        public bool IsFiltred => _activeDateRange != null || 
+                                 _activeMinAmount != null || 
+                                 _activeMaxAmount != null || 
+                                 _activeDescription != null || 
+                                 _activeMccDescription != null || 
+                                 _activeTag != null;
+
         #region
         /// <summary>
         /// Устанавливает период фильтрации.
@@ -195,13 +202,24 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             // Инициализация БД и загрузка данных на фоне
             await DatesRepositorio.SetDatasFromDB();  // EF Core
             await LoadFinanceItemsAsync();            // Преобразование DataItem -> FinanceItem
-            DatesRepositorio.PaymentsChanged += (_, __) => RefreshData();
-            DatesRepositorio.DepositsChanged += (_, __) => RefreshData();
-            DatesRepositorio.CashsChanged += (_, __) => RefreshData();
-            DatesRepositorio.UnreachableChanged += (_, __) => RefreshData();
+            
+            // Подписываемся на статические события через именованный метод, чтобы можно было отписаться
+            DatesRepositorio.PaymentsChanged += OnDataChanged;
+            DatesRepositorio.DepositsChanged += OnDataChanged;
+            DatesRepositorio.CashsChanged += OnDataChanged;
+            DatesRepositorio.UnreachableChanged += OnDataChanged;
 
         }
+
+        // Обработчик изменений в репозитории
+        private async void OnDataChanged(object? sender, EventArgs e)
+        {
+            await RefreshData();
+        }
+
         private async Task RefreshData() => await LoadFinanceItemsAsync();
+
+
         public async Task LoadFinanceItemsAsync()
         {
             var data = DatesRepositorio.DataItems ?? [];
@@ -349,13 +367,21 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 stats.MaxSum = list.Max(x => x.Sum);
                 stats.MinSum = list.Min(x => x.Sum);
 
-                // 2. Аномалии (Топ 3 по сумме)
-                stats.Anomalies = list.OrderByDescending(x => x.Sum).Take(3).ToList();
+                // 2. Аномалии (Выбросы)
+                // Используем порог: более чем в 2.5 раза выше среднего чека
+                double threshold = stats.AverageCheck * 2.5;
+                stats.Anomalies = list
+                    .Where(x => x.Sum > threshold)
+                    .OrderByDescending(x => x.Sum)
+                    .Take(5)
+                    .ToList();
+
+                // Если явных выбросов нет, можно оставить список пустым или взять топ-1 самый дорогой
+                // но лучше честно показывать, что выбросов нет. 
 
                 // 3. Топ 5 MCC и проценты
-                // Считаем общую сумму для процентов
                 var totalSum = list.Sum(x => x.Sum);
-                if (totalSum == 0) totalSum = 1; // защита от деления на 0
+                if (totalSum == 0) totalSum = 1;
 
                 stats.TopCategories = list
                     .Where(x => !string.IsNullOrEmpty(x.MccDescription))
@@ -370,17 +396,33 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                     .Take(5)
                     .ToList();
 
-                // 4. График (группируем по дням)
-                // Берем последние 10 дней, где были операции, чтобы график не был пустым
+                // 4. График
                 var dailyGroups = list
                     .GroupBy(x => x.Date.Date)
                     .OrderBy(g => g.Key)
-                    .TakeLast(10) // Ограничиваем точками, чтобы график влез
+                    .TakeLast(10)
                     .ToList();
 
                 stats.DailyChartLabels = dailyGroups.Select(g => g.Key.ToString("dd.MM")).ToArray();
                 stats.DailyChartData = dailyGroups.Select(g => (double)g.Count()).ToArray();
-                // Примечание: Если нужен график сумм, замените g.Count() на g.Sum(x => x.Sum)
+
+                // 5. РАСЧЕТ СРАВНЕНИЯ (Variant 1)
+                DateTime start = _activeDateRange?.Start?.Date ?? (AllItems.Any() ? AllItems.Min(x => x.Date).Date : DateTime.Today.AddDays(-30));
+                DateTime end = _activeDateRange?.End?.Date ?? (AllItems.Any() ? AllItems.Max(x => x.Date).Date : DateTime.Today);
+                
+                var duration = end - start;
+                if (duration.TotalDays < 1) duration = TimeSpan.FromDays(30);
+                
+                DateTime prevStart = start.Add(-duration);
+                DateTime prevEnd = start;
+
+                var prevItems = AllItems.Where(x => x.Date >= prevStart && x.Date < prevEnd).ToList();
+                
+                stats.TotalIncome = (float)list.Where(i => i.OperationType == OperacionTyps.ZACHISLENIE).Sum(i => i.Sum);
+                stats.TotalExpense = (float)list.Where(i => i.OperationType != OperacionTyps.ZACHISLENIE && i.OperationType != OperacionTyps.UNREACHABLE).Sum(i => i.Sum);
+                
+                stats.LastMonthTotalIncome = (float)prevItems.Where(i => i.OperationType == OperacionTyps.ZACHISLENIE).Sum(i => i.Sum);
+                stats.LastMonthTotalExpense = (float)prevItems.Where(i => i.OperationType != OperacionTyps.ZACHISLENIE && i.OperationType != OperacionTyps.UNREACHABLE).Sum(i => i.Sum);
             }
 
             CurrentStats = stats;
@@ -681,7 +723,13 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         {
             try
             {
-                var downloadsPath = _fileService.GetDownloadsPath(); //await _fileService.PickFolderAsync();//
+                var downloadsPath = await _fileService.PickFolderAsync();
+                if (string.IsNullOrEmpty(downloadsPath))
+                {
+                    await _uiService.ShowToastAsync("Экспорт отменен.");
+                    return;
+                }
+
                 var fileName = $"FinReport{DateTime.Now:yyyy_MM_dd_HH_mm_ss}.xml";
                 var filePath = System.IO.Path.Combine(downloadsPath, fileName);
 
@@ -689,7 +737,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
                 if (success)
                 {
-                    await _uiService.ShowToastAsync("Данные экспортированы.");
+                    await _uiService.ShowToastAsync($"Данные экспортированы в {fileName}");
                 }
                 else
                 {
@@ -713,6 +761,10 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                     await DatesRepositorio.AddDatas(dataItems.ToList());
                     await _uiService.ShowToastAsync("Данные импортированы.");
                 }
+                else
+                {
+                    await _uiService.ShowToastAsync("Импорт отменен.");
+                }
             }
             catch (Exception ex)
             {
@@ -735,20 +787,26 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         }
         public async Task UpdateItemValueAsync(int id, FinanceItem item)
         {
-            DataItem dataItem = new DataItem();// await DatesRepositorio.GetDataItem(id);
+            DataItem dataItem = new DataItem(item.OperationType, item.Date);
 
-            dataItem.Date = item.Date;
             dataItem.Sum = item.Sum;
             dataItem.Descripton = item.Description;
             dataItem.Title = item.Title;
             dataItem.MccDeskription = item.MccDescription;
             dataItem.MCC = item.MCC;
             dataItem.UnreachableText = item.UnreachableText;
-            dataItem.OperacionTyp = item.OperationType;
             dataItem.IsNewDataItem = item.IsNewDataItem;
             dataItem.Balance = item.Balance;
 
-            await DatesRepositorio.UpdateItemValue(id, dataItem);
+            if (id == 0)
+            {
+                await DatesRepositorio.AddDatas(new List<DataItem> { dataItem });
+                await RefreshData();
+            }
+            else
+            {
+                await DatesRepositorio.UpdateItemValue(id, dataItem);
+            }
         }
         public async Task<FinanceItem> GetFinItem(int id)
         {
@@ -872,10 +930,11 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         public void Dispose()
         {
             _smsReader.SmsReceived -= _smsReader_SmsReceived;
-            DatesRepositorio.PaymentsChanged -= (_, __) => RefreshData();
-            DatesRepositorio.DepositsChanged -= (_, __) => RefreshData();
-            DatesRepositorio.CashsChanged -= (_, __) => RefreshData();
-            DatesRepositorio.UnreachableChanged -= (_, __) => RefreshData();
+            
+            DatesRepositorio.PaymentsChanged -= OnDataChanged;
+            DatesRepositorio.DepositsChanged -= OnDataChanged;
+            DatesRepositorio.CashsChanged -= OnDataChanged;
+            DatesRepositorio.UnreachableChanged -= OnDataChanged;
         }
     }
 }

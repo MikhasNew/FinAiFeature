@@ -1,13 +1,13 @@
 @typeparam TItem
 <div class="transaction-item" @onclick="() => OnItemClick.InvokeAsync(Item)">
-    <div class="icon-container">
+    <div class="icon-container @(infoTitleColor == "green" ? "income" : "expense")">
         @if (infoTitleColor == "green")
         {
-            <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Success" Size="Size.Medium" />
+            <MudIcon Icon="@Icons.Material.Filled.SouthWest" Size="Size.Small" />
         }
         else
         {
-            <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Error" Size="Size.Medium" />
+            <MudIcon Icon="@Icons.Material.Filled.NorthEast" Size="Size.Small" />
         }
     </div>
     
@@ -17,7 +17,7 @@
     </div>
 
     <div class="amount-details">
-        <p class="amount-text" style="color:@infoTitleColor">@infoTitle</p>
+        <p class="amount-text @(infoTitleColor == "green" ? "income" : "expense")">@infoTitle</p>
         <p class="date-text">@infoLabel</p>
     </div>
 </div>

@@ -7,16 +7,6 @@
 
 
 
-<style>
-    .noInputClass {
-        pointer-events: none;
-    }
-
-    .yesInputClass {
-        pointer-events: auto;
-    }
-</style>
-
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style=" padding: 0px; ">
     <MudGrid Class="pt-4">
         <MudItem xs="12" sm="12">
@@ -26,34 +16,34 @@
                            Dense="true"
                            Label="Operation Type"
                            @bind-Value=Item.OperationType
-                           class="@inputClass">
+                           ReadOnly="!Editable">
                     @foreach (var i in (Enum.GetValues<OperacionTyps>()))
                     {
                         <MudSelectItem Value="@i">@i</MudSelectItem>
                     }
                 </MudSelect>
-                <MudTextField Variant="Variant.Outlined" T="float" Label="Summa" @bind-Value="@Item.Sum" class="@inputClass" />
+                <MudTextField Variant="Variant.Outlined" T="float" Label="Summa" @bind-Value="@Item.Sum" ReadOnly="!Editable" />
                 <MudGrid>
                     <MudItem xs="6">
                         <MudDatePicker Variant="Variant.Outlined"
                                        PickerVariant="PickerVariant.Dialog"
                                        @bind-Date="OnlyDate"
                                        Label="Date"
-                                       class="@inputClass" />
+                                       ReadOnly="!Editable" />
                     </MudItem>
                     <MudItem xs="6">
                         <MudTimePicker Variant="Variant.Outlined"
                                        PickerVariant="PickerVariant.Dialog"
                                        Label="Time"
                                        @bind-Time="OnlyTime"
-                                       class="@inputClass" />
+                                       ReadOnly="!Editable" />
                     </MudItem>
                 </MudGrid>
                 <MudSelect Variant="Variant.Outlined"
                            Dense="true" T="string"
-                           Label="Discriptoin"
+                           Label="Discription"
                            @bind-Value=Item.Description
-                           class="@inputClass">
+                           ReadOnly="!Editable">
                     @foreach (var i in VM.GetDeskriptions(Item.OperationType))
                     {
                         <MudSelectItem Value="@(i)" />
@@ -64,7 +54,7 @@
                            T="Int32"
                            Label="MCC-Code"
                            @bind-Value=@Item.MCC
-                           class="@inputClass">
+                           ReadOnly="!Editable">
                     @foreach (var i in VM.GetMccCodes(Item.OperationType))
                     {
                         <MudSelectItem Value="@i">@i</MudSelectItem>
@@ -75,7 +65,7 @@
                            T="string"
                            Label="MCC-Description"
                            @bind-Value=Item.MccDescription
-                           class="@inputClass">
+                           ReadOnly="!Editable">
                     @foreach (var i in VM.GetMccDeskriptons(Item.OperationType))
                     {
                         <MudSelectItem Value="@(i)" />
@@ -158,38 +148,46 @@
         }
     }
 
+    private Dictionary<string, bool> _chipValues = new();
+
     [Parameter]
-    public Dictionary<string,bool> ChipValues
+    public Dictionary<string, bool> ChipValues
     {
-        get
-        {
-            var dict = new Dictionary<string, bool>();
-            if(Editable)
-            {
-                foreach(var it in VM.GetTags().Result)
-                    dict.TryAdd(it,false);
-            }
-            if (!string.IsNullOrEmpty(Item.Title))
-            {
-                var list = Item.Title.Split(" ").ToList().Distinct();
-                foreach(var i in list)
-                {
-                    if(!dict.TryAdd(i,true))
-                        dict[i]=true;
-                }
-                return dict;
-            }
-            else
-                return dict;
-        }
+        get => _chipValues;
         set
         {
-            Item.Title = string.Join(" ", value.Where(x=>x.Value==true).Select(x=>x.Key));
+            _chipValues = value;
+            Item.Title = string.Join(" ", _chipValues.Where(x => x.Value).Select(x => x.Key));
         }
     }
 
-    protected override Task OnInitializedAsync()
+    private async Task SyncChips()
     {
-        return base.OnInitializedAsync();
+        var dict = new Dictionary<string, bool>();
+        if (Editable)
+        {
+            var allTags = await VM.GetTags();
+            foreach (var it in allTags)
+                dict.TryAdd(it, false);
+        }
+        
+        if (!string.IsNullOrEmpty(Item.Title))
+        {
+            var list = Item.Title.Split(" ").ToList().Distinct();
+            foreach (var i in list)
+            {
+                if (!dict.TryAdd(i, true))
+                    dict[i] = true;
+            }
+        }
+        _chipValues = dict;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_chipValues.Count == 0 || !Editable)
+        {
+            await SyncChips();
+        }
     }
 }

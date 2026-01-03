@@ -32,3 +32,5 @@ To build and run this project, you will need Visual Studio with the .NET Multi-p
 *   The application uses an MVVM (Model-View-ViewModel) architecture, with the `MainViewModel` in the `EfcToXamarinAndroid.Core` project orchestrating the application's logic.
 *   Platform-specific services are implemented in the respective UI projects (e.g., `AndroidSmsReader` in the `NavigationDrawerStarter` project and `MauiPermissionService` in the `MauiWithMudBlazorUi` project) and consumed through interfaces defined in the core project.
 *   Configuration for banks and MCC codes is stored in JSON files (`ConfigBank.json`, `ConfigMcc.json`) and embedded as resources in the `EfcToXamarinAndroid.Core` project.
+
+Отвечай на русском языке.

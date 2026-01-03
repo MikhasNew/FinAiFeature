@@ -102,11 +102,8 @@ namespace EfcToXamarinAndroid.Core.Repository
             {
                 using (var db = new DataItemContext(dbFullPath))
                 {
-                    foreach (var dataItem in DataItems)
-                    {
-                        db.Cats.Remove(dataItem);
-                    }
-
+                    var allItems = await db.Cats.ToListAsync();
+                    db.Cats.RemoveRange(allItems);
                     await db.SaveChangesAsync();
                 }
                 DataItems.Clear();

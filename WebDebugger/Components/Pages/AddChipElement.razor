@@ -45,9 +45,11 @@
     }
     private void SaveChip()
     {
-        if (!string.IsNullOrEmpty(Labeltext))
-            ChipValues.Add(Labeltext, true);
-        ChipValuesChanged.InvokeAsync(ChipValues);
+        if (!string.IsNullOrEmpty(Labeltext) && ChipValues != null)
+        {
+            ChipValues.TryAdd(Labeltext, true);
+            ChipValuesChanged.InvokeAsync(ChipValues);
+        }
         Labeltext = string.Empty;
         addChipVisible = false;
     }

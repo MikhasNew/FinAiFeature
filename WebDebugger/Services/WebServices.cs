@@ -21,19 +21,132 @@ namespace WebDebugger.Services
 
     public class WebFileService : IFileService
     {
-        public Task<string> PickFolderAsync() => Task.FromResult("");
-        public Task<string> PickFileAsync(string title, string[] fileTypes) => Task.FromResult("");
-        public Task<bool> SaveFileAsync(string content, string fileName, string filePath) => Task.FromResult(true);
-        public Task<string> ReadFileAsync(string filePath) => Task.FromResult("");
-        public bool FileExists(string filePath) => false;
-        public string GetDownloadsPath() => "";
+        private readonly Microsoft.JSInterop.IJSRuntime _js;
+        private readonly MudBlazor.IDialogService _dialogService;
+
+        public WebFileService(Microsoft.JSInterop.IJSRuntime js, MudBlazor.IDialogService dialogService)
+        {
+            _js = js;
+            _dialogService = dialogService;
+        }
+
+        public async Task<string> PickFolderAsync() 
+        {
+            Console.WriteLine("Entering PickFolderAsync");
+            try
+            {
+                var defaultPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Downloads");
+                
+                var parameters = new MudBlazor.DialogParameters<WebDebugger.Components.Dialogs.PathInputDialog>
+                {
+                    { x => x.Title, "Выбор папки для экспорта" },
+                    { x => x.Message, "Введите путь к папке (для симуляции выбор папки в MAUI):" },
+                    { x => x.Value, defaultPath }
+                };
+
+                var dialog = await _dialogService.ShowAsync<WebDebugger.Components.Dialogs.PathInputDialog>("Выбор пути", parameters);
+                var result = await dialog.Result;
+
+                if (result != null && !result.Canceled)
+                {
+                    return result.Data?.ToString();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in PickFolderAsync: {ex.Message}");
+                return null;
+            }
+        }
+        public async Task<string> PickFileAsync(string title, string[] fileTypes) 
+        {
+            Console.WriteLine("Entering PickFileAsync");
+            try
+            {
+                var dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Downloads");
+                var lastFile = "";
+                List<string> files = new();
+
+                if (Directory.Exists(dir))
+                {
+                    files = Directory.GetFiles(dir, "*.xml").OrderByDescending(f => f).ToList();
+                    lastFile = files.FirstOrDefault() ?? "";
+                }
+                
+                var parameters = new MudBlazor.DialogParameters<WebDebugger.Components.Dialogs.PathInputDialog>
+                {
+                    { x => x.Title, title },
+                    { x => x.Message, "Введите путь к файлу или выберите из списка:" },
+                    { x => x.Value, lastFile },
+                    { x => x.Files, files }
+                };
+
+                var dialog = await _dialogService.ShowAsync<WebDebugger.Components.Dialogs.PathInputDialog>("Выбор файла", parameters);
+                var result = await dialog.Result;
+
+                if (result != null && !result.Canceled)
+                {
+                    return result.Data?.ToString();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in PickFileAsync: {ex.Message}");
+                return null;
+            }
+        }
+        public Task<bool> SaveFileAsync(string content, string fileName, string filePath) 
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(filePath, content);
+                return Task.FromResult(true);
+            }
+            catch { return Task.FromResult(false); }
+        }
+        public Task<string> ReadFileAsync(string filePath) => File.Exists(filePath) ? Task.FromResult(File.ReadAllText(filePath)) : Task.FromResult("");
+        public bool FileExists(string filePath) => File.Exists(filePath);
+        public string GetDownloadsPath() 
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Downloads");
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            return path;
+        }
     }
 
     public class WebUIService : IUIService
     {
-        public Task ShowToastAsync(string message) { Console.WriteLine($"Toast: {message}"); return Task.CompletedTask; }
-        public Task<bool> ShowConfirmationDialogAsync(string title, string message) => Task.FromResult(true);
-        public Task<string> ShowInputDialogAsync(string title, string message, string defaultValue = "") => Task.FromResult(defaultValue);
+        private readonly MudBlazor.ISnackbar _snackbar;
+        private readonly MudBlazor.IDialogService _dialogService;
+
+        public WebUIService(MudBlazor.ISnackbar snackbar, MudBlazor.IDialogService dialogService)
+        {
+            _snackbar = snackbar;
+            _dialogService = dialogService;
+        }
+
+        public Task ShowToastAsync(string message) 
+        { 
+            _snackbar.Add(message, MudBlazor.Severity.Info);
+            return Task.CompletedTask; 
+        }
+
+        public async Task<bool> ShowConfirmationDialogAsync(string title, string message) 
+        {
+            var result = await _dialogService.ShowMessageBox(title, message, yesText: "Да", noText: "Нет");
+            return result ?? false;
+        }
+
+        public async Task<string> ShowInputDialogAsync(string title, string message, string defaultValue = "") 
+        {
+            // Simple input dialog using MudBlazor would require a custom component, 
+            // but for debugging we can return default or use JS prompt
+            return defaultValue;
+        }
     }
 
     public class WebPermissionService : IPermissionService

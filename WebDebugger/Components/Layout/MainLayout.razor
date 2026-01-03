@@ -1,19 +1,98 @@
 ﻿@inherits LayoutComponentBase
+@inject EfcToXamarinAndroid.Core.ViewModels.MainViewModel VM
+@inject ISnackbar Snackbar
 
-<MudThemeProvider />
+<MudThemeProvider @ref="@_mudThemeProvider" @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
 
 <MudLayout>
+    <MudAppBar Dense="true" Elevation="4" Color="Color.Primary" Style="background: var(--premium-gradient);">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+        <MudText Typo="Typo.h6" Style="font-weight: bold;">Web Debugger</MudText>
+        <MudSpacer />
+        
+        <MudToggleIconButton @bind-Toggled="@_isDarkMode" 
+                             Icon="@Icons.Material.Filled.DarkMode" 
+                             ToggledIcon="@Icons.Material.Filled.LightMode" 
+                             Color="Color.Inherit" 
+                             Title="Переключить тему" />
+
+        <MudIconButton Icon="@Icons.Material.Filled.FilterList" Color="Color.Inherit" OnClick="@((e) => FilterDrawerToggle())" Title="Фильтры" />
+
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Title="Действия">
+            <MudMenuItem Icon="@Icons.Material.Filled.Refresh" OnClick="@RefreshAll">Обновить данные</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.FileDownload" OnClick="@(() => VM.ExportDataAsync())">Экспорт в XML</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.FileUpload" OnClick="@(() => VM.ImportDataAsync())">Импорт из XML</MudMenuItem>
+            <MudDivider />
+            <MudMenuItem Icon="@Icons.Material.Filled.DeleteSweep" OnClick="@(() => VM.ClearDatabaseAsync())" Style="color: var(--mud-palette-error);">Очистить базу</MudMenuItem>
+        </MudMenu>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Temporary">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6" Style="font-weight: bold;">Меню</MudText>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+
+    <MudDrawer @bind-Open="_filterDrawerOpen" Anchor="Anchor.Right" Elevation="1" Variant="@DrawerVariant.Temporary" Width="320px">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6" Style="font-weight: bold;">Фильтры</MudText>
+        </MudDrawerHeader>
+        <WebDebugger.Components.Pages.FilterDrawer @bind-Open="_filterDrawerOpen" />
+    </MudDrawer>
+
     <MudMainContent>
         @Body
     </MudMainContent>
 </MudLayout>
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+@code {
+    bool _drawerOpen = false;
+    bool _filterDrawerOpen = false;
+    private MudThemeProvider _mudThemeProvider;
+    private bool _isDarkMode = true;
+
+    private async Task RefreshAll()
+    {
+        await EfcToXamarinAndroid.Core.Repository.DatesRepositorio.SetDatasFromDB();
+        await VM.LoadFinanceItemsAsync();
+        Snackbar.Add("Данные обновлены", Severity.Success);
+    }
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    void FilterDrawerToggle()
+    {
+        _filterDrawerOpen = !_filterDrawerOpen;
+    }
+
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#1a237e",
+            AppbarBackground = "#1a237e",
+            Background = "#f5f5f7",
+            DrawerBackground = "#ffffff",
+            Surface = "#ffffff",
+            TextPrimary = "#1a1a1a"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#3f51b5",
+            AppbarBackground = "#0d1242",
+            Background = "#0a0a0b",
+            DrawerBackground = "#121214",
+            Surface = "#1e1e21",
+            TextPrimary = "#e0e0e0"
+        }
+    };
+}
 

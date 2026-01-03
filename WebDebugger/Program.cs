@@ -20,8 +20,8 @@ builder.Services.AddScoped<MainViewModel>();
 
 // Web Stubs
 builder.Services.AddSingleton<ISmsReader, WebSmsReader>();
-builder.Services.AddSingleton<IFileService, WebFileService>();
-builder.Services.AddSingleton<IUIService, WebUIService>();
+builder.Services.AddScoped<IFileService, WebFileService>();
+builder.Services.AddScoped<IUIService, WebUIService>();
 builder.Services.AddSingleton<IPermissionService, WebPermissionService>();
 
 // Seed Mock Data for Debugging

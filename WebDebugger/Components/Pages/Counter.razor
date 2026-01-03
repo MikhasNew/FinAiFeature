@@ -180,19 +180,67 @@
             @* СЛАЙД 3: Аномалии *@
             <MudCarouselItem Transition="Transition.Slide">
                 <div class="stats-card pa-6">
-                    <MudText Typo="Typo.subtitle2" Class="mb-4" Style="color: rgba(255,255,255,0.7);">АНАЛИЗ ОПЕРАЦИЙ</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mb-4" Style="color: rgba(255,255,255,0.7);">ВЫБРОСЫ (АНАЛИЗ)</MudText>
                     <div class="w-100 px-4">
                          @foreach (var item in VM.CurrentStats.Anomalies.Take(3))
                         {
                             <div class="d-flex justify-space-between align-center mb-2 pa-2 rounded" style="background: rgba(255,255,255,0.1);">
-                                <MudText Typo="Typo.caption" Style="color: white;">@item.Description</MudText>
-                                <MudText Typo="Typo.body2" Style="font-weight:bold; color: white;">@item.Sum.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;">@item.Description</MudText>
+                                <MudText Typo="Typo.body2" Style="font-weight:bold; color: #FF8A80;">@item.Sum.ToString("N0")</MudText>
                             </div>
                         }
                         @if (!VM.CurrentStats.Anomalies.Any())
                         {
-                             <MudText Typo="Typo.body2" Style="color: white; opacity: 0.7">Нет аномалий</MudText>
+                             <MudText Typo="Typo.body2" Style="color: white; opacity: 0.7; text-align: center;">Аномальных трат не обнаружено</MudText>
                         }
+                    </div>
+                </div>
+            </MudCarouselItem>
+
+            @* СЛАЙД 4: Сравнение периодов *@
+            <MudCarouselItem Transition="Transition.Slide">
+                <div class="stats-card pa-6">
+                    <MudText Typo="Typo.subtitle2" Class="mb-4" Style="color: rgba(255,255,255,0.7);">СРАВНЕНИЕ С ПРОШЛЫМ ПЕРИОДОМ</MudText>
+                    <div class="w-100 px-4 d-flex flex-column gap-4">
+                        
+                        @* Расходы сравнение *@
+                        <div class="pa-3 rounded" style="background: rgba(255,255,255,0.05);">
+                            <div class="d-flex justify-space-between align-center mb-1">
+                                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.7);">РАСХОДЫ</MudText>
+                                @{
+                                    var expWeight = VM.CurrentStats.ExpenseChangePercent;
+                                    var expColor = expWeight > 0 ? "#FF8A80" : "#81C784";
+                                    var expSign = expWeight > 0 ? "+" : "";
+                                }
+                                <MudText Typo="Typo.subtitle2" Style="@($"font-weight:900; color: {expColor};")">
+                                    @(expSign + (expWeight * 100).ToString("F1"))%
+                                </MudText>
+                            </div>
+                            <div class="d-flex justify-space-between align-baseline">
+                                <MudText Typo="Typo.h5" Style="color: white; font-weight:700;">@VM.CurrentStats.TotalExpense.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5);">было @VM.CurrentStats.LastMonthTotalExpense.ToString("N0")</MudText>
+                            </div>
+                        </div>
+
+                        @* Доходы сравнение *@
+                        <div class="pa-3 rounded" style="background: rgba(255,255,255,0.05);">
+                            <div class="d-flex justify-space-between align-center mb-1">
+                                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.7);">ДОХОДЫ</MudText>
+                                @{
+                                    var incWeight = VM.CurrentStats.IncomeChangePercent;
+                                    var incColor = incWeight >= 0 ? "#81C784" : "#FF8A80";
+                                    var incSign = incWeight > 0 ? "+" : "";
+                                }
+                                <MudText Typo="Typo.subtitle2" Style="@($"font-weight:900; color: {incColor};")">
+                                    @(incSign + (incWeight * 100).ToString("F1"))%
+                                </MudText>
+                            </div>
+                            <div class="d-flex justify-space-between align-baseline">
+                                <MudText Typo="Typo.h5" Style="color: white; font-weight:700;">@VM.CurrentStats.TotalIncome.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5);">было @VM.CurrentStats.LastMonthTotalIncome.ToString("N0")</MudText>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </MudCarouselItem>
@@ -200,16 +248,16 @@
         </MudCarousel>
     </div>
 
-    @* --- СЛОЙ 2: Скроллящаяся область (Лежит поверх статистики) --- *@
-    <div id="scroll-area" class="scroll-layer">
+    @* --- СЛОЙ 2: Скроллящаяся область --- *@
+    <div class="scroll-layer" @onscroll="OnScroll" id="scroll-target">
         
         @* Прозрачный блок, через который мы управляем каруселью *@
         <div class="header-spacer">
             <MudSwipeArea OnSwipeEnd="SwipeEndAsync" Class="swipe-catcher" />
             
-            @* Кастомные индикаторы (4 точки) *@
+            @* Кастомные индикаторы (5 точек) *@
             <div class="custom-bullets">
-                @for (int i = 0; i < 4; i++)
+                @for (int i = 0; i < 5; i++)
                 {
                     var index = i;
                     <div class="bullet @(selectedIndex == index ? "active" : "")" 
@@ -219,15 +267,29 @@
         </div>
 
         <div class="content-sheet">
-             <div class="d-flex justify-space-between align-center mb-6 px-2">
-                <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1a1a1a;">@LabelTransactions (@curentItems.Count())</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Tune" Size="Size.Small" />
+            <div class="d-flex justify-space-between align-center mb-4 px-2">
+                <div class="d-flex align-center gap-2">
+                    <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1a1a1a;">@LabelTransactions</MudText>
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Text">@curentItems.Count()</MudChip>
+                </div>
             </div>
+
+            @if (VM.IsFiltred)
+            {
+                <div class="px-2 mb-4">
+                    <MudChip T="string" OnClose="@(() => VM.ClearAdvancedFilters())" Color="Color.Warning" Variant="Variant.Text" Size="Size.Small">
+                        Фильтры активны (сбросить)
+                    </MudChip>
+                </div>
+            }
 
             <div class="transaction-list">
                  @if (curentItems == null || !curentItems.Any())
                 {
-                     <MudText Typo="Typo.body1" Class="text-center mt-4">Нет данных</MudText>
+                    <div class="d-flex flex-column align-center justify-center py-10" style="opacity: 0.5;">
+                        <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Class="mb-2" />
+                        <MudText Typo="Typo.body2">Транзакций не найдено</MudText>
+                    </div>
                 }
                 else 
                 {
@@ -249,6 +311,24 @@
         </div>
     </div>
 
+    @* Кнопка (Добавить или Вверх) *@
+    <div class="fab-container">
+        @if (_showScrollToTop)
+        {
+            <MudFab Color="Color.Secondary" 
+                    StartIcon="@Icons.Material.Filled.ArrowUpward" 
+                    OnClick="@ScrollToTop"
+                    Style="box-shadow: 0 8px 25px rgba(0,0,0,0.2);" />
+        }
+        else
+        {
+            <MudFab Color="Color.Primary" 
+                    StartIcon="@Icons.Material.Filled.Add" 
+                    OnClick="@AddItem"
+                    Style="box-shadow: 0 8px 25px rgba(25, 118, 210, 0.4);" />
+        }
+    </div>
+
      @* --- СЛОЙ 3: Нижняя навигация (Иконки как в оригинале) --- *@
     <div class="bottom-nav">
         <MudIconButton Icon="@Icons.Material.Filled.List" Color="@(activeTabIndex == 0 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(0))" />
@@ -258,11 +338,16 @@
         <MudIconButton Icon="@Icons.Material.Filled.QuestionMark" Color="@(activeTabIndex == 4 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(4))" />
     </div>
 
+
+
 </div>
+
+@implements IDisposable
 
 @code {
     private int selectedIndex = 0;
     private int activeTabIndex = 0;
+    private bool _showScrollToTop = false;
     private IEnumerable<FinanceItem> curentItems = Enumerable.Empty<FinanceItem>();
     
     private string TitleNetBalance => L10n.TitleNetBalance;
@@ -274,12 +359,36 @@
 
     protected override async Task OnInitializedAsync()
     {
-        VM.DataUpdated += async (_, __) => await InvokeAsync(StateHasChanged);
-        VM.DataFiltred += async (_, __) => await FilterChangedAsync();
+        VM.DataUpdated += HandleDataUpdated;
+        VM.DataFiltred += HandleDataFiltred;
         
         await VM.InitializeAsync();
         await VM.LoadFinanceItemsAsync(); 
         await TabChangedAsync(0);
+    }
+
+    private async void HandleDataUpdated(object? sender, EventArgs e)
+    {
+        try
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception) { /* Ignore disposal errors */ }
+    }
+
+    private async void HandleDataFiltred(object? sender, EventArgs e)
+    {
+        try
+        {
+            await FilterChangedAsync();
+        }
+        catch (Exception) { /* Ignore disposal errors */ }
+    }
+
+    public void Dispose()
+    {
+        VM.DataUpdated -= HandleDataUpdated;
+        VM.DataFiltred -= HandleDataFiltred;
     }
 
     private void SetSlide(int index)
@@ -292,7 +401,7 @@
     {
         if (args.SwipeDirection == SwipeDirection.RightToLeft)
         {
-            if (selectedIndex < 3) selectedIndex++; // Теперь 3 - это максимальный индекс (4 слайда)
+            if (selectedIndex < 4) selectedIndex++; // Теперь 4 - это максимальный индекс (5 слайдов)
         }
         else if (args.SwipeDirection == SwipeDirection.LeftToRight)
         {
@@ -327,9 +436,50 @@
         await DialogService.ShowAsync<FullScreenFinItemDialog>("Details", parameters, new DialogOptions { FullScreen = true });
     }
 
+    private async Task AddItem()
+    {
+        var newItem = new FinanceItem 
+        { 
+            Date = DateTime.Now, 
+            OperationType = OperacionTyps.OPLATA,
+            Sum = 0
+        };
+        var parameters = new DialogParameters<FullScreenFinItemDialog> { { x => x.Item, newItem }, { x => x.VM, VM } };
+        await DialogService.ShowAsync<FullScreenFinItemDialog>("Новая операция", parameters, new DialogOptions { FullScreen = true });
+    }
+
     private async Task FilterChangedAsync()
     {
         curentItems = GetActiveItems();
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshAll()
+    {
+        await VM.LoadFinanceItemsAsync();
+        await TabChangedAsync(activeTabIndex);
+    }
+
+    private void OnScroll(EventArgs e)
+    {
+        // В Blazor Server/WASM для получения точного scrollTop эффективнее JS,
+        // но для простоты добавим JS-хелпер или будем использовать базовое событие
+        _ = CheckScrollPosition();
+    }
+
+    private async Task CheckScrollPosition()
+    {
+        var scrollInfo = await JSRuntime.InvokeAsync<decimal>("eval", "document.getElementById('scroll-target').scrollTop");
+        bool shouldShow = scrollInfo > 300;
+        if (shouldShow != _showScrollToTop)
+        {
+            _showScrollToTop = shouldShow;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ScrollToTop()
+    {
+        await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('scroll-target').scrollTo({top: 0, behavior: 'smooth'})");
     }
 }

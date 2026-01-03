@@ -61,6 +61,7 @@ namespace EfcToXamarinAndroid.Core
             Title = dataItem.Title;
             Descripton = dataItem.Descripton;
             MCC = dataItem.MCC;
+            MccDeskription = dataItem.MccDeskription;
             if (ParentId != 0) //если у записи есть предки, значит она пользовательская и можно изменять ее дату
             {
                 Date = dataItem.Date;
