@@ -200,17 +200,38 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
         public async Task InitializeAsync()
         {
-            _smsReader.SmsReceived += _smsReader_SmsReceived;
-            // Инициализация БД и загрузка данных на фоне
-            await DatesRepositorio.SetDatasFromDB();  // EF Core
-            await LoadFinanceItemsAsync();            // Преобразование DataItem -> FinanceItem
-            
-            // Подписываемся на статические события через именованный метод, чтобы можно было отписаться
-            DatesRepositorio.PaymentsChanged += OnDataChanged;
-            DatesRepositorio.DepositsChanged += OnDataChanged;
-            DatesRepositorio.CashsChanged += OnDataChanged;
-            DatesRepositorio.UnreachableChanged += OnDataChanged;
+            try
+            {
+                _smsReader.SmsReceived += _smsReader_SmsReceived;
+                
+                // Запрашиваем разрешения уровня платформы
+                await CheckPermissionsAsync();
 
+                // Инициализация БД и загрузка данных
+                await DatesRepositorio.SetDatasFromDB();  // EF Core
+
+                // Первичное сканирование SMS (если есть конфигурация)
+                if (_appConfiguration?.Banks != null)
+                {
+                    await ProcessSmsDataAsync();
+                    // Запускаем прослушивание новых SMS
+                    _smsReader.StartListening(_appConfiguration.Banks);
+                }
+
+                await LoadFinanceItemsAsync();            // Преобразование DataItem -> FinanceItem
+                
+                // Подписываемся на статические события через именованный метод, чтобы можно было отписаться
+                DatesRepositorio.PaymentsChanged += OnDataChanged;
+                DatesRepositorio.DepositsChanged += OnDataChanged;
+                DatesRepositorio.CashsChanged += OnDataChanged;
+                DatesRepositorio.UnreachableChanged += OnDataChanged;
+            }
+            catch (Exception ex)
+            {
+                // Логируем ошибку, но не даем приложению упасть намертво
+                System.Diagnostics.Debug.WriteLine($"InitializeAsync Error: {ex}");
+                await _uiService.ShowToastAsync($"Ошибка при запуске: {ex.Message}");
+            }
         }
 
         // Обработчик изменений в репозитории

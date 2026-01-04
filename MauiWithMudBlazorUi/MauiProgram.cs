@@ -4,12 +4,10 @@ using EfcToXamarinAndroid.Core.Services;
 using CommunityToolkit.Maui;
 using CommunityToolkit.Maui.Storage;
 
-
 #if ANDROID
 using MauiAppWithMudBlazor.Platforms.Android.Services;
 #endif
 using MauiAppWithMudBlazor.Services;
-
 
 namespace MauiAppWithMudBlazor
 {
@@ -20,7 +18,7 @@ namespace MauiAppWithMudBlazor
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
-                  .UseMauiCommunityToolkit()
+                .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -31,28 +29,22 @@ namespace MauiAppWithMudBlazor
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddMudServices();
+
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
-            // DI: €дро
-            builder.Services.AddScoped<IDataService, DataService>();
-            // UI и платформенные реализации добавим ниже (см. раздел 3)
-            // ViewModel как сервис
+            // DI: Core services as Singletons (compatible with MainViewModel)
+            builder.Services.AddSingleton<IDataService, DataService>();
             builder.Services.AddSingleton<EfcToXamarinAndroid.Core.ViewModels.MainViewModel>();
 
-
-            // ISmsReader: Android Ч реальна€ реализаци€; прочие Ч заглушка
-            
+            // Platform-specific ISmsReader
 #if ANDROID
             builder.Services.AddSingleton<ISmsReader, AndroidSmsReader>();
             builder.Services.AddSingleton<Android.Content.Context>(Android.App.Application.Context);
-            builder.Services.AddSingleton<EfcToXamarinAndroid.Core.Services.ISmsReader, MauiAppWithMudBlazor.Platforms.Android.Services.AndroidSmsReader>();
-
 #else
-     builder.Services.AddSingleton<ISmsReader, DummySmsReader>();
-     builder.Services.AddSingleton<EfcToXamarinAndroid.Core.Services.ISmsReader, MauiAppWithMudBlazor.Services.DummySmsReader>();
+            builder.Services.AddSingleton<ISmsReader, DummySmsReader>();
 #endif
             builder.Services.AddSingleton<IFileService, MauiFileService>();
             builder.Services.AddSingleton<IUIService, MauiUIService>();
@@ -64,5 +56,3 @@ namespace MauiAppWithMudBlazor
         }
     }
 }
-
-

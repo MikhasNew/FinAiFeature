@@ -380,16 +380,25 @@
     private string TitleTopCategories => L10n.TitleTopCategories;
     private string LabelTransactions => L10n.LabelTransactions;
 
-    protected override async Task OnInitializedAsync()
+    private bool _isInitialized = false;
+
+    protected override void OnInitialized()
     {
         VM.DataUpdated += HandleDataUpdated;
         VM.DataFiltred += HandleDataFiltred;
-        
-        await VM.InitializeAsync();
-        // Мы больше не загружаем весь список при старте, MudVirtualize сделает это сам через Провайдер
-        // Загружаем данные в память для работы статистики (и фильтров)
-        await VM.LoadFinanceItemsAsync(); 
-        await TabChangedAsync(0);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_isInitialized)
+        {
+            _isInitialized = true;
+            await VM.InitializeAsync();
+            // Загружаем данные в память для работы статистики (и фильтров)
+            await VM.LoadFinanceItemsAsync(); 
+            await TabChangedAsync(0);
+            StateHasChanged();
+        }
     }
 
     private async ValueTask<ItemsProviderResult<FinanceItem>> LoadServerData(ItemsProviderRequest request)
