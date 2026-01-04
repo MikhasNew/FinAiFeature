@@ -1,0 +1,161 @@
+﻿@page "/rules"
+@using EfcToXamarinAndroid.Core.Configs.ManagerCore
+@using EfcToXamarinAndroid.Core
+@using EfcToXamarinAndroid.UI.Components.Dialogs
+@using Newtonsoft.Json
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <div class="d-flex align-center mb-6">
+        <MudText Typo="Typo.h5" Style="font-weight: bold;">Правила парсинга</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Add" 
+                   OnClick="AddBank">
+            Добавить банк
+        </MudButton>
+    </div>
+
+    @if (_banks == null || !_banks.Any())
+    {
+        <MudAlert Severity="Severity.Warning">Конфигурации банков не найдены. Добавьте первую конфигурацию.</MudAlert>
+    }
+    else
+    {
+        <MudTable Items="@_banks" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="4" Dense="false" Class="mb-8">
+            <HeaderContent>
+                <MudTh>Название банка</MudTh>
+                <MudTh>Отправитель (SMS ID)</MudTh>
+                <MudTh Style="width: 180px; text-align: center;">Действия</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Название">@context.Name</MudTd>
+                <MudTd DataLabel="Отправитель">
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Text">@context.SmsNumber</MudChip>
+                </MudTd>
+                <MudTd Style="text-align: center;">
+                    <div class="d-flex justify-center">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                       Color="Color.Primary" 
+                                       OnClick="@(() => EditBank(context))" 
+                                       Title="Редактировать" 
+                                       Size="Size.Small" />
+                        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" 
+                                       Color="Color.Default" 
+                                       OnClick="@(() => DuplicateBank(context))" 
+                                       Title="Копировать" 
+                                       Size="Size.Small" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                       Color="Color.Error" 
+                                       OnClick="@(() => DeleteBank(context))" 
+                                       Title="Удалить" 
+                                       Size="Size.Small" />
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager InfoFormat="Всего {all_items}" RowsPerPageString="Рядов на странице:" />
+            </PagerContent>
+        </MudTable>
+    }
+
+    <MudExpansionPanels MultiExpansion="true" Class="mt-4">
+        <MudExpansionPanel Text="Как это работает?">
+            <MudText Typo="Typo.body2">
+                При получении нового SMS сообщения приложение ищет отправителя в этом списке. 
+                Если совпадение найдено, текст SMS обрабатывается регулярными выражениями (Regex) для извлечения суммы, даты и типа операции.
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mt-2" Style="font-weight: bold;">Пример типичного процесса:</MudText>
+            <MudList T="string" Dense="true">
+                <MudListItem Text="1. Поиск банка по номеру отправителя (напр. 'Alfa-Bank')." />
+                <MudListItem Text="2. Запуск Regex для извлечения суммы, валюты и описания." />
+                <MudListItem Text="3. Определение типа (Оплата/Доход/Наличные) по ключевым словам." />
+            </MudList>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+</MudContainer>
+
+@code {
+    private List<BankConfiguration> _banks => ConfigurationManager.ConfigManager.BankConfigurationFromJson.Banks;
+
+    private async Task AddBank()
+    {
+        var newBank = new BankConfiguration
+        {
+            Name = "Новый банк",
+            SmsNumber = "",
+            SmsParseRegex = new SmsParseRegex(),
+            PdfReportTemplate = new PdfReportTemplate(),
+            PaymentTemplates = new[] { "OPLATA" },
+            DepositTemplates = new[] { "ZACHISLENIE" },
+            CashTemplates = new[] { "NALICHNYE" }
+        };
+
+        var parameters = new DialogParameters { ["Model"] = newBank, ["Title"] = "Добавить новый банк" };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<BankRuleDialog>("Настройка банка", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            _banks.Add((BankConfiguration)result.Data);
+            ConfigurationManager.ConfigManager.Save();
+            Snackbar.Add("Конфигурация банка добавлена", Severity.Success);
+            StateHasChanged();
+        }
+    }
+
+    private async Task EditBank(BankConfiguration bank)
+    {
+        // Для отмены изменений лучше работать с копией
+        var clone = JsonConvert.DeserializeObject<BankConfiguration>(JsonConvert.SerializeObject(bank));
+        
+        var parameters = new DialogParameters { ["Model"] = clone, ["Title"] = $"Редактирование {bank.Name}" };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<BankRuleDialog>("Настройка банка", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // Находим индекс и заменяем оригинал обновленной копией
+            var index = _banks.IndexOf(bank);
+            if (index != -1)
+            {
+                _banks[index] = (BankConfiguration)result.Data;
+                ConfigurationManager.ConfigManager.Save();
+                Snackbar.Add("Изменения успешно сохранены", Severity.Success);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task DuplicateBank(BankConfiguration bank)
+    {
+        var clone = JsonConvert.DeserializeObject<BankConfiguration>(JsonConvert.SerializeObject(bank));
+        clone.Name += " (Копия)";
+        
+        _banks.Add(clone);
+        ConfigurationManager.ConfigManager.Save();
+        Snackbar.Add($"Конфигурация '{bank.Name}' скопирована", Severity.Info);
+        StateHasChanged();
+    }
+
+    private async Task DeleteBank(BankConfiguration bank)
+    {
+        bool? confirmed = await DialogService.ShowMessageBox(
+            "Удаление конфигурации", 
+            $"Вы действительно хотите удалить настройки для '{bank.Name}'? Это повлияет на будущий парсинг сообщений от этого отправителя.", 
+            yesText: "Удалить", noText: "Отмена");
+
+        if (confirmed == true)
+        {
+            _banks.Remove(bank);
+            ConfigurationManager.ConfigManager.Save();
+            Snackbar.Add("Конфигурация удалена", Severity.Warning);
+            StateHasChanged();
+        }
+    }
+}
+

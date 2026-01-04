@@ -5,7 +5,7 @@
       "SmsNumber": "ASB.BY",
       "PaymentTemplates": [ "OPLATA" ],
       "DepositTemplates": [ "ZACHISLENIE" ],
-      "СashTemplates": [ "NALICHNYE" ],
+      "CashTemplates": [ "NALICHNYE" ],
       "SmsParseRegex": {
         "OperacionTyp": "^[A-Z]{1,}",
         "Sum": "(([0-9]{1,}.[0-9]{1,})(?= BYN | RUB ))",
@@ -35,7 +35,7 @@
       "SmsNumber": "Mbank",
       "PaymentTemplates": [ "OPLATA" ],
       "DepositTemplates": [ "ZACHISLENIE" ],
-      "СashTemplates": [ "NALICHNYE" ],
+      "CashTemplates": [ "NALICHNYE" ],
       "SmsParseRegex": {
         "OperacionTyp": "^[A-Z]{1,}",
         "Sum": "(([0-9]{1,}.[0-9]{1,})(?= BYN | RUB ))",
@@ -65,7 +65,7 @@
       "SmsNumber": "Alfa-Bank",
       "PaymentTemplates": [ "Spisanie", "Oplata" ],
       "DepositTemplates": [ "Popolnenie", "Vnesenie nalichnyh", "Postuplenie" ],
-      "СashTemplates": [ "Nalichnie" ],
+      "CashTemplates": [ "Nalichnie" ],
       "SmsParseRegex": {
         "OperacionTyp": "(?<=(Karta [0-9 .]{1,}\\n))[a-zA-Z ]{1,}",
         "Sum": "(?<=Summa:)([ 0-9.]{1,})(?= BYN| RUB)",
@@ -95,7 +95,7 @@
       "SmsNumber": "MTBANK",
       "PaymentTemplates": [ "OPLATA" ],
       "DepositTemplates": [ "POPOLNENIE" ],
-      "СashTemplates": [ "NALICHNYE" ],
+      "CashTemplates": [ "NALICHNYE" ],
       "SmsParseRegex": {
         "OperacionTyp": "(?<=(\\d\\d\\d\\d\\-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d)(\\r\\n|\\r|\\n)).{1,}(?= [0-9]{1,}.[0-9 ]{1,}(BYN|RUB))",
         "Sum": "(?<=(\\d\\d\\d\\d\\-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d)(\\r\\n|\\r|\\n.{1,}))[0-9]{1,}.[0-9 ]{1,}(?=(BYN|RUB))",
@@ -125,7 +125,7 @@
       "SmsNumber": "1111111111111111",
       "PaymentTemplates": [ "OPLATA", "OPLATE" ],
       "DepositTemplates": [ "ZACHISLENIE" ],
-      "СashTemplates": [ "NALICHNYE" ],
+      "CashTemplates": [ "NALICHNYE" ],
       "SmsParseRegex": {
         "OperacionTyp": "^[A-Z]{1,}",
         "Sum": "(([0-9]{1,}.[0-9]{1,})(?= BYN | RUB ))",

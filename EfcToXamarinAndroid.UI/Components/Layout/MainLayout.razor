@@ -1,4 +1,4 @@
-@inherits LayoutComponentBase
+п»ї@inherits LayoutComponentBase
 @inject EfcToXamarinAndroid.Core.ViewModels.MainViewModel VM
 @inject ISnackbar Snackbar
 
@@ -18,29 +18,26 @@
                              Icon="@Icons.Material.Filled.DarkMode" 
                              ToggledIcon="@Icons.Material.Filled.LightMode" 
                              Color="Color.Inherit" 
-                             Title="Переключить тему" />
+                             Title="РџРµСЂРµРєР»СЋС‡РёС‚СЊ С‚РµРјСѓ" />
 
-        <MudIconButton Icon="@Icons.Material.Filled.FilterList" Color="Color.Inherit" OnClick="@((e) => FilterDrawerToggle())" Title="Фильтры" />
+        <MudIconButton Icon="@Icons.Material.Filled.FilterList" Color="Color.Inherit" OnClick="@((e) => FilterDrawerToggle())" Title="Р¤РёР»СЊС‚СЂС‹" />
 
-        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Title="Действия">
-            <MudMenuItem Icon="@Icons.Material.Filled.Refresh" OnClick="@RefreshAll">Обновить данные</MudMenuItem>
-            <MudMenuItem Icon="@Icons.Material.Filled.FileDownload" OnClick="@(() => VM.ExportDataAsync())">Экспорт в XML</MudMenuItem>
-            <MudMenuItem Icon="@Icons.Material.Filled.FileUpload" OnClick="@(() => VM.ImportDataAsync())">Импорт из XML</MudMenuItem>
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Title="Р”РµР№СЃС‚РІРёСЏ">
+            <MudMenuItem Icon="@Icons.Material.Filled.Refresh" OnClick="@RefreshAll">РћР±РЅРѕРІРёС‚СЊ РґР°РЅРЅС‹Рµ</MudMenuItem>
             <MudDivider />
-            <MudMenuItem Icon="@Icons.Material.Filled.DeleteSweep" OnClick="@(() => VM.ClearDatabaseAsync())" Style="color: var(--mud-palette-error);">Очистить базу</MudMenuItem>
         </MudMenu>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Temporary">
         <MudDrawerHeader>
-            <MudText Typo="Typo.h6" Style="font-weight: bold;">Меню</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight: bold;">РњРµРЅСЋ</MudText>
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
 
     <MudDrawer @bind-Open="_filterDrawerOpen" Anchor="Anchor.Right" Elevation="1" Variant="@DrawerVariant.Temporary" Width="320px">
         <MudDrawerHeader>
-            <MudText Typo="Typo.h6" Style="font-weight: bold;">Фильтры</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight: bold;">Р¤РёР»СЊС‚СЂС‹</MudText>
         </MudDrawerHeader>
         <EfcToXamarinAndroid.UI.Components.Pages.FilterDrawer @bind-Open="_filterDrawerOpen" />
     </MudDrawer>
@@ -60,7 +57,7 @@
     {
         await EfcToXamarinAndroid.Core.Repository.DatesRepositorio.SetDatasFromDB();
         await VM.LoadFinanceItemsAsync();
-        Snackbar.Add("Данные обновлены", Severity.Success);
+        Snackbar.Add("Р”Р°РЅРЅС‹Рµ РѕР±РЅРѕРІР»РµРЅС‹", Severity.Success);
     }
 
     void DrawerToggle()

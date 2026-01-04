@@ -67,7 +67,7 @@ namespace EfcToXamarinAndroid.Core.Parsers
                         operType = OperacionTyps.OPLATA;
                     else if (BankConfigurations.Where(x => x.SmsNumber == sms.getAddress()).First().DepositTemplates.Contains(parselableOperTyp))
                         operType = OperacionTyps.ZACHISLENIE;
-                    else if (BankConfigurations.Where(x => x.SmsNumber == sms.getAddress()).First().СashTemplates.Contains(parselableOperTyp))
+                    else if (BankConfigurations.Where(x => x.SmsNumber == sms.getAddress()).First().CashTemplates.Contains(parselableOperTyp))
                         operType = OperacionTyps.NALICHNYE;
                     else
                         operType = OperacionTyps.UNREACHABLE;

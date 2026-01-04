@@ -16,6 +16,14 @@ namespace EfcToXamarinAndroid.Core
             DatabasePath = databasePath;
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<DataItem>()
+                .HasIndex(x => x.Date);
+
+            modelBuilder.Entity<DataItem>()
+                .HasIndex(x => x.OperacionTyp);
+        }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite($"Filename={DatabasePath}");

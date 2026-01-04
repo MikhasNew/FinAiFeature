@@ -25,7 +25,7 @@
 
             @* СЛАЙД 0: Чистый денежный поток (Баланс) *@
             <MudCarouselItem Transition="Transition.Slide">
-                <div class="stats-card">
+                <div class="stats-card" style="justify-content: center; padding-top: 0;">
                     <MudText Typo="Typo.subtitle2" Style="color: rgba(255,255,255,0.7);">@TitleNetBalance.ToUpper()</MudText>
                     <MudText Typo="Typo.h3" Style="font-weight:900; color: white;">
                          @((VM.FlowStats.TotalIncome - VM.FlowStats.TotalExpense).ToString("N0"))
@@ -62,7 +62,7 @@
 
             @* СЛАЙД 1: Динамика (Bar Chart) *@
             <MudCarouselItem Transition="Transition.Slide">
-                <div class="stats-card pa-4">
+                <div class="stats-card px-1 pt-4 pb-4">
                     <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color: rgba(255,255,255,0.7);">@VM.DynamicsGroupingTitle</MudText>
                     
                     @* Summary Numbers *@
@@ -100,7 +100,7 @@
                         </div>
                     </div>
 
-                    <div style="height: 140px; width: 100%;">
+                    <div style="height: 155px; width: 100%;">
                         @if (VM.DynamicsStats.DailyChartLabels.Any())
                         {
                             <MudChart ChartType="ChartType.Line" 
@@ -110,6 +110,7 @@
                                       })"
                                       XAxisLabels="@VM.DynamicsStats.DailyChartLabels"
                                       Width="100%" Height="100%"
+                                      LegendPosition="Position.End"
                                       ChartOptions="@(new ChartOptions { 
                                           ChartPalette = new[] { "#66BB6A", "#EF5350" },
                                           YAxisTicks = 0,
@@ -200,10 +201,10 @@
             <MudCarouselItem Transition="Transition.Slide">
                 <div class="stats-card pa-6">
                     <MudText Typo="Typo.subtitle2" Class="mb-4" Style="color: rgba(255,255,255,0.7);">СРАВНЕНИЕ С ПРОШЛЫМ ПЕРИОДОМ</MudText>
-                    <div class="w-100 px-4 d-flex flex-column gap-4">
+                    <div class="w-100 px-4 d-flex flex-row gap-4">
                         
                         @* Расходы сравнение *@
-                        <div class="pa-3 rounded" style="background: rgba(255,255,255,0.05);">
+                        <div class="pa-3 rounded flex-grow-1" style="background: rgba(255,255,255,0.05);">
                             <div class="d-flex justify-space-between align-center mb-1">
                                 <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.7);">РАСХОДЫ</MudText>
                                 @{
@@ -222,7 +223,7 @@
                         </div>
 
                         @* Доходы сравнение *@
-                        <div class="pa-3 rounded" style="background: rgba(255,255,255,0.05);">
+                        <div class="pa-3 rounded flex-grow-1" style="background: rgba(255,255,255,0.05);">
                             <div class="d-flex justify-space-between align-center mb-1">
                                 <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.7);">ДОХОДЫ</MudText>
                                 @{
@@ -244,6 +245,37 @@
                 </div>
             </MudCarouselItem>
 
+            <!-- SLIDE 5: Финансовый Прогноз -->
+            <MudCarouselItem Transition="Transition.Slide">
+                <div class="stats-card pa-6">
+                    <MudText Typo="Typo.subtitle2" Class="mb-4" Style="color: rgba(255,255,255,0.7);">ФИНАНСОВЫЙ ПРОГНОЗ</MudText>
+                    
+                    <div class="d-flex flex-column align-center w-100 gap-2">
+                            <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.7);">ТЕКУЩИЙ БАЛАНС</MudText>
+                            <MudText Typo="Typo.h4" Style="font-weight:900; color: white;">@VM.PredictionStats.CurrentBalance.ToString("N0")</MudText>
+                    </div>
+
+                    <div class="d-flex w-100 justify-space-between px-4 mt-6">
+                        <div class="d-flex flex-column align-start">
+                                <MudText Typo="Typo.caption" Style="color: #64B5F6;">СЛЕД. ПОСТУПЛЕНИЕ</MudText>
+                                <MudText Typo="Typo.body1" Style="color: white; font-weight: bold;">
+                                    @(VM.PredictionStats.PredictedIncomeDate?.ToString("dd MMM") ?? "-")
+                                </MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5);">
+                                    через @VM.PredictionStats.DaysUntilIncome дн.
+                                </MudText>
+                        </div>
+
+                        <div class="d-flex flex-column align-end">
+                                <MudText Typo="Typo.caption" Style="color: #81C784;">МОЖНО ТРАТИТЬ / ДЕНЬ</MudText>
+                                <MudText Typo="Typo.body1" Style="font-weight: bold; color: #81C784;">
+                                    @VM.PredictionStats.RecommendedDailyBudget.ToString("N0")
+                                </MudText>
+                        </div>
+                    </div>
+                </div>
+            </MudCarouselItem>
+
         </MudCarousel>
     </div>
 
@@ -256,7 +288,7 @@
             
             @* Кастомные индикаторы (5 точек) *@
             <div class="custom-bullets">
-                @for (int i = 0; i < 5; i++)
+                @for (int i = 0; i < 6; i++)
                 {
                     var index = i;
                     <div class="bullet @(selectedIndex == index ? "active" : "")" 
@@ -292,8 +324,7 @@
                 }
                 else 
                 {
-                    @foreach (var item in curentItems)
-                    {
+                    <MudVirtualize Items="@curentItems" Context="item" OverscanCount="5">
                         <MyTItem @key="item.Id"
                                  TItem="FinanceItem"
                                  Item="@item"
@@ -303,7 +334,7 @@
                                  infoTitleColor="@item.AmountColor"
                                  infoLabel=@($"{item.FormattedTime} · {item.FormattedDate}")
                                  OnItemClick="ItemClicked" />
-                    }
+                    </MudVirtualize>
                 }
             </div>
             <div style="height: 100px;"></div>
@@ -347,7 +378,7 @@
     private int selectedIndex = 0;
     private int activeTabIndex = 0;
     private bool _showScrollToTop = false;
-    private IEnumerable<FinanceItem> curentItems = Enumerable.Empty<FinanceItem>();
+    private ICollection<FinanceItem> curentItems = new List<FinanceItem>();
     
     private string TitleNetBalance => L10n.TitleNetBalance;
     private string LabelIncome => L10n.LabelIncome;
@@ -400,7 +431,7 @@
     {
         if (args.SwipeDirection == SwipeDirection.RightToLeft)
         {
-            if (selectedIndex < 4) selectedIndex++; // Теперь 4 - это максимальный индекс (5 слайдов)
+            if (selectedIndex < 5) selectedIndex++; // Теперь 5 - это максимальный индекс (6 слайдов)
         }
         else if (args.SwipeDirection == SwipeDirection.LeftToRight)
         {
@@ -412,7 +443,7 @@
     private async Task TabChangedAsync(int index)
     {
         activeTabIndex = index;
-        curentItems = GetActiveItems();
+        curentItems = GetActiveItems().ToList();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -449,7 +480,7 @@
 
     private async Task FilterChangedAsync()
     {
-        curentItems = GetActiveItems();
+        curentItems = GetActiveItems().ToList();
         await InvokeAsync(StateHasChanged);
     }
 

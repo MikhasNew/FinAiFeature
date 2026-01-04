@@ -272,6 +272,10 @@ html {
 }
 
 /* Chart Styles */
+.mud-chart-legend {
+    display: none !important;
+}
+
 .mud-charts-yaxis {
     display: none !important;
 }

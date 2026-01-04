@@ -1,4 +1,4 @@
-using EfcToXamarinAndroid.Core.Services;
+п»їusing EfcToXamarinAndroid.Core.Services;
 using EfcToXamarinAndroid.Core.Configs.ManagerCore;
 
 using EfcToXamarinAndroid.Core.Repository;
@@ -39,12 +39,12 @@ namespace EfcToXamarinAndroid.UI.Services
                 
                 var parameters = new MudBlazor.DialogParameters<EfcToXamarinAndroid.UI.Components.Dialogs.PathInputDialog>
                 {
-                    { x => x.Title, "Выбор папки для экспорта" },
-                    { x => x.Message, "Введите путь к папке (для симуляции выбор папки в MAUI):" },
+                    { x => x.Title, "Р’С‹Р±РѕСЂ РїР°РїРєРё РґР»СЏ СЌРєСЃРїРѕСЂС‚Р°" },
+                    { x => x.Message, "Р’РІРµРґРёС‚Рµ РїСѓС‚СЊ Рє РїР°РїРєРµ (РґР»СЏ СЃРёРјСѓР»СЏС†РёРё РІС‹Р±РѕСЂ РїР°РїРєРё РІ MAUI):" },
                     { x => x.Value, defaultPath }
                 };
 
-                var dialog = await _dialogService.ShowAsync<EfcToXamarinAndroid.UI.Components.Dialogs.PathInputDialog>("Выбор пути", parameters);
+                var dialog = await _dialogService.ShowAsync<EfcToXamarinAndroid.UI.Components.Dialogs.PathInputDialog>("Р’С‹Р±РѕСЂ РїСѓС‚Рё", parameters);
                 var result = await dialog.Result;
 
                 if (result != null && !result.Canceled)
@@ -70,19 +70,19 @@ namespace EfcToXamarinAndroid.UI.Services
 
                 if (Directory.Exists(dir))
                 {
-                    files = Directory.GetFiles(dir, "*.xml").OrderByDescending(f => f).ToList();
+                    var patterns = (fileTypes != null && fileTypes.Length > 0) ? fileTypes.Select(t => "*" + t) : new string[] { "*.*" }; foreach (var pattern in patterns) { files.AddRange(Directory.GetFiles(dir, pattern)); } files = files.Distinct().OrderByDescending(f => f).ToList();
                     lastFile = files.FirstOrDefault() ?? "";
                 }
                 
                 var parameters = new MudBlazor.DialogParameters<EfcToXamarinAndroid.UI.Components.Dialogs.PathInputDialog>
                 {
                     { x => x.Title, title },
-                    { x => x.Message, "Введите путь к файлу или выберите из списка:" },
+                    { x => x.Message, "Р’РІРµРґРёС‚Рµ РїСѓС‚СЊ Рє С„Р°Р№Р»Сѓ РёР»Рё РІС‹Р±РµСЂРёС‚Рµ РёР· СЃРїРёСЃРєР°:" },
                     { x => x.Value, lastFile },
                     { x => x.Files, files }
                 };
 
-                var dialog = await _dialogService.ShowAsync<EfcToXamarinAndroid.UI.Components.Dialogs.PathInputDialog>("Выбор файла", parameters);
+                var dialog = await _dialogService.ShowAsync<EfcToXamarinAndroid.UI.Components.Dialogs.PathInputDialog>("Р’С‹Р±РѕСЂ С„Р°Р№Р»Р°", parameters);
                 var result = await dialog.Result;
 
                 if (result != null && !result.Canceled)
@@ -137,7 +137,7 @@ namespace EfcToXamarinAndroid.UI.Services
 
         public async Task<bool> ShowConfirmationDialogAsync(string title, string message) 
         {
-            var result = await _dialogService.ShowMessageBox(title, message, yesText: "Да", noText: "Нет");
+            var result = await _dialogService.ShowMessageBox(title, message, yesText: "Р”Р°", noText: "РќРµС‚");
             return result ?? false;
         }
 
@@ -169,7 +169,7 @@ namespace EfcToXamarinAndroid.UI.Services
             var now = DateTime.Now;
             var items = new List<DataItem>();
 
-            // Р”РѕР±Р°РІР»СЏРµРј РґРѕС…РѕРґС‹
+            // Р вЂќР С•Р В±Р В°Р Р†Р В»РЎРЏР ВµР С Р Т‘Р С•РЎвЂ¦Р С•Р Т‘РЎвЂ№
             for (int i = 0; i < 5; i++)
             {
                 items.Add(new DataItem(OperacionTyps.ZACHISLENIE, now.AddDays(-i * 2))
@@ -182,7 +182,7 @@ namespace EfcToXamarinAndroid.UI.Services
                 });
             }
 
-            // Р”РѕР±Р°РІР»СЏРµРј СЂР°СЃС…РѕРґС‹ (РћРїР»Р°С‚Р°)
+            // Р вЂќР С•Р В±Р В°Р Р†Р В»РЎРЏР ВµР С РЎР‚Р В°РЎРѓРЎвЂ¦Р С•Р Т‘РЎвЂ№ (Р С›Р С—Р В»Р В°РЎвЂљР В°)
             string[] categories = { "Supermarket", "Fuel", "Restaurants", "Electronics", "Pharmacy" };
             for (int i = 0; i < 20; i++)
             {
@@ -199,7 +199,7 @@ namespace EfcToXamarinAndroid.UI.Services
                 });
             }
 
-            // Р”РѕР±Р°РІР»СЏРµРј РЅР°Р»РёС‡РЅС‹Рµ
+            // Р вЂќР С•Р В±Р В°Р Р†Р В»РЎРЏР ВµР С Р Р…Р В°Р В»Р С‘РЎвЂЎР Р…РЎвЂ№Р Вµ
             for (int i = 0; i < 3; i++)
             {
                 items.Add(new DataItem(OperacionTyps.NALICHNYE, now.AddDays(-random.Next(1, 10)))
@@ -215,8 +215,8 @@ namespace EfcToXamarinAndroid.UI.Services
             DatesRepositorio.DataItems.Clear();
             DatesRepositorio.DataItems.AddRange(items);
             
-            // В Core проекте статистика обычно считается при LoadFinanceItemsAsync в VM.
-            // Мы убедимся, что VM будет обновлен.
+            // Р’ Core РїСЂРѕРµРєС‚Рµ СЃС‚Р°С‚РёСЃС‚РёРєР° РѕР±С‹С‡РЅРѕ СЃС‡РёС‚Р°РµС‚СЃСЏ РїСЂРё LoadFinanceItemsAsync РІ VM.
+            // РњС‹ СѓР±РµРґРёРјСЃСЏ, С‡С‚Рѕ VM Р±СѓРґРµС‚ РѕР±РЅРѕРІР»РµРЅ.
         }
     }
 
@@ -230,4 +230,5 @@ namespace EfcToXamarinAndroid.UI.Services
         public static string LabelTransactions = "\u0422\u0440\u0430\u043D\u0437\u0430\u043A\u0446\u0438\u0438";
     }
 }
+
 

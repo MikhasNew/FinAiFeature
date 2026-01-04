@@ -1,0 +1,78 @@
+@page "/data"
+@using EfcToXamarinAndroid.Core.ViewModels
+@inject MainViewModel VM
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudText Typo="Typo.h5" Class="mb-6" Style="font-weight: bold;">Управление данными</MudText>
+    
+    <MudGrid>
+        @* Секция Импорта *@
+        <MudItem xs="12">
+            <MudCard Elevation="2" Class="pa-4 mb-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-2" Color="Color.Primary" Style="font-weight: bold;">Импорт</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">Загрузите данные из банковских выписок или резервных копий.</MudText>
+                
+                <div class="d-flex flex-column gap-3">
+                    <MudButton Variant="Variant.Filled" 
+                               StartIcon="@Icons.Material.Filled.PictureAsPdf" 
+                               Color="Color.Info" 
+                               FullWidth="true"
+                               OnClick="@(() => VM.ImportPdfAsync())">
+                        Импорт из PDF
+                    </MudButton>
+                    
+                    <MudButton Variant="Variant.Outlined" 
+                               StartIcon="@Icons.Material.Filled.FileUpload" 
+                               Color="Color.Primary" 
+                               FullWidth="true"
+                               OnClick="@(() => VM.ImportDataAsync())">
+                        Импорт из XML
+                    </MudButton>
+                </div>
+            </MudCard>
+        </MudItem>
+
+        @* Секция Экспорта *@
+        <MudItem xs="12">
+            <MudCard Elevation="2" Class="pa-4 mb-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-2" Color="Color.Primary" Style="font-weight: bold;">Экспорт</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">Создайте резервную копию ваших транзакций в формате XML.</MudText>
+                
+                <MudButton Variant="Variant.Filled" 
+                           StartIcon="@Icons.Material.Filled.FileDownload" 
+                           Color="Color.Success" 
+                           FullWidth="true"
+                           OnClick="@(() => VM.ExportDataAsync())">
+                    Экспорт в XML
+                </MudButton>
+            </MudCard>
+        </MudItem>
+
+        @* Секция Очистки *@
+        <MudItem xs="12">
+            <MudCard Elevation="2" Class="pa-4 border-error">
+                <MudText Typo="Typo.subtitle1" Class="mb-2" Color="Color.Error" Style="font-weight: bold;">Опасная зона</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">Удаление всех данных из локальной базы данных. Это действие необратимо.</MudText>
+                
+                <MudButton Variant="Variant.Text" 
+                           StartIcon="@Icons.Material.Filled.DeleteSweep" 
+                           Color="Color.Error" 
+                           FullWidth="true"
+                           OnClick="@(() => VM.ClearDatabaseAsync())">
+                    Очистить базу данных
+                </MudButton>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .border-error {
+        border: 1px solid var(--mud-palette-error-lighten);
+    }
+</style>
+
+@code {
+    // Страница использует методы из MainViewModel
+}

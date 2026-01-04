@@ -1,4 +1,4 @@
-
+п»ї
 using EfcToXamarinAndroid.Core.Configs.ManagerCore;
 using EfcToXamarinAndroid.Core.Models;
 using EfcToXamarinAndroid.Core.Repository;
@@ -15,7 +15,7 @@ using PermissionStatus = EfcToXamarinAndroid.Core.Services.PermissionStatus;
 namespace EfcToXamarinAndroid.Core.ViewModels
 {
     /// <summary>
-    /// Основная ViewModel приложения, управляющая бизнес-логикой и состоянием UI.
+    /// РћСЃРЅРѕРІРЅР°СЏ ViewModel РїСЂРёР»РѕР¶РµРЅРёСЏ, СѓРїСЂР°РІР»СЏСЋС‰Р°СЏ Р±РёР·РЅРµСЃ-Р»РѕРіРёРєРѕР№ Рё СЃРѕСЃС‚РѕСЏРЅРёРµРј UI.
     /// </summary>
     public class MainViewModel : IDisposable
     {
@@ -40,56 +40,57 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         public List<FinanceItem> AllItems { get; private set; } = [];
         public Dictionary<OperacionTyps, List<FinanceItem>> FilteredItems { get; private set; } = new();
 
-        #region Статистические свойства
+        #region РЎС‚Р°С‚РёСЃС‚РёС‡РµСЃРєРёРµ СЃРІРѕР№СЃС‚РІР°
         /// <summary>
-        /// Данные первого слайда.
+        /// Р”Р°РЅРЅС‹Рµ РїРµСЂРІРѕРіРѕ СЃР»Р°Р№РґР°.
         /// </summary>
         public FlowStatisticsDto FlowStats { get; private set; } = new();
         /// <summary>
-        /// Данные второго слайда.
+        /// Р”Р°РЅРЅС‹Рµ РІС‚РѕСЂРѕРіРѕ СЃР»Р°Р№РґР°.
         /// </summary>
         public DynamicsStatisticsDto DynamicsStats { get; private set; } = new();
-        public string DynamicsGroupingTitle { get; private set; } = "ДИНАМИКА";
+        public string DynamicsGroupingTitle { get; private set; } = "Р”РРќРђРњРРљРђ";
         public double ChartYAxisMax { get; private set; } = 1000;
 
         public DynamicsStatisticsDto CategoryStats { get; private set; } = new();
+        public PredictionStatisticsDto PredictionStats { get; private set; } = new();
 
         public TabStatisticsDto CurrentStats { get; private set; } = new();
 
         /// <summary>
-        /// Общая сумма доходов за весь период.
+        /// РћР±С‰Р°СЏ СЃСѓРјРјР° РґРѕС…РѕРґРѕРІ Р·Р° РІРµСЃСЊ РїРµСЂРёРѕРґ.
         /// </summary>
         public float TotalIncome { get; private set; }
         /// <summary>
-        /// Общая сумма расходов за весь период.
+        /// РћР±С‰Р°СЏ СЃСѓРјРјР° СЂР°СЃС…РѕРґРѕРІ Р·Р° РІРµСЃСЊ РїРµСЂРёРѕРґ.
         /// </summary>
         public float TotalExpense { get; private set; }
         /// <summary>
-        /// Расходы, сгруппированные по категориям (ключ - название категории, значение - сумма).
+        /// Р Р°СЃС…РѕРґС‹, СЃРіСЂСѓРїРїРёСЂРѕРІР°РЅРЅС‹Рµ РїРѕ РєР°С‚РµРіРѕСЂРёСЏРј (РєР»СЋС‡ - РЅР°Р·РІР°РЅРёРµ РєР°С‚РµРіРѕСЂРёРё, Р·РЅР°С‡РµРЅРёРµ - СЃСѓРјРјР°).
         /// </summary>
         public Dictionary<string, float> ExpensesByCategory { get; private set; } = new();
         /// <summary>
-        /// Общее количество всех операций.
+        /// РћР±С‰РµРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РІСЃРµС… РѕРїРµСЂР°С†РёР№.
         /// </summary>
         public int TotalTransactionsCount { get; private set; }
         /// <summary>
-        /// Количество операций дохода.
+        /// РљРѕР»РёС‡РµСЃС‚РІРѕ РѕРїРµСЂР°С†РёР№ РґРѕС…РѕРґР°.
         /// </summary>
         public int TotalIncomeCount { get; private set; }
         /// <summary>
-        /// Количество операций расхода.
+        /// РљРѕР»РёС‡РµСЃС‚РІРѕ РѕРїРµСЂР°С†РёР№ СЂР°СЃС…РѕРґР°.
         /// </summary>
         public int TotalExpenseCount { get; private set; }
         /// <summary>
-        /// Детальная статистика, сгруппированная по каждому типу операции.
+        /// Р”РµС‚Р°Р»СЊРЅР°СЏ СЃС‚Р°С‚РёСЃС‚РёРєР°, СЃРіСЂСѓРїРїРёСЂРѕРІР°РЅРЅР°СЏ РїРѕ РєР°Р¶РґРѕРјСѓ С‚РёРїСѓ РѕРїРµСЂР°С†РёРё.
         /// </summary>
         public Dictionary<OperacionTyps, OperationTypeStatistics> StatisticsByOperationType { get; private set; } = new();
         /// <summary>
-        /// Количество отфильтрованных операций.
+        /// РљРѕР»РёС‡РµСЃС‚РІРѕ РѕС‚С„РёР»СЊС‚СЂРѕРІР°РЅРЅС‹С… РѕРїРµСЂР°С†РёР№.
         /// </summary>
         public int FiltredTransactionsCount { get; set; }
         /// <summary>
-        /// Сумма отфильтрованных транзакций.
+        /// РЎСѓРјРјР° РѕС‚С„РёР»СЊС‚СЂРѕРІР°РЅРЅС‹С… С‚СЂР°РЅР·Р°РєС†РёР№.
         /// </summary>
         public float FiltredTransactionsSumm { get; set; }
 
@@ -105,7 +106,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
         #region
         /// <summary>
-        /// Устанавливает период фильтрации.
+        /// РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РїРµСЂРёРѕРґ С„РёР»СЊС‚СЂР°С†РёРё.
         /// </summary>
         public void SetDateRange(DateRange? range)
         {
@@ -114,7 +115,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         }
 
         /// <summary>
-        /// Устанавливает минимальную сумму фильтра.
+        /// РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РјРёРЅРёРјР°Р»СЊРЅСѓСЋ СЃСѓРјРјСѓ С„РёР»СЊС‚СЂР°.
         /// </summary>
         public void SetMinAmount(decimal? min)
         {
@@ -123,7 +124,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         }
 
         /// <summary>
-        /// Устанавливает максимальную сумму фильтра.
+        /// РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РјР°РєСЃРёРјР°Р»СЊРЅСѓСЋ СЃСѓРјРјСѓ С„РёР»СЊС‚СЂР°.
         /// </summary>
         public void SetMaxAmount(decimal? max)
         {
@@ -132,7 +133,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         }
 
         /// <summary>
-        /// Устанавливает MCC код фильтра.
+        /// РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ MCC РєРѕРґ С„РёР»СЊС‚СЂР°.
         /// </summary>
         public void SetMcc(string? mcc)
         {
@@ -141,7 +142,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         }
 
         /// <summary>
-        /// Применяет все фильтры одновременно.
+        /// РџСЂРёРјРµРЅСЏРµС‚ РІСЃРµ С„РёР»СЊС‚СЂС‹ РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ.
         /// </summary>
         public void SetAdvancedFilters(DateRange? range, decimal? minAmount, decimal? maxAmount,
                                string? description, string? mccDescription, string? tag, string? mcc = null)
@@ -159,7 +160,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         }
 
         /// <summary>
-        /// Сбрасывает фильтры.
+        /// РЎР±СЂР°СЃС‹РІР°РµС‚ С„РёР»СЊС‚СЂС‹.
         /// </summary>
         public void ClearAdvancedFilters()
         {
@@ -199,11 +200,11 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         public async Task InitializeAsync()
         {
             _smsReader.SmsReceived += _smsReader_SmsReceived;
-            // Инициализация БД и загрузка данных на фоне
+            // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Р‘Р” Рё Р·Р°РіСЂСѓР·РєР° РґР°РЅРЅС‹С… РЅР° С„РѕРЅРµ
             await DatesRepositorio.SetDatasFromDB();  // EF Core
-            await LoadFinanceItemsAsync();            // Преобразование DataItem -> FinanceItem
+            await LoadFinanceItemsAsync();            // РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ DataItem -> FinanceItem
             
-            // Подписываемся на статические события через именованный метод, чтобы можно было отписаться
+            // РџРѕРґРїРёСЃС‹РІР°РµРјСЃСЏ РЅР° СЃС‚Р°С‚РёС‡РµСЃРєРёРµ СЃРѕР±С‹С‚РёСЏ С‡РµСЂРµР· РёРјРµРЅРѕРІР°РЅРЅС‹Р№ РјРµС‚РѕРґ, С‡С‚РѕР±С‹ РјРѕР¶РЅРѕ Р±С‹Р»Рѕ РѕС‚РїРёСЃР°С‚СЊСЃСЏ
             DatesRepositorio.PaymentsChanged += OnDataChanged;
             DatesRepositorio.DepositsChanged += OnDataChanged;
             DatesRepositorio.CashsChanged += OnDataChanged;
@@ -211,7 +212,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
         }
 
-        // Обработчик изменений в репозитории
+        // РћР±СЂР°Р±РѕС‚С‡РёРє РёР·РјРµРЅРµРЅРёР№ РІ СЂРµРїРѕР·РёС‚РѕСЂРёРё
         private async void OnDataChanged(object? sender, EventArgs e)
         {
             await RefreshData();
@@ -260,12 +261,12 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         }
 
         /// <summary>
-        /// Вычисляет и обновляет статистические показатели на основе текущего списка всех операций.
+        /// Р’С‹С‡РёСЃР»СЏРµС‚ Рё РѕР±РЅРѕРІР»СЏРµС‚ СЃС‚Р°С‚РёСЃС‚РёС‡РµСЃРєРёРµ РїРѕРєР°Р·Р°С‚РµР»Рё РЅР° РѕСЃРЅРѕРІРµ С‚РµРєСѓС‰РµРіРѕ СЃРїРёСЃРєР° РІСЃРµС… РѕРїРµСЂР°С†РёР№.
         /// </summary>
         
         private void UpdateStatistics()
         {
-            // Сбрасываем предыдущие значения
+            // РЎР±СЂР°СЃС‹РІР°РµРј РїСЂРµРґС‹РґСѓС‰РёРµ Р·РЅР°С‡РµРЅРёСЏ
             TotalIncome = 0;
             TotalExpense = 0;
             TotalTransactionsCount = 0;
@@ -273,12 +274,12 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             TotalExpenseCount = 0;
             ExpensesByCategory.Clear();
 
-            // Типы операций, которые считаются расходами
+            // РўРёРїС‹ РѕРїРµСЂР°С†РёР№, РєРѕС‚РѕСЂС‹Рµ СЃС‡РёС‚Р°СЋС‚СЃСЏ СЂР°СЃС…РѕРґР°РјРё
             var expenseTypes = new[] { OperacionTyps.OPLATA, OperacionTyps.NALICHNYE };
 
             TotalTransactionsCount = AllItems.Count;
 
-            // Рассчитываем общие доходы и расходы
+            // Р Р°СЃСЃС‡РёС‚С‹РІР°РµРј РѕР±С‰РёРµ РґРѕС…РѕРґС‹ Рё СЂР°СЃС…РѕРґС‹
             var incomeItems = AllItems.Where(i => i.OperationType == OperacionTyps.ZACHISLENIE).ToList();
             TotalIncome = incomeItems.Sum(i => i.Sum);
             TotalIncomeCount = incomeItems.Count;
@@ -287,12 +288,14 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             TotalExpense = expenseItems.Sum(i => i.Sum);
             TotalExpenseCount = expenseItems.Count;
 
-            // Группируем расходы по категориям (MccDescription)
-            // Используем уже отфильтрованный список расходных операций
+            // Р“СЂСѓРїРїРёСЂСѓРµРј СЂР°СЃС…РѕРґС‹ РїРѕ РєР°С‚РµРіРѕСЂРёСЏРј (MccDescription)
+            // РСЃРїРѕР»СЊР·СѓРµРј СѓР¶Рµ РѕС‚С„РёР»СЊС‚СЂРѕРІР°РЅРЅС‹Р№ СЃРїРёСЃРѕРє СЂР°СЃС…РѕРґРЅС‹С… РѕРїРµСЂР°С†РёР№
             ExpensesByCategory = expenseItems
                 .Where(i => !string.IsNullOrEmpty(i.MccDescription))
                 .GroupBy(i => i.MccDescription!)
                 .ToDictionary(g => g.Key, g => g.Sum(i => i.Sum));
+
+            CalculatePredictionStatistics();
         }
 
         public IEnumerable<FinanceItem> GetFilteredItems(OperacionTyps type)
@@ -300,13 +303,13 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             CurentType = type;
             IEnumerable<FinanceItem> query = AllItems;
 
-            // 1. Фильтр по табу (тип операции)
+            // 1. Р¤РёР»СЊС‚СЂ РїРѕ С‚Р°Р±Сѓ (С‚РёРї РѕРїРµСЂР°С†РёРё)
             if (type != OperacionTyps.None)
             {
                 query = query.Where(x => x.OperationType == type);
             }
 
-            // ... (Существующие фильтры по дате и сумме оставляем как есть) ...
+            // ... (РЎСѓС‰РµСЃС‚РІСѓСЋС‰РёРµ С„РёР»СЊС‚СЂС‹ РїРѕ РґР°С‚Рµ Рё СЃСѓРјРјРµ РѕСЃС‚Р°РІР»СЏРµРј РєР°Рє РµСЃС‚СЊ) ...
             if (_activeDateRange is not null)
             {
                 if (_activeDateRange.Start.HasValue) query = query.Where(x => x.Date.Date >= _activeDateRange.Start.Value.Date);
@@ -315,34 +318,34 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             if (_activeMinAmount.HasValue) query = query.Where(x => (decimal)x.Sum >= _activeMinAmount.Value);
             if (_activeMaxAmount.HasValue) query = query.Where(x => (decimal)x.Sum <= _activeMaxAmount.Value);
 
-            // === НОВЫЕ ФИЛЬТРЫ ===
+            // === РќРћР’Р«Р• Р¤РР›Р¬РўР Р« ===
 
-            // 1. Фильтр по описанию (частичное совпадение)
+            // 1. Р¤РёР»СЊС‚СЂ РїРѕ РѕРїРёСЃР°РЅРёСЋ (С‡Р°СЃС‚РёС‡РЅРѕРµ СЃРѕРІРїР°РґРµРЅРёРµ)
             if (!string.IsNullOrWhiteSpace(_activeDescription))
             {
                 query = query.Where(x => x.Description != null &&
                                          x.Description.Contains(_activeDescription, StringComparison.OrdinalIgnoreCase));
             }
 
-            // 2. Фильтр по категории (MccDescription)
+            // 2. Р¤РёР»СЊС‚СЂ РїРѕ РєР°С‚РµРіРѕСЂРёРё (MccDescription)
             if (!string.IsNullOrWhiteSpace(_activeMccDescription))
             {
                 query = query.Where(x => x.MccDescription != null &&
                                          x.MccDescription.Equals(_activeMccDescription, StringComparison.OrdinalIgnoreCase));
             }
 
-            // 3. Фильтр по Тегу (поиск тега внутри Title)
+            // 3. Р¤РёР»СЊС‚СЂ РїРѕ РўРµРіСѓ (РїРѕРёСЃРє С‚РµРіР° РІРЅСѓС‚СЂРё Title)
             if (!string.IsNullOrWhiteSpace(_activeTag))
             {
-                // Логика: если тег содержится в Title. 
-                // Т.к. вы разбиваете Title по пробелам в GetTags, здесь ищем вхождение слова.
+                // Р›РѕРіРёРєР°: РµСЃР»Рё С‚РµРі СЃРѕРґРµСЂР¶РёС‚СЃСЏ РІ Title. 
+                // Рў.Рє. РІС‹ СЂР°Р·Р±РёРІР°РµС‚Рµ Title РїРѕ РїСЂРѕР±РµР»Р°Рј РІ GetTags, Р·РґРµСЃСЊ РёС‰РµРј РІС…РѕР¶РґРµРЅРёРµ СЃР»РѕРІР°.
                 query = query.Where(x => x.Title != null &&
                                          x.Title.Contains(_activeTag, StringComparison.OrdinalIgnoreCase));
             }
 
             var result = query.ToList();
 
-            // 5. Обновляем вычисляемые поля
+            // 5. РћР±РЅРѕРІР»СЏРµРј РІС‹С‡РёСЃР»СЏРµРјС‹Рµ РїРѕР»СЏ
             FiltredTransactionsCount = result.Count;
             FiltredTransactionsSumm = result.Sum(x => x.Sum);
             CalculateAdvancedStats(result);
@@ -350,6 +353,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             CalculateFlowStatistics(result);
             CalculateDynamicsStatistics(result);
             CalculateCategoryStatistics(result);
+            CalculatePredictionStatistics(); // Global stats
 
 
             return result;
@@ -362,13 +366,13 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
             if (list.Count > 0)
             {
-                // 1. Среднее, Мин, Макс
+                // 1. РЎСЂРµРґРЅРµРµ, РњРёРЅ, РњР°РєСЃ
                 stats.AverageCheck = list.Average(x => x.Sum);
                 stats.MaxSum = list.Max(x => x.Sum);
                 stats.MinSum = list.Min(x => x.Sum);
 
-                // 2. Аномалии (Выбросы)
-                // Используем порог: более чем в 2.5 раза выше среднего чека
+                // 2. РђРЅРѕРјР°Р»РёРё (Р’С‹Р±СЂРѕСЃС‹)
+                // РСЃРїРѕР»СЊР·СѓРµРј РїРѕСЂРѕРі: Р±РѕР»РµРµ С‡РµРј РІ 2.5 СЂР°Р·Р° РІС‹С€Рµ СЃСЂРµРґРЅРµРіРѕ С‡РµРєР°
                 double threshold = stats.AverageCheck * 2.5;
                 stats.Anomalies = list
                     .Where(x => x.Sum > threshold)
@@ -376,10 +380,10 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                     .Take(5)
                     .ToList();
 
-                // Если явных выбросов нет, можно оставить список пустым или взять топ-1 самый дорогой
-                // но лучше честно показывать, что выбросов нет. 
+                // Р•СЃР»Рё СЏРІРЅС‹С… РІС‹Р±СЂРѕСЃРѕРІ РЅРµС‚, РјРѕР¶РЅРѕ РѕСЃС‚Р°РІРёС‚СЊ СЃРїРёСЃРѕРє РїСѓСЃС‚С‹Рј РёР»Рё РІР·СЏС‚СЊ С‚РѕРї-1 СЃР°РјС‹Р№ РґРѕСЂРѕРіРѕР№
+                // РЅРѕ Р»СѓС‡С€Рµ С‡РµСЃС‚РЅРѕ РїРѕРєР°Р·С‹РІР°С‚СЊ, С‡С‚Рѕ РІС‹Р±СЂРѕСЃРѕРІ РЅРµС‚. 
 
-                // 3. Топ 5 MCC и проценты
+                // 3. РўРѕРї 5 MCC Рё РїСЂРѕС†РµРЅС‚С‹
                 var totalSum = list.Sum(x => x.Sum);
                 if (totalSum == 0) totalSum = 1;
 
@@ -396,7 +400,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                     .Take(5)
                     .ToList();
 
-                // 4. График
+                // 4. Р“СЂР°С„РёРє
                 var dailyGroups = list
                     .GroupBy(x => x.Date.Date)
                     .OrderBy(g => g.Key)
@@ -406,7 +410,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 stats.DailyChartLabels = dailyGroups.Select(g => g.Key.ToString("dd.MM")).ToArray();
                 stats.DailyChartData = dailyGroups.Select(g => (double)g.Count()).ToArray();
 
-                // 5. РАСЧЕТ СРАВНЕНИЯ (Variant 1)
+                // 5. Р РђРЎР§Р•Рў РЎР РђР’РќР•РќРРЇ (Variant 1)
                 DateTime start = _activeDateRange?.Start?.Date ?? (AllItems.Any() ? AllItems.Min(x => x.Date).Date : DateTime.Today.AddDays(-30));
                 DateTime end = _activeDateRange?.End?.Date ?? (AllItems.Any() ? AllItems.Max(x => x.Date).Date : DateTime.Today);
                 
@@ -416,7 +420,22 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 DateTime prevStart = start.Add(-duration);
                 DateTime prevEnd = start;
 
-                var prevItems = AllItems.Where(x => x.Date >= prevStart && x.Date < prevEnd).ToList();
+                  // РЎРѕР·РґР°РµРј Р·Р°РїСЂРѕСЃ Рє РїРѕР»РЅРѕРјСѓ СЃРїРёСЃРєСѓ, РїСЂРёРјРµРЅСЏСЏ РІСЃРµ Р°РєС‚РёРІРЅС‹Рµ С„РёР»СЊС‚СЂС‹ (РєСЂРѕРјРµ РґР°С‚С‹)
+                  var baseQuery = AllItems.AsEnumerable();
+
+                  if (!string.IsNullOrWhiteSpace(_activeDescription))
+                      baseQuery = baseQuery.Where(x => x.Description != null && x.Description.Contains(_activeDescription, StringComparison.OrdinalIgnoreCase));
+                  
+                  if (!string.IsNullOrWhiteSpace(_activeMccDescription))
+                      baseQuery = baseQuery.Where(x => x.MccDescription != null && x.MccDescription.Equals(_activeMccDescription, StringComparison.OrdinalIgnoreCase));
+                  
+                  if (!string.IsNullOrWhiteSpace(_activeTag))
+                       baseQuery = baseQuery.Where(x => x.Title != null && x.Title.Contains(_activeTag, StringComparison.OrdinalIgnoreCase));
+
+                  if (CurentType != OperacionTyps.None)
+                       baseQuery = baseQuery.Where(x => x.OperationType == CurentType);
+
+                  var prevItems = baseQuery.Where(x => x.Date >= prevStart && x.Date < prevEnd).ToList();
                 
                 stats.TotalIncome = (float)list.Where(i => i.OperationType == OperacionTyps.ZACHISLENIE).Sum(i => i.Sum);
                 stats.TotalExpense = (float)list.Where(i => i.OperationType != OperacionTyps.ZACHISLENIE && i.OperationType != OperacionTyps.UNREACHABLE).Sum(i => i.Sum);
@@ -428,12 +447,125 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             CurrentStats = stats;
         }
 
-        
+        private void CalculatePredictionStatistics()
+        {
+            var stats = new PredictionStatisticsDto();
+
+            // 1. Get Current Balance (Latest non-zero balance)
+            var latestItemWithBalance = AllItems
+                .OrderByDescending(x => x.Date)
+                .FirstOrDefault(x => x.Balance > 0);
+            
+            // Р•СЃР»Рё Р±Р°Р»Р°РЅСЃ РЅРµ РЅР°Р№РґРµРЅ РІ С‚СЂР°РЅР·Р°РєС†РёСЏС…, РїСЂРѕР±СѓРµРј СЂР°СЃСЃС‡РёС‚Р°С‚СЊ РєР°Рє (Р”РѕС…РѕРґ - Р Р°СЃС…РѕРґ) Р·Р° РІСЃРµ РІСЂРµРјСЏ
+            if (latestItemWithBalance != null)
+            {
+                stats.CurrentBalance = latestItemWithBalance.Balance;
+            }
+            else
+            {
+                // Fallback estimate
+                var totalInc = AllItems.Where(x => x.OperationType == OperacionTyps.ZACHISLENIE).Sum(x => x.Sum);
+                var totalExp = AllItems.Where(x => x.OperationType != OperacionTyps.ZACHISLENIE && x.OperationType != OperacionTyps.UNREACHABLE).Sum(x => x.Sum);
+                stats.CurrentBalance = totalInc - totalExp;
+            }
+            
+            // 2. Predict Next Income
+            // Strategy: Look at significant income in the last 90 days.
+            var threeMonthsAgo = DateTime.Today.AddDays(-90);
+            var incomeItems = AllItems
+                .Where(x => x.OperationType == OperacionTyps.ZACHISLENIE && x.Date >= threeMonthsAgo)
+                .ToList();
+
+            if (incomeItems.Any())
+            {
+                // Filter "significant" incomes (e.g., > 20% of max income) 
+                var maxInc = incomeItems.Max(x => x.Sum);
+                var significantIncomes = incomeItems.Where(x => x.Sum > maxInc * 0.2).ToList(); 
+
+                if (significantIncomes.Any())
+                {
+                    // Group by Day of Month
+                    var frequentDays = significantIncomes
+                        .GroupBy(x => x.Date.Day)
+                        .Select(g => new { Day = g.Key, Count = g.Count() })
+                        .OrderByDescending(x => x.Count)
+                        .Take(2) 
+                        .Select(x => x.Day)
+                        .OrderBy(x => x)
+                        .ToList();
+
+                    if (frequentDays.Any())
+                    {
+                        var today = DateTime.Today;
+                        DateTime? nextDate = null;
+
+                        // Try to find a date in the current month matching one of the days
+                        foreach (var day in frequentDays)
+                        {
+                            try {
+                                var candidate = new DateTime(today.Year, today.Month, day);
+                                if (candidate > today)
+                                {
+                                    nextDate = candidate;
+                                    break; 
+                                }
+                            } catch {} 
+                        }
+
+                        // If not found in current month, look in next month
+                        if (nextDate == null)
+                        {
+                             foreach (var day in frequentDays)
+                             {
+                                try {
+                                    var candidate = new DateTime(today.Year, today.Month, 1).AddMonths(1);
+                                    var daysInNextMonth = DateTime.DaysInMonth(candidate.Year, candidate.Month);
+                                    var safeDay = Math.Min(day, daysInNextMonth);
+                                    candidate = new DateTime(candidate.Year, candidate.Month, safeDay);
+                                    
+                                    nextDate = candidate;
+                                    break; 
+                                } catch {}
+                             }
+                        }
+                        
+                        stats.PredictedIncomeDate = nextDate;
+                    }
+                }
+            }
+
+            // Fallback: If no prediction possible, assume End of Month
+            if (stats.PredictedIncomeDate == null)
+            {
+                 var today = DateTime.Today;
+                 stats.PredictedIncomeDate = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+            }
+
+            // 3. Calculate Daily Budget
+            var daysUntil = (stats.PredictedIncomeDate.Value - DateTime.Today).TotalDays;
+            if (daysUntil < 1) daysUntil = 1; // Avoid division by zero
+            
+            stats.DaysUntilIncome = (int)daysUntil;
+
+            // Only calculate budget if balance is positive
+            if (stats.CurrentBalance > 0)
+            {
+                // Simple strategy: Evenly distribute current balance
+                stats.RecommendedDailyBudget = stats.CurrentBalance / daysUntil;
+            }
+            else
+            {
+                stats.RecommendedDailyBudget = 0;
+            }
+
+            PredictionStats = stats;
+        }
+
         private void CalculateFlowStatistics(List<FinanceItem> currentItems)
         {
             var flowStats = new FlowStatisticsDto();
 
-            // Защита от пустых данных
+            // Р—Р°С‰РёС‚Р° РѕС‚ РїСѓСЃС‚С‹С… РґР°РЅРЅС‹С…
             if (currentItems == null || currentItems.Count == 0)
             {
                 flowStats.CurrentPeriodDisplay = DateTime.Now.ToString("MMMM yyyy");
@@ -441,34 +573,34 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 return;
             }
 
-            // 1. Расчет Доходов и Расходов
+            // 1. Р Р°СЃС‡РµС‚ Р”РѕС…РѕРґРѕРІ Рё Р Р°СЃС…РѕРґРѕРІ
             flowStats.TotalIncome = currentItems.Where(i=>i.OperationType==OperacionTyps.ZACHISLENIE).Sum(x => x.Sum);
             flowStats.TotalExpense = currentItems.Where(i => i.OperationType != OperacionTyps.ZACHISLENIE)
                                                  .Where(i=>i.OperationType!=OperacionTyps.UNREACHABLE)
                                                  .Sum(x => x.Sum);
 
-            // 2. Определение отображаемого периода и границ
+            // 2. РћРїСЂРµРґРµР»РµРЅРёРµ РѕС‚РѕР±СЂР°Р¶Р°РµРјРѕРіРѕ РїРµСЂРёРѕРґР° Рё РіСЂР°РЅРёС†
 
-            // Берем границы из фильтра, если они установлены
+            // Р‘РµСЂРµРј РіСЂР°РЅРёС†С‹ РёР· С„РёР»СЊС‚СЂР°, РµСЃР»Рё РѕРЅРё СѓСЃС‚Р°РЅРѕРІР»РµРЅС‹
             DateTime startDisplay = _activeDateRange?.Start?.Date ?? currentItems.Min(x => x.Date).Date;
             DateTime endDisplay = _activeDateRange?.End?.Date ?? currentItems.Max(x => x.Date).Date;
 
-            // Если фильтр не установлен, и это не один и тот же день, используем форматирование диапазона
+            // Р•СЃР»Рё С„РёР»СЊС‚СЂ РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ, Рё СЌС‚Рѕ РЅРµ РѕРґРёРЅ Рё С‚РѕС‚ Р¶Рµ РґРµРЅСЊ, РёСЃРїРѕР»СЊР·СѓРµРј С„РѕСЂРјР°С‚РёСЂРѕРІР°РЅРёРµ РґРёР°РїР°Р·РѕРЅР°
             if (_activeDateRange != null && startDisplay.Date != endDisplay.Date)
             {
                 flowStats.CurrentPeriodDisplay = $"{startDisplay:dd MMM} - {endDisplay:dd MMM yyyy}";
             }
             else
             {
-                // Если это один день или фильтр не установлен (например, в табе "Все")
+                // Р•СЃР»Рё СЌС‚Рѕ РѕРґРёРЅ РґРµРЅСЊ РёР»Рё С„РёР»СЊС‚СЂ РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ (РЅР°РїСЂРёРјРµСЂ, РІ С‚Р°Р±Рµ "Р’СЃРµ")
                 flowStats.CurrentPeriodDisplay = $"{startDisplay:dd MMMM yyyy}";
             }
 
-            // 3. Расчет Дневного Лимита (работает только для текущего или будущего периода)
+            // 3. Р Р°СЃС‡РµС‚ Р”РЅРµРІРЅРѕРіРѕ Р›РёРјРёС‚Р° (СЂР°Р±РѕС‚Р°РµС‚ С‚РѕР»СЊРєРѕ РґР»СЏ С‚РµРєСѓС‰РµРіРѕ РёР»Рё Р±СѓРґСѓС‰РµРіРѕ РїРµСЂРёРѕРґР°)
 
             var today = DateTime.Now.Date;
 
-            // Определяем, является ли период архивным
+            // РћРїСЂРµРґРµР»СЏРµРј, СЏРІР»СЏРµС‚СЃСЏ Р»Рё РїРµСЂРёРѕРґ Р°СЂС…РёРІРЅС‹Рј
             flowStats.IsPeriodInPast = endDisplay < today;
 
             if (flowStats.IsPeriodInPast)
@@ -477,38 +609,38 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             }
             else
             {
-                // Для расчета лимита, если период заканчивается в будущем, 
-                // берем конец месяца, в который попадает today, или конец фильтра, если он раньше.
+                // Р”Р»СЏ СЂР°СЃС‡РµС‚Р° Р»РёРјРёС‚Р°, РµСЃР»Рё РїРµСЂРёРѕРґ Р·Р°РєР°РЅС‡РёРІР°РµС‚СЃСЏ РІ Р±СѓРґСѓС‰РµРј, 
+                // Р±РµСЂРµРј РєРѕРЅРµС† РјРµСЃСЏС†Р°, РІ РєРѕС‚РѕСЂС‹Р№ РїРѕРїР°РґР°РµС‚ today, РёР»Рё РєРѕРЅРµС† С„РёР»СЊС‚СЂР°, РµСЃР»Рё РѕРЅ СЂР°РЅСЊС€Рµ.
                 DateTime calculationEndDay = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
 
-                // Если конец фильтра раньше конца месяца, используем конец фильтра
+                // Р•СЃР»Рё РєРѕРЅРµС† С„РёР»СЊС‚СЂР° СЂР°РЅСЊС€Рµ РєРѕРЅС†Р° РјРµСЃСЏС†Р°, РёСЃРїРѕР»СЊР·СѓРµРј РєРѕРЅРµС† С„РёР»СЊС‚СЂР°
                 if (endDisplay < calculationEndDay)
                 {
                     calculationEndDay = endDisplay;
                 }
 
-                // Количество дней, оставшихся для траты (от сегодняшнего дня до конца периода)
+                // РљРѕР»РёС‡РµСЃС‚РІРѕ РґРЅРµР№, РѕСЃС‚Р°РІС€РёС…СЃСЏ РґР»СЏ С‚СЂР°С‚С‹ (РѕС‚ СЃРµРіРѕРґРЅСЏС€РЅРµРіРѕ РґРЅСЏ РґРѕ РєРѕРЅС†Р° РїРµСЂРёРѕРґР°)
                 var remainingDays = (calculationEndDay - today).TotalDays + 1;
 
                 if (remainingDays < 1) remainingDays = 1;
 
                 var balance = flowStats.NetFlow;
 
-                // Лимит рассчитываем только для положительного чистого баланса
+                // Р›РёРјРёС‚ СЂР°СЃСЃС‡РёС‚С‹РІР°РµРј С‚РѕР»СЊРєРѕ РґР»СЏ РїРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРіРѕ С‡РёСЃС‚РѕРіРѕ Р±Р°Р»Р°РЅСЃР°
                 flowStats.CalculatedDailyLimit = balance > 0 ? (float)(balance / remainingDays) : 0;
             }
 
-            // Сохраняем результат
+            // РЎРѕС…СЂР°РЅСЏРµРј СЂРµР·СѓР»СЊС‚Р°С‚
             FlowStats = flowStats;
         }
-        // Внутри класса MainViewModel
+        // Р’РЅСѓС‚СЂРё РєР»Р°СЃСЃР° MainViewModel
         private void CalculateDynamicsStatistics(List<FinanceItem> currentItems)
         {
             var dynamicsStats = new DynamicsStatisticsDto();
 
             if (currentItems.Any())
             {
-                // 1. Определяем границы для графика
+                // 1. РћРїСЂРµРґРµР»СЏРµРј РіСЂР°РЅРёС†С‹ РґР»СЏ РіСЂР°С„РёРєР°
                 DateTime minDate = _activeDateRange?.Start?.Date ?? currentItems.Min(x => x.Date).Date;
                 DateTime maxDate = _activeDateRange?.End?.Date ?? currentItems.Max(x => x.Date).Date;
 
@@ -521,9 +653,29 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 var incomeData = new List<double>();
                 var expenseData = new List<double>();
 
-                if (totalDays > 60) // Более 2 месяцев -> Группировка по месяцам
+                if (totalDays > 730) // Р‘РѕР»РµРµ 2 Р»РµС‚ -> Р“СЂСѓРїРїРёСЂРѕРІРєР° РїРѕ РіРѕРґР°Рј
                 {
-                    DynamicsGroupingTitle = "ПО МЕСЯЦАМ";
+                    DynamicsGroupingTitle = "РџРћ Р“РћР”РђРњ";
+                    var current = new DateTime(minDate.Year, 1, 1);
+                    var end = new DateTime(maxDate.Year, 1, 1);
+
+                    while (current <= end)
+                    {
+                        labels.Add(current.ToString("yyyy"));
+                        
+                        // Р‘РµСЂРµРј РґР°РЅРЅС‹Рµ Р·Р° РІРµСЃСЊ РіРѕРґ
+                        var yearEnd = current.AddYears(1).AddSeconds(-1);
+                        var chunk = currentItems.Where(x => x.Date >= current && x.Date <= yearEnd).ToList();
+
+                        incomeData.Add(chunk.Where(i => i.OperationType == OperacionTyps.ZACHISLENIE).Sum(i => i.Sum));
+                        expenseData.Add(chunk.Where(i => i.OperationType != OperacionTyps.ZACHISLENIE && i.OperationType != OperacionTyps.UNREACHABLE).Sum(i => i.Sum));
+
+                        current = current.AddYears(1);
+                    }
+                }
+                else if (totalDays > 60) // Р‘РѕР»РµРµ 2 РјРµСЃСЏС†РµРІ -> Р“СЂСѓРїРїРёСЂРѕРІРєР° РїРѕ РјРµСЃСЏС†Р°Рј
+                {
+                    DynamicsGroupingTitle = "РџРћ РњР•РЎРЇР¦РђРњ";
                     var current = new DateTime(minDate.Year, minDate.Month, 1);
                     var end = new DateTime(maxDate.Year, maxDate.Month, 1);
 
@@ -531,7 +683,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                     {
                         labels.Add(current.ToString("MMM yy"));
                         
-                        // Берем данные за весь месяц
+                        // Р‘РµСЂРµРј РґР°РЅРЅС‹Рµ Р·Р° РІРµСЃСЊ РјРµСЃСЏС†
                         var monthEnd = current.AddMonths(1).AddSeconds(-1);
                         var chunk = currentItems.Where(x => x.Date >= current && x.Date <= monthEnd).ToList();
 
@@ -541,9 +693,9 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                         current = current.AddMonths(1);
                     }
                 }
-                else if (totalDays > 21) // От 3 недель до 2 месяцев -> Группировка по неделям
+                else if (totalDays > 21) // РћС‚ 3 РЅРµРґРµР»СЊ РґРѕ 2 РјРµСЃСЏС†РµРІ -> Р“СЂСѓРїРїРёСЂРѕРІРєР° РїРѕ РЅРµРґРµР»СЏРј
                 {
-                    DynamicsGroupingTitle = "ПО НЕДЕЛЯМ";
+                    DynamicsGroupingTitle = "РџРћ РќР•Р”Р•Р›РЇРњ";
                     var current = minDate;
                     while (current <= maxDate)
                     {
@@ -560,9 +712,9 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                         current = current.AddDays(7);
                     }
                 }
-                else // Менее 3 недель -> По дням
+                else // РњРµРЅРµРµ 3 РЅРµРґРµР»СЊ -> РџРѕ РґРЅСЏРј
                 {
-                    DynamicsGroupingTitle = "ПО ДНЯМ";
+                    DynamicsGroupingTitle = "РџРћ Р”РќРЇРњ";
 
                     for (DateTime date = minDate; date <= maxDate; date = date.AddDays(1))
                     {
@@ -605,37 +757,37 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 }
             }
 
-            // Присваиваем результат
+            // РџСЂРёСЃРІР°РёРІР°РµРј СЂРµР·СѓР»СЊС‚Р°С‚
             DynamicsStats = dynamicsStats;
         }
 
         private void CalculateCategoryStatistics(List<FinanceItem> currentItems)
         {
-            // ... (Расчет FlowStats и DynamicsStats здесь) ...
+            // ... (Р Р°СЃС‡РµС‚ FlowStats Рё DynamicsStats Р·РґРµСЃСЊ) ...
 
-            // --- Расчет Слайда 3: Категории ---
+            // --- Р Р°СЃС‡РµС‚ РЎР»Р°Р№РґР° 3: РљР°С‚РµРіРѕСЂРёРё ---
             var categoryStats = new DynamicsStatisticsDto();
 
             if (currentItems.Any())
             {
-                // Решаем, что считать за "Total" для расчета процентов. 
-                // Если выбран таб "Расход", Total = TotalExpense. Если "Доход", Total = TotalIncome.
-                // Если "Все" (OperacionTyps.None), то лучше считать расходы, т.к. категории обычно интересны для трат.
+                // Р РµС€Р°РµРј, С‡С‚Рѕ СЃС‡РёС‚Р°С‚СЊ Р·Р° "Total" РґР»СЏ СЂР°СЃС‡РµС‚Р° РїСЂРѕС†РµРЅС‚РѕРІ. 
+                // Р•СЃР»Рё РІС‹Р±СЂР°РЅ С‚Р°Р± "Р Р°СЃС…РѕРґ", Total = TotalExpense. Р•СЃР»Рё "Р”РѕС…РѕРґ", Total = TotalIncome.
+                // Р•СЃР»Рё "Р’СЃРµ" (OperacionTyps.None), С‚Рѕ Р»СѓС‡С€Рµ СЃС‡РёС‚Р°С‚СЊ СЂР°СЃС…РѕРґС‹, С‚.Рє. РєР°С‚РµРіРѕСЂРёРё РѕР±С‹С‡РЅРѕ РёРЅС‚РµСЂРµСЃРЅС‹ РґР»СЏ С‚СЂР°С‚.
 
-                // Определяем базовый список для группировки
+                // РћРїСЂРµРґРµР»СЏРµРј Р±Р°Р·РѕРІС‹Р№ СЃРїРёСЃРѕРє РґР»СЏ РіСЂСѓРїРїРёСЂРѕРІРєРё
                 IEnumerable<FinanceItem> itemsToGroup;
 
                 //if (CurentType == OperacionTyps.ZACHISLENIE)
                 //{
                 //    itemsToGroup = currentItems.Where(i=>i.OperationType== OperacionTyps.ZACHISLENIE);
                 //}
-                //else // OPLATA, NALICHNYE, or None (показываем расходы по умолчанию)
+                //else // OPLATA, NALICHNYE, or None (РїРѕРєР°Р·С‹РІР°РµРј СЂР°СЃС…РѕРґС‹ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ)
                 //{
                 //    itemsToGroup = currentItems.Where(i => i.OperationType == OperacionTyps.OPLATA || i.OperationType == OperacionTyps.NALICHNYE);
                 //}
 
                 var totalForCalc = currentItems.Sum(x => x.Sum);
-                if (totalForCalc == 0) totalForCalc = 1; // Защита от деления на 0
+                if (totalForCalc == 0) totalForCalc = 1; // Р—Р°С‰РёС‚Р° РѕС‚ РґРµР»РµРЅРёСЏ РЅР° 0
 
                 categoryStats.TopCategories = currentItems
                     .Where(x => !string.IsNullOrEmpty(x.Description))
@@ -652,7 +804,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                     .ToList();
             }
 
-            // Присваиваем результаты
+            // РџСЂРёСЃРІР°РёРІР°РµРј СЂРµР·СѓР»СЊС‚Р°С‚С‹
             // FlowStats = flowStats;
             // DynamicsStats = dynamicsStats;
             CategoryStats = categoryStats;
@@ -684,8 +836,8 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             }
             catch (Exception ex)
             {
-                // Здесь важна логика обработки ошибок, например, логирование
-                Console.WriteLine($"Ошибка при обработке полученного SMS: {ex.Message}");
+                // Р—РґРµСЃСЊ РІР°Р¶РЅР° Р»РѕРіРёРєР° РѕР±СЂР°Р±РѕС‚РєРё РѕС€РёР±РѕРє, РЅР°РїСЂРёРјРµСЂ, Р»РѕРіРёСЂРѕРІР°РЅРёРµ
+                Console.WriteLine($"РћС€РёР±РєР° РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїРѕР»СѓС‡РµРЅРЅРѕРіРѕ SMS: {ex.Message}");
             }
         }
 
@@ -711,11 +863,11 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 var dataItems = await _dataService.ParsePdfToDataItemsAsync(filePath, configuration.Banks);
                 await DatesRepositorio.AddDatas(dataItems);
 
-                await _uiService.ShowToastAsync("Файл обработан.");
+                await _uiService.ShowToastAsync("Р¤Р°Р№Р» РѕР±СЂР°Р±РѕС‚Р°РЅ.");
             }
             catch (Exception ex)
             {
-                await _uiService.ShowToastAsync("Произошла ошибка при обработке файла.");
+                await _uiService.ShowToastAsync("РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ С„Р°Р№Р»Р°.");
             }
         }
 
@@ -726,7 +878,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 var downloadsPath = await _fileService.PickFolderAsync();
                 if (string.IsNullOrEmpty(downloadsPath))
                 {
-                    await _uiService.ShowToastAsync("Экспорт отменен.");
+                    await _uiService.ShowToastAsync("Р­РєСЃРїРѕСЂС‚ РѕС‚РјРµРЅРµРЅ.");
                     return;
                 }
 
@@ -737,16 +889,16 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
                 if (success)
                 {
-                    await _uiService.ShowToastAsync($"Данные экспортированы в {fileName}");
+                    await _uiService.ShowToastAsync($"Р”Р°РЅРЅС‹Рµ СЌРєСЃРїРѕСЂС‚РёСЂРѕРІР°РЅС‹ РІ {fileName}");
                 }
                 else
                 {
-                    await _uiService.ShowToastAsync("Ошибка экспорта данных.");
+                    await _uiService.ShowToastAsync("РћС€РёР±РєР° СЌРєСЃРїРѕСЂС‚Р° РґР°РЅРЅС‹С….");
                 }
             }
             catch (Exception ex)
             {
-                await _uiService.ShowToastAsync("Ошибка экспорта данных.");
+                await _uiService.ShowToastAsync("РћС€РёР±РєР° СЌРєСЃРїРѕСЂС‚Р° РґР°РЅРЅС‹С….");
             }
         }
 
@@ -754,34 +906,56 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         {
             try
             {
-                var filePath = await _fileService.PickFileAsync("Выберите файл для импорта", [".xml"]);
+                var filePath = await _fileService.PickFileAsync("Р’С‹Р±РµСЂРёС‚Рµ С„Р°Р№Р» РґР»СЏ РёРјРїРѕСЂС‚Р°", [".xml"]);
                 if (!string.IsNullOrEmpty(filePath))
                 {
                     var dataItems = await _dataService.ParseXmlToDataItemsAsync(filePath);
                     await DatesRepositorio.AddDatas(dataItems.ToList());
-                    await _uiService.ShowToastAsync("Данные импортированы.");
+                    await RefreshData();
+                    await _uiService.ShowToastAsync("Р”Р°РЅРЅС‹Рµ РёРјРїРѕСЂС‚РёСЂРѕРІР°РЅС‹.");
                 }
                 else
                 {
-                    await _uiService.ShowToastAsync("Импорт отменен.");
+                    await _uiService.ShowToastAsync("РРјРїРѕСЂС‚ РѕС‚РјРµРЅРµРЅ.");
                 }
             }
             catch (Exception ex)
             {
-                await _uiService.ShowToastAsync("Ошибка импорта данных.");
+                await _uiService.ShowToastAsync("РћС€РёР±РєР° РёРјРїРѕСЂС‚Р° РґР°РЅРЅС‹С….");
+            }
+        }
+
+        public async Task ImportPdfAsync()
+        {
+            try
+            {
+                var filePath = await _fileService.PickFileAsync("Р’С‹Р±РµСЂРёС‚Рµ PDF С„Р°Р№Р» РґР»СЏ РёРјРїРѕСЂС‚Р°", [".pdf"]);
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    await ProcessPdfFileAsync(filePath);
+                    await RefreshData();
+                }
+                else
+                {
+                    await _uiService.ShowToastAsync("РРјРїРѕСЂС‚ РѕС‚РјРµРЅРµРЅ.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _uiService.ShowToastAsync("РћС€РёР±РєР° РёРјРїРѕСЂС‚Р° PDF.");
             }
         }
 
         public async Task ClearDatabaseAsync()
         {
             var confirmed = await _uiService.ShowConfirmationDialogAsync(
-                "Очистка базы данных",
-                "Данное действие приведет к полной очистке базы данных приложения. Вы действительно хотите продолжить?");
+                "РћС‡РёСЃС‚РєР° Р±Р°Р·С‹ РґР°РЅРЅС‹С…",
+                "Р”Р°РЅРЅРѕРµ РґРµР№СЃС‚РІРёРµ РїСЂРёРІРµРґРµС‚ Рє РїРѕР»РЅРѕР№ РѕС‡РёСЃС‚РєРµ Р±Р°Р·С‹ РґР°РЅРЅС‹С… РїСЂРёР»РѕР¶РµРЅРёСЏ. Р’С‹ РґРµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ С…РѕС‚РёС‚Рµ РїСЂРѕРґРѕР»Р¶РёС‚СЊ?");
 
             if (confirmed)
             {
                 var success = await DatesRepositorio.DeleteAllItems();
-                var message = success ? "База данных очищена." : "Произошла ошибка очистки базы данных.";
+                var message = success ? "Р‘Р°Р·Р° РґР°РЅРЅС‹С… РѕС‡РёС‰РµРЅР°." : "РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° РѕС‡РёСЃС‚РєРё Р±Р°Р·С‹ РґР°РЅРЅС‹С….";
                 await _uiService.ShowToastAsync(message);
             }
         }
@@ -900,7 +1074,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             return Enumerable.Empty<string>();
 
         }
-        // Вставьте следующий метод сюда, например, после метода AddItem()      
+        // Р’СЃС‚Р°РІСЊС‚Рµ СЃР»РµРґСѓСЋС‰РёР№ РјРµС‚РѕРґ СЃСЋРґР°, РЅР°РїСЂРёРјРµСЂ, РїРѕСЃР»Рµ РјРµС‚РѕРґР° AddItem()      
         public async Task<IEnumerable<FinanceItem>> GetFinanceItemsChunk(GetItemsRequest request)
         {
             var items = await DatesRepositorio.GetDataItems(request);
@@ -925,7 +1099,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         }
 
         /// <summary>
-        /// Освобождает ресурсы и отписывается от событий, чтобы предотвратить утечки памяти.
+        /// РћСЃРІРѕР±РѕР¶РґР°РµС‚ СЂРµСЃСѓСЂСЃС‹ Рё РѕС‚РїРёСЃС‹РІР°РµС‚СЃСЏ РѕС‚ СЃРѕР±С‹С‚РёР№, С‡С‚РѕР±С‹ РїСЂРµРґРѕС‚РІСЂР°С‚РёС‚СЊ СѓС‚РµС‡РєРё РїР°РјСЏС‚Рё.
         /// </summary>
         public void Dispose()
         {
@@ -938,4 +1112,5 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         }
     }
 }
+
 

@@ -41,7 +41,7 @@ namespace EfcToXamarinAndroid.Core.Repository
                     using (var db = new DataItemContext(dbFullPath))
                     {
                         await db.Database.MigrateAsync(); //We need to ensure the latest Migration was added. This is different than EnsureDatabaseCreated.
-                        DataItems = await db.Cats.ToListAsync();
+                        DataItems = await db.Cats.AsNoTracking().ToListAsync();
                         UpdateAutLists(DataItems);
                     }
                 }
@@ -287,7 +287,7 @@ namespace EfcToXamarinAndroid.Core.Repository
             {
                 using (var db = new DataItemContext(dbFullPath))
                 {
-                    var query = db.Cats.AsQueryable();
+                    var query = db.Cats.AsNoTracking().AsQueryable();
 
                     // Этот фильтр будет применяться только если тип операции указан в  
 

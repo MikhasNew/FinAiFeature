@@ -33,4 +33,4 @@ To build and run this project, you will need Visual Studio with the .NET Multi-p
 *   Platform-specific services are implemented in the respective UI projects (e.g., `AndroidSmsReader` in the `NavigationDrawerStarter` project and `MauiPermissionService` in the `MauiWithMudBlazorUi` project) and consumed through interfaces defined in the core project.
 *   Configuration for banks and MCC codes is stored in JSON files (`ConfigBank.json`, `ConfigMcc.json`) and embedded as resources in the `EfcToXamarinAndroid.Core` project.
 
-Отвечай на русском языке.
+Все отчеты о проделанной работе находятся в файле PROJECT_STATUS.md
