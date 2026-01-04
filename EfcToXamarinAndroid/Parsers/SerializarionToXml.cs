@@ -32,7 +32,7 @@ namespace EfcToXamarinAndroid.Core.Parsers
         public DataItem[] DeserializeFile(string filename)
         {
 
-            using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(filename, FileMode.Open))
             {
                 DataItem[]? dataItems = xmlFormat.Deserialize(fs) as DataItem[];
                 return dataItems;
