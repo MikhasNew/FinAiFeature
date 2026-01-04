@@ -1,4 +1,6 @@
-namespace EfcToXamarinAndroid.UI.Components.Models
+using System;
+
+namespace EfcToXamarinAndroid.Core.Models
 {
     public class PredictionStatisticsDto
     {

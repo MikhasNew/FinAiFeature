@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EfcToXamarinAndroid.UI.Components.Models
+namespace EfcToXamarinAndroid.Core.Models
 {
     /// <summary>
-    /// Статистика для Слайда 1: Чистый денежный поток (Баланс месяца)
+    /// РЎС‚Р°С‚РёСЃС‚РёРєР° РґР»СЏ РЎР»Р°Р№РґР° 1: Р§РёСЃС‚С‹Р№ РґРµРЅРµР¶РЅС‹Р№ РїРѕС‚РѕРє (Р‘Р°Р»Р°РЅСЃ РјРµСЃСЏС†Р°)
     /// </summary>
     public class FlowStatisticsDto
     {
@@ -15,25 +15,23 @@ namespace EfcToXamarinAndroid.UI.Components.Models
         public float TotalExpense { get; set; }
 
         /// <summary>
-        /// Чистый баланс за период: Доход - Расход
+        /// Р§РёСЃС‚С‹Р№ Р±Р°Р»Р°РЅСЃ Р·Р° РїРµСЂРёРѕРґ: Р”РѕС…РѕРґ - Р Р°СЃС…РѕРґ
         /// </summary>
         public float NetFlow => TotalIncome - TotalExpense;
 
         /// <summary>
-        /// Текстовое представление периода (например: "01 дек - 31 дек")
+        /// РўРµРєСЃС‚РѕРІРѕРµ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ РїРµСЂРёРѕРґР° (РЅР°РїСЂРёРјРµСЂ: "01 РґРµРє - 31 РґРµРє")
         /// </summary>
         public string CurrentPeriodDisplay { get; set; } = string.Empty;
 
         /// <summary>
-        /// Сколько можно тратить в день до конца месяца (для текущего незавершенного месяца).
+        /// РЎРєРѕР»СЊРєРѕ РјРѕР¶РЅРѕ С‚СЂР°С‚РёС‚СЊ РІ РґРµРЅСЊ РґРѕ РєРѕРЅС†Р° РјРµСЃСЏС†Р° (РґР»СЏ С‚РµРєСѓС‰РµРіРѕ РЅРµР·Р°РІРµСЂС€РµРЅРЅРѕРіРѕ РјРµСЃСЏС†Р°).
         /// </summary>
         public float CalculatedDailyLimit { get; set; }
 
         /// <summary>
-        /// Является ли текущий период прошедшим (для отключения логики DailyLimit).
+        /// РЇРІР»СЏРµС‚СЃСЏ Р»Рё С‚РµРєСѓС‰РёР№ РїРµСЂРёРѕРґ РїСЂРѕС€РµРґС€РёРј (РґР»СЏ РѕС‚РєР»СЋС‡РµРЅРёСЏ Р»РѕРіРёРєРё DailyLimit).
         /// </summary>
         public bool IsPeriodInPast { get; set; }
     }
 }
-
-

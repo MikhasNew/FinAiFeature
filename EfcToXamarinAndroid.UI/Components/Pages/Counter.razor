@@ -315,15 +315,7 @@
             }
 
             <div class="transaction-list">
-@*                  @if (curentItems == null || !curentItems.Any())
-                {
-                    <div class="d-flex flex-column align-center justify-center py-10" style="opacity: 0.5;">
-                        <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.body2">Транзакций не найдено</MudText>
-                    </div>
-                }
-                else 
-                { *@
+
                     <Virtualize @ref="_virtualize" ItemsProvider="@LoadServerData" Context="item" OverscanCount="5">
                         <MyTItem @key="item.Id"
                                  TItem="FinanceItem"
@@ -335,7 +327,7 @@
                                  infoLabel=@($"{item.FormattedTime} · {item.FormattedDate}")
                                  OnItemClick="ItemClicked" />
                     </Virtualize>
-@*                 } *@
+
             </div>
             <div style="height: 100px;"></div>
         </div>
@@ -531,7 +523,7 @@
         {
             await _virtualize.RefreshDataAsync();
         }
-        //await TabChangedAsync(activeTabIndex);
+
         await InvokeAsync(StateHasChanged);
     }
 

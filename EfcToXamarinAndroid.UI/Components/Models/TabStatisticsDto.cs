@@ -3,52 +3,53 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EfcToXamarinAndroid.Core.Models;
 
 namespace EfcToXamarinAndroid.UI.Components.Models
 {
     public class TabStatisticsDto
     {
-        // 1. Основные метрики
+        // 1. РћСЃРЅРѕРІРЅС‹Рµ РјРµС‚СЂРёРєРё
         public double AverageCheck { get; set; }
         public double MaxSum { get; set; }
         public double MinSum { get; set; }
 
-        // 2. График по дням (последние 7-30 дней или весь период)
+        // 2. Р“СЂР°С„РёРє РїРѕ РґРЅСЏРј (РїРѕСЃР»РµРґРЅРёРµ 7-30 РґРЅРµР№ РёР»Рё РІРµСЃСЊ РїРµСЂРёРѕРґ)
         public double[] DailyChartData { get; set; } = Array.Empty<double>();
         public string[] DailyChartLabels { get; set; } = Array.Empty<string>();
 
-        // 3. Топ категорий и проценты
+        // 3. РўРѕРї РєР°С‚РµРіРѕСЂРёР№ Рё РїСЂРѕС†РµРЅС‚С‹
         public List<CategoryStat> TopCategories { get; set; } = new();
 
-        // 4. Аномалии (Топ 3 самых крупных операции)
+        // 4. РђРЅРѕРјР°Р»РёРё (РўРѕРї 3 СЃР°РјС‹С… РєСЂСѓРїРЅС‹С… РѕРїРµСЂР°С†РёРё)
         public List<FinanceItem> Anomalies { get; set; } = new();
 
-        // Новые ключевые метрики для Слайда 1
-        /// <summary>Чистый баланс за период (Доход - Расход)</summary>
+        // РќРѕРІС‹Рµ РєР»СЋС‡РµРІС‹Рµ РјРµС‚СЂРёРєРё РґР»СЏ РЎР»Р°Р№РґР° 1
+        /// <summary>Р§РёСЃС‚С‹Р№ Р±Р°Р»Р°РЅСЃ Р·Р° РїРµСЂРёРѕРґ (Р”РѕС…РѕРґ - Р Р°СЃС…РѕРґ)</summary>
         public float NetFlow { get; set; }
 
-        /// <summary>Средний расход в день за прошедшие дни месяца</summary>
+        /// <summary>РЎСЂРµРґРЅРёР№ СЂР°СЃС…РѕРґ РІ РґРµРЅСЊ Р·Р° РїСЂРѕС€РµРґС€РёРµ РґРЅРё РјРµСЃСЏС†Р°</summary>
         public float AverageDailyExpense { get; set; }
 
-        /// <summary>Расчетный ежедневный лимит трат (для выхода в ноль или достижения цели)</summary>
+        /// <summary>Р Р°СЃС‡РµС‚РЅС‹Р№ РµР¶РµРґРЅРµРІРЅС‹Р№ Р»РёРјРёС‚ С‚СЂР°С‚ (РґР»СЏ РІС‹С…РѕРґР° РІ РЅРѕР»СЊ РёР»Рё РґРѕСЃС‚РёР¶РµРЅРёСЏ С†РµР»Рё)</summary>
         public float CalculatedDailyLimit { get; set; }
 
 
-        // Метрики для Слайда 2: Сравнение с прошлым месяцем
+        // РњРµС‚СЂРёРєРё РґР»СЏ РЎР»Р°Р№РґР° 2: РЎСЂР°РІРЅРµРЅРёРµ СЃ РїСЂРѕС€Р»С‹Рј РјРµСЃСЏС†РµРј
         public float LastMonthTotalExpense { get; set; }
         public float LastMonthTotalIncome { get; set; }
 
-        /// <summary>Процент изменения расходов (Тек. месяц vs Прошлый месяц)</summary>
+        /// <summary>РџСЂРѕС†РµРЅС‚ РёР·РјРµРЅРµРЅРёСЏ СЂР°СЃС…РѕРґРѕРІ (РўРµРє. РјРµСЃСЏС† vs РџСЂРѕС€Р»С‹Р№ РјРµСЃСЏС†)</summary>
         public float ExpenseChangePercent
         {
             get
             {
-                if (LastMonthTotalExpense == 0) return 0; // Избегаем деления на ноль
+                if (LastMonthTotalExpense == 0) return 0; // РР·Р±РµРіР°РµРј РґРµР»РµРЅРёСЏ РЅР° РЅРѕР»СЊ
                 return (TotalExpense - LastMonthTotalExpense) / LastMonthTotalExpense;
             }
         }
 
-        /// <summary>Процент изменения доходов (Тек. месяц vs Прошлый месяц)</summary>
+        /// <summary>РџСЂРѕС†РµРЅС‚ РёР·РјРµРЅРµРЅРёСЏ РґРѕС…РѕРґРѕРІ (РўРµРє. РјРµСЃСЏС† vs РџСЂРѕС€Р»С‹Р№ РјРµСЃСЏС†)</summary>
         public float IncomeChangePercent
         {
             get
@@ -63,4 +64,3 @@ namespace EfcToXamarinAndroid.UI.Components.Models
         public float AverageExpenseCheck { get; set; }
     }
 }
-

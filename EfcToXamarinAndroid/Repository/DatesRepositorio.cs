@@ -283,61 +283,9 @@ namespace EfcToXamarinAndroid.Core.Repository
             }
         }
 
-        public static async Task<int> GetTotalCountAsync(GetItemsRequest getItemsRequest)
-        {
-            try
-            {
-                using (var db = new DataItemContext(dbFullPath))
-                {
-                    var query = db.Cats.AsNoTracking().AsQueryable();
-
-                    if (getItemsRequest.Typ != null && getItemsRequest.Typ != OperacionTyps.None)
-                    {
-                        query = query.Where(x => x.OperacionTyp == getItemsRequest.Typ);
-                    }
-
-                    return await query.CountAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
-                return 0;
-            }
-        }
-
-        public static async Task<IEnumerable<DataItem>> GetDataItems(GetItemsRequest getItemsRequest)
-        {
-            try
-            {
-                using (var db = new DataItemContext(dbFullPath))
-                {
-                    var query = db.Cats.AsNoTracking().AsQueryable();
-
-                    // Этот фильтр будет применяться только если тип операции указан в  
-
-                    if (getItemsRequest.Typ != null)
-                    {
-                        if (getItemsRequest.Typ != OperacionTyps.None)
-                            query = query.Where(x => x.OperacionTyp == getItemsRequest.Typ);
-                    }
 
 
-                    // Сортируем по дате (сначала новые), пропускаем нужное количество и
 
-                    return await query
-                        .OrderByDescending(x => x.Date)
-                        .Skip(getItemsRequest.StartIndex)
-                        .Take(getItemsRequest.Count)
-                        .ToListAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
-                return new List<DataItem>();
-            }
-        }
 
         public static async Task<DataItem> GetDataItem(int id)
         {

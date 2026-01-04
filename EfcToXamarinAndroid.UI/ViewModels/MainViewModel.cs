@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Components.Web.Virtualization;
 
 using EfcToXamarinAndroid.UI.Components.Models;
 
-// using Microsoft.Maui.Controls;
+
 
 using MudBlazor;
 using PermissionStatus = EfcToXamarinAndroid.Core.Services.PermissionStatus;
@@ -635,7 +635,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             // Сохраняем результат
             FlowStats = flowStats;
         }
-        // Внутри класса MainViewModel
+
         private void CalculateDynamicsStatistics(List<FinanceItem> currentItems)
         {
             var dynamicsStats = new DynamicsStatisticsDto();
@@ -1094,29 +1094,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             return Enumerable.Empty<string>();
 
         }
-        // Вставьте следующий метод сюда, например, после метода AddItem()      
-        public async Task<IEnumerable<FinanceItem>> GetFinanceItemsChunk(GetItemsRequest request)
-        {
-            var items = await DatesRepositorio.GetDataItems(request);
-            var fintems = items
-              .Select(item => new FinanceItem
-              {
-                  Id = item.Id,
-                  Date = item.Date,
-                  Sum = item.Sum,
-                  Description = item.Descripton,
-                  Title = item.Title,
-                  MccDescription = item.MccDeskription,
-                  MCC = item.MCC,
-                  UnreachableText = item.UnreachableText,
-                  OperationType = item.OperacionTyp,
-                  IsNewDataItem = item.IsNewDataItem,
-                  Balance = item.Balance
-              })
-              .OrderByDescending(x => x.Date)
-              .ToList();
-            return fintems;
-        }
+
 
         private List<FinanceItem> _currentFilteredList = new();
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EfcToXamarinAndroid.UI.Components.Models
+namespace EfcToXamarinAndroid.Core.Models
 {
     public class CategoryStat
     {
