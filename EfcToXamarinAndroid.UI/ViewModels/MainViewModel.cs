@@ -357,6 +357,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             CalculatePredictionStatistics(); // Global stats
 
 
+            _currentFilteredList = result;
             return result;
         }
         
@@ -1117,19 +1118,25 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             return fintems;
         }
 
+        private List<FinanceItem> _currentFilteredList = new();
+
         public async ValueTask<ItemsProviderResult<FinanceItem>> GetFinanceItemsProvider(ItemsProviderRequest request, OperacionTyps filterType)
         {
-            var itemsRequest = new GetItemsRequest
+            // Если тип фильтра изменился, или кэш пуст (первый запуск), или запрос сдвигается за пределы (хотя лист в памяти полный)
+            // на самом деле MainLayout/Counter вызывает GetActiveItems() при смене таба или фильтра, 
+            // так что _currentFilteredList должен быть уже актуальным.
+            
+            // Но для надежности, если вдруг ItemsProvider вызвался раньше или без обновления:
+            if (_currentFilteredList == null || CurentType != filterType)
             {
-                StartIndex = request.StartIndex,
-                Count = request.Count,
-                Typ = filterType
-            };
+                 // Это вызовет пересчет статистики, если таб сменился "неявно" (что вряд ли)
+                 _currentFilteredList = GetFilteredItems(filterType).ToList();
+            }
 
-            var items = await GetFinanceItemsChunk(itemsRequest);
-            var totalCount = await DatesRepositorio.GetTotalCountAsync(itemsRequest);
+            var totalCount = _currentFilteredList.Count;
+            var pagedItems = _currentFilteredList.Skip(request.StartIndex).Take(request.Count).ToList();
 
-            return new ItemsProviderResult<FinanceItem>(items, totalCount);
+            return new ItemsProviderResult<FinanceItem>(pagedItems, totalCount);
         }
 
         /// <summary>

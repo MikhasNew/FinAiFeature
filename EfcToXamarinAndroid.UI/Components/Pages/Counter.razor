@@ -395,7 +395,8 @@
         
         await VM.InitializeAsync();
         // Мы больше не загружаем весь список при старте, MudVirtualize сделает это сам через Провайдер
-        //await VM.LoadFinanceItemsAsync(); 
+        // Загружаем данные в память для работы статистики (и фильтров)
+        await VM.LoadFinanceItemsAsync(); 
         await TabChangedAsync(0);
     }
 
@@ -421,7 +422,8 @@
     {
         try
         {
-            //curentItems = GetActiveItems().ToList();
+            // Обновляем статистику в памяти
+            curentItems = GetActiveItems().ToList();
             if (_virtualize != null)
             {
                 await _virtualize.RefreshDataAsync();
@@ -468,7 +470,20 @@
     private async Task TabChangedAsync(int index)
     {
         activeTabIndex = index;
-        //curentItems = GetActiveItems().ToList();
+        // Вызываем GetActiveItems для обновления статистики (в памяти)
+        curentItems = GetActiveItems().ToList();
+        // Обновляем виртуализированный список
+        if (_virtualize != null)
+        {
+            await _virtualize.RefreshDataAsync();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+    private async Task FilterChangedAsync()
+    {
+        // Вызываем GetActiveItems для обновления статистики (в памяти) и кэша в MainViewModel
+        curentItems = GetActiveItems().ToList();
+        
         if (_virtualize != null)
         {
             await _virtualize.RefreshDataAsync();
@@ -507,15 +522,7 @@
         await DialogService.ShowAsync<FullScreenFinItemDialog>("Новая операция", parameters, new DialogOptions { FullScreen = true });
     }
 
-    private async Task FilterChangedAsync()
-    {
-        //curentItems = GetActiveItems().ToList();
-        if (_virtualize != null)
-        {
-            await _virtualize.RefreshDataAsync();
-        }
-        await InvokeAsync(StateHasChanged);
-    }
+
 
     private async Task RefreshAll()
     {
