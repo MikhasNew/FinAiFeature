@@ -4,20 +4,28 @@
 @inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
-    <MudText Typo="Typo.h5" Class="mb-6" Style="font-weight: bold;">Управление данными</MudText>
+    <div class="d-flex align-center mb-6">
+        <MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Primary" Size="Size.Large" Class="mr-3" />
+        <MudText Typo="Typo.h5" Style="font-weight: bold;">Управление данными</MudText>
+    </div>
     
-    <MudGrid>
+    <MudGrid Spacing="4">
         @* Секция Импорта *@
         <MudItem xs="12">
-            <MudCard Elevation="2" Class="pa-4 mb-4">
-                <MudText Typo="Typo.subtitle1" Class="mb-2" Color="Color.Primary" Style="font-weight: bold;">Импорт</MudText>
-                <MudText Typo="Typo.body2" Class="mb-4">Загрузите данные из банковских выписок или резервных копий.</MudText>
+            <MudPaper Elevation="4" Class="pa-6 rounded-lg relative overflow-hidden">
+                <div class="section-badge import-badge">ИМПОРТ</div>
+                <MudText Typo="Typo.h6" Class="mb-2" Color="Color.Primary">Загрузка данных</MudText>
+                <MudText Typo="Typo.body2" Class="mb-6" Style="opacity: 0.7;">
+                    Добавьте транзакции из внешних источников (PDF выписки банков или XML бэкапы).
+                </MudText>
                 
-                <div class="d-flex flex-column gap-3">
+                <div class="d-flex flex-column gap-4">
                     <MudButton Variant="Variant.Filled" 
                                StartIcon="@Icons.Material.Filled.PictureAsPdf" 
                                Color="Color.Info" 
                                FullWidth="true"
+                               Class="py-3 rounded-pill"
+                               Style="text-transform: none; font-weight: 600;"
                                OnClick="@(() => VM.ImportPdfAsync())">
                         Импорт из PDF
                     </MudButton>
@@ -26,51 +34,94 @@
                                StartIcon="@Icons.Material.Filled.FileUpload" 
                                Color="Color.Primary" 
                                FullWidth="true"
+                               Class="py-3 rounded-pill"
+                               Style="text-transform: none; font-weight: 600;"
                                OnClick="@(() => VM.ImportDataAsync())">
                         Импорт из XML
                     </MudButton>
                 </div>
-            </MudCard>
+            </MudPaper>
         </MudItem>
 
         @* Секция Экспорта *@
         <MudItem xs="12">
-            <MudCard Elevation="2" Class="pa-4 mb-4">
-                <MudText Typo="Typo.subtitle1" Class="mb-2" Color="Color.Primary" Style="font-weight: bold;">Экспорт</MudText>
-                <MudText Typo="Typo.body2" Class="mb-4">Создайте резервную копию ваших транзакций в формате XML.</MudText>
+            <MudPaper Elevation="4" Class="pa-6 rounded-lg relative overflow-hidden">
+                <div class="section-badge export-badge">ЭКСПОРТ</div>
+                <MudText Typo="Typo.h6" Class="mb-2" Color="Color.Success">Резервное копирование</MudText>
+                <MudText Typo="Typo.body2" Class="mb-6" Style="opacity: 0.7;">
+                    Сохраните все ваши транзакции в XML файл для переноса на другое устройство.
+                </MudText>
                 
                 <MudButton Variant="Variant.Filled" 
                            StartIcon="@Icons.Material.Filled.FileDownload" 
                            Color="Color.Success" 
                            FullWidth="true"
+                           Class="py-3 rounded-pill"
+                           Style="text-transform: none; font-weight: 600;"
                            OnClick="@(() => VM.ExportDataAsync())">
                     Экспорт в XML
                 </MudButton>
-            </MudCard>
+            </MudPaper>
         </MudItem>
 
         @* Секция Очистки *@
         <MudItem xs="12">
-            <MudCard Elevation="2" Class="pa-4 border-error">
-                <MudText Typo="Typo.subtitle1" Class="mb-2" Color="Color.Error" Style="font-weight: bold;">Опасная зона</MudText>
-                <MudText Typo="Typo.body2" Class="mb-4">Удаление всех данных из локальной базы данных. Это действие необратимо.</MudText>
+            <MudPaper Elevation="4" Class="pa-6 rounded-lg border-danger-glow relative overflow-hidden">
+                <div class="section-badge danger-badge">ОПАСНО</div>
+                <MudText Typo="Typo.h6" Class="mb-2" Color="Color.Error">Очистка данных</MudText>
+                <MudText Typo="Typo.body2" Class="mb-6" Style="opacity: 0.7;">
+                    Полное удаление всех записей. Это действие нельзя отменить.
+                </MudText>
                 
                 <MudButton Variant="Variant.Text" 
                            StartIcon="@Icons.Material.Filled.DeleteSweep" 
                            Color="Color.Error" 
                            FullWidth="true"
+                           Class="py-2"
+                           Style="text-transform: none;"
                            OnClick="@(() => VM.ClearDatabaseAsync())">
                     Очистить базу данных
                 </MudButton>
-            </MudCard>
+            </MudPaper>
         </MudItem>
     </MudGrid>
 </MudContainer>
 
 <style>
-    .border-error {
-        border: 1px solid var(--mud-palette-error-lighten);
+    .rounded-lg { border-radius: 16px !important; }
+    .rounded-pill { border-radius: 30px !important; }
+    
+    .relative { position: relative; }
+    .overflow-hidden { overflow: hidden; }
+
+    .section-badge {
+        position: absolute;
+        top: 12px;
+        right: -30px;
+        transform: rotate(45deg);
+        padding: 4px 40px;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        color: white;
+        text-align: center;
+        width: 120px;
     }
+
+    .import-badge { background: var(--mud-palette-info); }
+    .export-badge { background: var(--mud-palette-success); }
+    .danger-badge { background: var(--mud-palette-error); }
+
+    .border-danger-glow {
+        border: 1px solid rgba(255, 82, 82, 0.2) !important;
+        transition: border 0.3s ease;
+    }
+    
+    .border-danger-glow:hover {
+        border-color: rgba(255, 82, 82, 0.5) !important;
+    }
+
+    .gap-4 { gap: 1rem; }
 </style>
 
 @code {

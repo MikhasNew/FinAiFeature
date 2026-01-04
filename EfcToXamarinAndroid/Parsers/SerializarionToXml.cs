@@ -31,13 +31,19 @@ namespace EfcToXamarinAndroid.Core.Parsers
 
         public DataItem[] DeserializeFile(string filename)
         {
-
-            using (FileStream fs = new FileStream(filename, FileMode.Open))
+            try 
             {
-                DataItem[]? dataItems = xmlFormat.Deserialize(fs) as DataItem[];
-                return dataItems;
+                using (FileStream fs = new FileStream(filename, FileMode.Open))
+                {
+                    DataItem[]? dataItems = xmlFormat.Deserialize(fs) as DataItem[];
+                    return dataItems;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"XML Deserialization Error: {ex}");
+                return null;
             }
         }
     }
 }
-

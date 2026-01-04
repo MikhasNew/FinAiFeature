@@ -24,7 +24,9 @@ namespace EfcToXamarinAndroid.Core.Services
         public async Task<List<DataItem>> ParseXmlToDataItemsAsync(string filePath)
         {
             var serializer = new SerializarionToXml();
-            return await Task.FromResult(serializer.DeserializeFile(filePath).ToList());
+            var items = serializer.DeserializeFile(filePath);
+            if (items == null) return null;
+            return await Task.FromResult(items.ToList() ?? new List<DataItem>());
         }
 
         public async Task<bool> SaveDataItemsToXmlAsync(string filePath)

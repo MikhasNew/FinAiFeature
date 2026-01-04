@@ -25,7 +25,7 @@ builder.Services.AddScoped<IUIService, WebUIService>();
 builder.Services.AddSingleton<IPermissionService, WebPermissionService>();
 
 // Seed Mock Data for Debugging
-EfcToXamarinAndroid.UI.Services.MockDataHelper.SeedMockData();
+// EfcToXamarinAndroid.UI.Services.MockDataHelper.SeedMockData();
 
 var app = builder.Build();
 

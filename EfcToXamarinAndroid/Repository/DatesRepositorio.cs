@@ -53,7 +53,7 @@ namespace EfcToXamarinAndroid.Core.Repository
                 return false;
             }
         }
-        public static async Task AddDatas(List<DataItem> dataItems)
+        public static async Task<bool> AddDatas(List<DataItem> dataItems)
         {
             //var newDataItems = new List<DataItem>();
             var newDataItems = GetNewDatas(dataItems);
@@ -71,10 +71,12 @@ namespace EfcToXamarinAndroid.Core.Repository
                         UpdateAutLists(DataItems);
                     }
                 }
+                return true;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(ex.ToString());
+                return false;
             }
         }
         public static async Task DeleteItem(DataItem dataItem)
@@ -278,6 +280,29 @@ namespace EfcToXamarinAndroid.Core.Repository
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(ex.ToString());
+            }
+        }
+
+        public static async Task<int> GetTotalCountAsync(GetItemsRequest getItemsRequest)
+        {
+            try
+            {
+                using (var db = new DataItemContext(dbFullPath))
+                {
+                    var query = db.Cats.AsNoTracking().AsQueryable();
+
+                    if (getItemsRequest.Typ != null && getItemsRequest.Typ != OperacionTyps.None)
+                    {
+                        query = query.Where(x => x.OperacionTyp == getItemsRequest.Typ);
+                    }
+
+                    return await query.CountAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                return 0;
             }
         }
 

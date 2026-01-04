@@ -315,7 +315,7 @@
             }
 
             <div class="transaction-list">
-                 @if (curentItems == null || !curentItems.Any())
+@*                  @if (curentItems == null || !curentItems.Any())
                 {
                     <div class="d-flex flex-column align-center justify-center py-10" style="opacity: 0.5;">
                         <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Class="mb-2" />
@@ -323,8 +323,8 @@
                     </div>
                 }
                 else 
-                {
-                    <MudVirtualize Items="@curentItems" Context="item" OverscanCount="5">
+                { *@
+                    <Virtualize @ref="_virtualize" ItemsProvider="@LoadServerData" Context="item" OverscanCount="5">
                         <MyTItem @key="item.Id"
                                  TItem="FinanceItem"
                                  Item="@item"
@@ -334,8 +334,8 @@
                                  infoTitleColor="@item.AmountColor"
                                  infoLabel=@($"{item.FormattedTime} · {item.FormattedDate}")
                                  OnItemClick="ItemClicked" />
-                    </MudVirtualize>
-                }
+                    </Virtualize>
+@*                 } *@
             </div>
             <div style="height: 100px;"></div>
         </div>
@@ -379,6 +379,7 @@
     private int activeTabIndex = 0;
     private bool _showScrollToTop = false;
     private ICollection<FinanceItem> curentItems = new List<FinanceItem>();
+    private Virtualize<FinanceItem> _virtualize;
     
     private string TitleNetBalance => L10n.TitleNetBalance;
     private string LabelIncome => L10n.LabelIncome;
@@ -393,15 +394,38 @@
         VM.DataFiltred += HandleDataFiltred;
         
         await VM.InitializeAsync();
-        await VM.LoadFinanceItemsAsync(); 
+        // Мы больше не загружаем весь список при старте, MudVirtualize сделает это сам через Провайдер
+        //await VM.LoadFinanceItemsAsync(); 
         await TabChangedAsync(0);
+    }
+
+    private async ValueTask<ItemsProviderResult<FinanceItem>> LoadServerData(ItemsProviderRequest request)
+    {
+        var filterType = GetFilterType();
+        return await VM.GetFinanceItemsProvider(request, filterType);
+    }
+
+    private OperacionTyps GetFilterType()
+    {
+        return activeTabIndex switch
+        {
+            1 => OperacionTyps.OPLATA,
+            2 => OperacionTyps.NALICHNYE,
+            3 => OperacionTyps.ZACHISLENIE,
+            4 => OperacionTyps.UNREACHABLE,
+            _ => OperacionTyps.None
+        };
     }
 
     private async void HandleDataUpdated(object? sender, EventArgs e)
     {
         try
         {
-            curentItems = GetActiveItems().ToList();
+            //curentItems = GetActiveItems().ToList();
+            if (_virtualize != null)
+            {
+                await _virtualize.RefreshDataAsync();
+            }
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception) { /* Ignore disposal errors */ }
@@ -444,7 +468,11 @@
     private async Task TabChangedAsync(int index)
     {
         activeTabIndex = index;
-        curentItems = GetActiveItems().ToList();
+        //curentItems = GetActiveItems().ToList();
+        if (_virtualize != null)
+        {
+            await _virtualize.RefreshDataAsync();
+        }
         await InvokeAsync(StateHasChanged);
     }
 
@@ -481,14 +509,23 @@
 
     private async Task FilterChangedAsync()
     {
-        curentItems = GetActiveItems().ToList();
+        //curentItems = GetActiveItems().ToList();
+        if (_virtualize != null)
+        {
+            await _virtualize.RefreshDataAsync();
+        }
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task RefreshAll()
     {
         await VM.LoadFinanceItemsAsync();
-        await TabChangedAsync(activeTabIndex);
+        if (_virtualize != null)
+        {
+            await _virtualize.RefreshDataAsync();
+        }
+        //await TabChangedAsync(activeTabIndex);
+        await InvokeAsync(StateHasChanged);
     }
 
     private void OnScroll(EventArgs e)

@@ -16,6 +16,12 @@ namespace EfcToXamarinAndroid.Core
             DatabasePath = databasePath;
         }
 
+        // Конструктор для создания миграций (используется EF Core Tools)
+        public DataItemContext()
+        {
+            DatabasePath = "migration_dummy.db";
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<DataItem>()

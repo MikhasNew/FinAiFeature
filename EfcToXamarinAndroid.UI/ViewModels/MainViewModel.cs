@@ -4,6 +4,7 @@ using EfcToXamarinAndroid.Core.Models;
 using EfcToXamarinAndroid.Core.Repository;
 using EfcToXamarinAndroid.Core.Services;
 using EfcToXamarinAndroid.MigrationsHelper.Migrations;
+using Microsoft.AspNetCore.Components.Web.Virtualization;
 
 using EfcToXamarinAndroid.UI.Components.Models;
 
@@ -910,9 +911,27 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 if (!string.IsNullOrEmpty(filePath))
                 {
                     var dataItems = await _dataService.ParseXmlToDataItemsAsync(filePath);
-                    await DatesRepositorio.AddDatas(dataItems.ToList());
-                    await RefreshData();
-                    await _uiService.ShowToastAsync("Данные импортированы.");
+                    if (dataItems != null && dataItems.Any())
+                    {
+                        var success = await DatesRepositorio.AddDatas(dataItems.ToList());
+                        if (success)
+                        {
+                            await RefreshData();
+                            await _uiService.ShowToastAsync($"Импортировано {dataItems.Count} записей. Всего: {AllItems.Count}");
+                        }
+                        else
+                        {
+                            await _uiService.ShowToastAsync("Ошибка: Не удалось сохранить данные в базу (БД заблокирована или ошибка записи).");
+                        }
+                    }
+                    else if (dataItems != null)
+                    {
+                         await _uiService.ShowToastAsync("Файл прочитан, но записей не найдено (возможно, пустой или дубликаты).");
+                    }
+                    else
+                    {
+                         await _uiService.ShowToastAsync("Ошибка: Не удалось парсить файл (неверный формат).");
+                    }
                 }
                 else
                 {
@@ -921,7 +940,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             }
             catch (Exception ex)
             {
-                await _uiService.ShowToastAsync("Ошибка импорта данных.");
+                await _uiService.ShowToastAsync($"Ошибка импорта данных: {ex.Message}");
             }
         }
 
@@ -1096,6 +1115,21 @@ namespace EfcToXamarinAndroid.Core.ViewModels
               .OrderByDescending(x => x.Date)
               .ToList();
             return fintems;
+        }
+
+        public async ValueTask<ItemsProviderResult<FinanceItem>> GetFinanceItemsProvider(ItemsProviderRequest request, OperacionTyps filterType)
+        {
+            var itemsRequest = new GetItemsRequest
+            {
+                StartIndex = request.StartIndex,
+                Count = request.Count,
+                Typ = filterType
+            };
+
+            var items = await GetFinanceItemsChunk(itemsRequest);
+            var totalCount = await DatesRepositorio.GetTotalCountAsync(itemsRequest);
+
+            return new ItemsProviderResult<FinanceItem>(items, totalCount);
         }
 
         /// <summary>
