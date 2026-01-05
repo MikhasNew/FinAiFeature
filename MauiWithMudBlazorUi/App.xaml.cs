@@ -1,3 +1,5 @@
+using Microsoft.Maui.Controls;
+
 namespace MauiAppWithMudBlazor
 {
     public partial class App : Application

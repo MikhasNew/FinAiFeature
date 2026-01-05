@@ -1,3 +1,4 @@
+using Microsoft.Maui.Controls;
 using Microsoft.AspNetCore.Components.WebView.Maui;
 
 namespace MauiAppWithMudBlazor

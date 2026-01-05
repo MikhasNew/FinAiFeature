@@ -281,57 +281,59 @@
 
     @* --- СЛОЙ 2: Скроллящаяся область --- *@
     <div class="scroll-layer" @onscroll="OnScroll" id="scroll-target">
-        
-        @* Прозрачный блок, через который мы управляем каруселью *@
-        <div class="header-spacer">
-            <MudSwipeArea OnSwipeEnd="SwipeEndAsync" Class="swipe-catcher" />
-            
-            @* Кастомные индикаторы (5 точек) *@
-            <div class="custom-bullets">
-                @for (int i = 0; i < 6; i++)
+        <MudPullToRefresh RefreshFunc="@RefreshAll">
+            @* Прозрачный блок, через который мы управляем каруселью *@
+            <div class="header-spacer">
+                <MudSwipeArea OnSwipeEnd="SwipeEndAsync" Class="swipe-catcher" />
+                
+                @* Кастомные индикаторы (5 точек) *@
+                <div class="custom-bullets">
+                    @for (int i = 0; i < 6; i++)
+                    {
+                        var index = i;
+                        <div class="bullet @(selectedIndex == index ? "active" : "")" 
+                             @onclick="@(() => SetSlide(index))"></div>
+                    }
+                </div>
+            </div>
+
+            <div class="content-sheet">
+                <div class="d-flex justify-space-between align-center mb-4 px-2">
+                    <div class="d-flex align-center gap-2">
+                        <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1a1a1a;">@LabelTransactions</MudText>
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Text">@curentItems.Count()</MudChip>
+                    </div>
+                </div>
+
+                @if (VM.IsFiltred)
                 {
-                    var index = i;
-                    <div class="bullet @(selectedIndex == index ? "active" : "")" 
-                         @onclick="@(() => SetSlide(index))"></div>
+                    <div class="px-2 mb-4">
+                        <MudChip T="string" OnClose="@(() => VM.ClearAdvancedFilters())" Color="Color.Warning" Variant="Variant.Text" Size="Size.Small">
+                            Фильтры активны (сбросить)
+                        </MudChip>
+                    </div>
                 }
-            </div>
-        </div>
 
-        <div class="content-sheet">
-            <div class="d-flex justify-space-between align-center mb-4 px-2">
-                <div class="d-flex align-center gap-2">
-                    <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1a1a1a;">@LabelTransactions</MudText>
-                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Text">@curentItems.Count()</MudChip>
+                <div class="transaction-list">
+
+                        <Virtualize @ref="_virtualize" ItemsProvider="@LoadServerData" Context="item" OverscanCount="5">
+                            <MyTItem @key="item.Id"
+                                     TItem="FinanceItem"
+                                     Item="@item"
+                                     ItemTitle="@item.DisplayTitle"
+                                     ItemLabel="@item.DisplayDescription"
+                                     infoTitle="@item.FormattedSum"
+                                     infoTitleColor="@item.AmountColor"
+                                     infoLabel=@($"{item.FormattedTime} · {item.FormattedDate}")
+                                     OnItemClick="ItemClicked" />
+                        </Virtualize>
+
                 </div>
+                <div style="height: 100px;"></div>
             </div>
-
-            @if (VM.IsFiltred)
-            {
-                <div class="px-2 mb-4">
-                    <MudChip T="string" OnClose="@(() => VM.ClearAdvancedFilters())" Color="Color.Warning" Variant="Variant.Text" Size="Size.Small">
-                        Фильтры активны (сбросить)
-                    </MudChip>
-                </div>
-            }
-
-            <div class="transaction-list">
-
-                    <Virtualize @ref="_virtualize" ItemsProvider="@LoadServerData" Context="item" OverscanCount="5">
-                        <MyTItem @key="item.Id"
-                                 TItem="FinanceItem"
-                                 Item="@item"
-                                 ItemTitle="@item.DisplayTitle"
-                                 ItemLabel="@item.DisplayDescription"
-                                 infoTitle="@item.FormattedSum"
-                                 infoTitleColor="@item.AmountColor"
-                                 infoLabel=@($"{item.FormattedTime} · {item.FormattedDate}")
-                                 OnItemClick="ItemClicked" />
-                    </Virtualize>
-
-            </div>
-            <div style="height: 100px;"></div>
-        </div>
+        </MudPullToRefresh>
     </div>
+
 
     @* Кнопка (Добавить или Вверх) *@
     <div class="fab-container">

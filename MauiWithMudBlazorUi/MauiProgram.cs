@@ -1,3 +1,4 @@
+using Microsoft.Maui.Hosting;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using EfcToXamarinAndroid.Core.Services;

@@ -22,10 +22,6 @@
 
         <MudIconButton Icon="@Icons.Material.Filled.FilterList" Color="Color.Inherit" OnClick="@((e) => FilterDrawerToggle())" Title="Фильтры" />
 
-        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Title="Действия">
-            <MudMenuItem Icon="@Icons.Material.Filled.Refresh" OnClick="@RefreshAll">Обновить данные</MudMenuItem>
-            <MudDivider />
-        </MudMenu>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Temporary">
