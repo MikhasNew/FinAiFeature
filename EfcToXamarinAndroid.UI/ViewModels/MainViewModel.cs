@@ -12,6 +12,7 @@ using EfcToXamarinAndroid.UI.Components.Models;
 
 using MudBlazor;
 using PermissionStatus = EfcToXamarinAndroid.Core.Services.PermissionStatus;
+using EfcToXamarinAndroid.Core.Enums;
 
 namespace EfcToXamarinAndroid.Core.ViewModels
 {
@@ -57,6 +58,13 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         public PredictionStatisticsDto PredictionStats { get; private set; } = new();
 
         public TabStatisticsDto CurrentStats { get; private set; } = new();
+        
+        #region Pre-calculated view values
+        public double AvgIncome { get; private set; }
+        public double AvgExpense { get; private set; }
+        public double MaxIncome { get; private set; }
+        public double MaxExpense { get; private set; }
+        #endregion
 
         /// <summary>
         /// Общая сумма доходов за весь период.
@@ -220,6 +228,9 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
                 await LoadFinanceItemsAsync();            // Преобразование DataItem -> FinanceItem
                 
+                // Применяем период отображения по умолчанию
+                ApplyDefaultPeriod();
+
                 // Подписываемся на статические события через именованный метод, чтобы можно было отписаться
                 DatesRepositorio.PaymentsChanged += OnDataChanged;
                 DatesRepositorio.DepositsChanged += OnDataChanged;
@@ -374,28 +385,63 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             FiltredTransactionsCount = result.Count;
             FiltredTransactionsSumm = result.Sum(x => x.Sum);
 
-            // 🚀 ОПТИМИЗАЦИЯ: Расчет статистики вынесен в отдельный метод
-            // Он будет вызываться с debouncing из UI
             _currentFilteredList = result;
             return result;
         }
+
+        private bool _isCalculating = false;
+        public bool IsCalculating => _isCalculating;
 
         /// <summary>
         /// Пересчитывает все статистики на основе текущего отфильтрованного списка.
         /// Вызывается с debouncing из UI для оптимизации производительности.
         /// </summary>
-        public void RecalculateStatistics()
+        public async Task RecalculateStatisticsAsync()
         {
             if (_currentFilteredList == null || _currentFilteredList.Count == 0)
+            {
+                ClearStats();
                 return;
+            }
 
-            CalculateAdvancedStats(_currentFilteredList);
-            CalculateFlowStatistics(_currentFilteredList);
-            CalculateDynamicsStatistics(_currentFilteredList);
-            CalculateCategoryStatistics(_currentFilteredList);
-           
-            // Используем отфильтрованные данные для прогноза
-            CalculatePredictionStatistics(_currentFilteredList);
+            _isCalculating = true;
+            try
+            {
+                var capturedList = _currentFilteredList.ToList();
+                await Task.Run(() =>
+                {
+                    CalculateAdvancedStats(capturedList);
+                    CalculateFlowStatistics(capturedList);
+                    CalculateDynamicsStatistics(capturedList);
+                    CalculateCategoryStatistics(capturedList);
+                    CalculatePredictionStatistics(capturedList);
+                    
+                    // Pre-calculate view values
+                    AvgIncome = DynamicsStats.DailyIncomeData?.DefaultIfEmpty(0).Average() ?? 0;
+                    AvgExpense = DynamicsStats.DailyExpenseData?.DefaultIfEmpty(0).Average() ?? 0;
+                    MaxIncome = DynamicsStats.DailyIncomeData?.DefaultIfEmpty(0).Max() ?? 0;
+                    MaxExpense = DynamicsStats.DailyExpenseData?.DefaultIfEmpty(0).Max() ?? 0;
+                });
+            }
+            finally
+            {
+                _isCalculating = false;
+            }
+        }
+
+        private void ClearStats()
+        {
+            AvgIncome = 0;
+            AvgExpense = 0;
+            MaxIncome = 0;
+            MaxExpense = 0;
+            // Additional clearing if needed
+        }
+        
+        [Obsolete("Use RecalculateStatisticsAsync")]
+        public void RecalculateStatistics()
+        {
+             _ = RecalculateStatisticsAsync();
         }
         
         private void CalculateAdvancedStats(IEnumerable<FinanceItem> items)
@@ -1172,6 +1218,69 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             DatesRepositorio.DepositsChanged -= OnDataChanged;
             DatesRepositorio.CashsChanged -= OnDataChanged;
             DatesRepositorio.UnreachableChanged -= OnDataChanged;
+        }
+
+        private void ApplyDefaultPeriod()
+        {
+            var period = _appConfiguration.DefaultPeriod;
+            DateTime end = DateTime.Now.Date;
+            DateTime start = end;
+
+            if (period == DisplayPeriod.Auto)
+            {
+                // Auto Logic
+                if (!AllItems.Any())
+                {
+                    period = DisplayPeriod.Week; // Fallback for new users
+                }
+                else
+                {
+                    var firstDate = AllItems.Min(x => x.Date).Date;
+                    var totalDays = (end - firstDate).TotalDays;
+
+                    // "When it's possible to compare months" -> roughly > 2 months (60 days)
+                    if (totalDays < 60)
+                    {
+                        period = DisplayPeriod.Week;
+                    }
+                    else if (totalDays < 180) // < 6 months
+                    {
+                        period = DisplayPeriod.Month;
+                    }
+                    else if (totalDays < 365) // < 1 year
+                    {
+                        period = DisplayPeriod.HalfYear;
+                    }
+                    else
+                    {
+                        period = DisplayPeriod.Year;
+                    }
+                }
+            }
+
+            switch (period)
+            {
+                case DisplayPeriod.Week:
+                    start = end.AddDays(-6); // Last 7 days including today
+                    break;
+                case DisplayPeriod.Month:
+                    start = new DateTime(end.Year, end.Month, 1);
+                    break;
+                case DisplayPeriod.HalfYear:
+                    start = end.AddMonths(-6);
+                    break;
+                case DisplayPeriod.Year:
+                    start = new DateTime(end.Year, 1, 1);
+                    break;
+                case DisplayPeriod.All:
+                    SetDateRange(null);
+                    return;
+                case DisplayPeriod.Auto: // Should be resolved above, but needed for compiler/fallback
+                    start = end.AddDays(-6);
+                    break;
+            }
+
+            SetDateRange(new DateRange(start, end));
         }
     }
 }

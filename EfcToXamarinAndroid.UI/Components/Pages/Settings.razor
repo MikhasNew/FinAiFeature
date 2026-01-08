@@ -1,11 +1,29 @@
-﻿ @page "/settings"
- @using EfcToXamarinAndroid.Core.Configs.ManagerCore
+﻿@page "/settings"
+@using EfcToXamarinAndroid.Core.Configs.ManagerCore
+@using EfcToXamarinAndroid.Core.Enums
 
- <MudContainer Class="pa-4">
-   <MudText Typo="Typo.h5">Настройки</MudText>
-   <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4">Сохранить</MudButton>
- </MudContainer>
+<MudContainer Class="pa-4">
+    <MudText Typo="Typo.h5">Настройки</MudText>
+
+    <MudSelect T="DisplayPeriod" Label="Период отображения по умолчанию" @bind-Value="Config.DefaultPeriod" Class="mt-4">
+        @foreach (DisplayPeriod item in Enum.GetValues(typeof(DisplayPeriod)))
+        {
+            <MudSelectItem Value="@item">@GetDescription(item)</MudSelectItem>
+        }
+    </MudSelect>
+
+    <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4">Сохранить</MudButton>
+</MudContainer>
 
 @code {
+    private AppConfiguration Config => ConfigurationManager.ConfigManager.BankConfigurationFromJson;
+
     private void Save() => ConfigurationManager.ConfigManager.Save();
- }
+
+    private string GetDescription(DisplayPeriod val)
+    {
+        var field = val.GetType().GetField(val.ToString());
+        var attributes = (System.ComponentModel.DescriptionAttribute[])field.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false);
+        return attributes.Length > 0 ? attributes[0].Description : val.ToString();
+    }
+}
