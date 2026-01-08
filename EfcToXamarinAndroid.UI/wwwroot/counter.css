@@ -1,0 +1,376 @@
+:root {
+    --header-height: 280px;
+}
+
+body.mud-theme-dark {
+    --premium-blue: #0d1242;
+    --premium-gradient: linear-gradient(180deg, #0d1242 0%, #1a237e 100%);
+}
+
+body {
+    --premium-blue: #1a237e;
+    --premium-gradient: linear-gradient(180deg, #1a237e 0%, #3f51b5 100%);
+}
+
+* {
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    /* Let MudBlazor handle background-color */
+    font-family: 'Roboto', sans-serif;
+    /* Одинаковый скроллбар для всех платформ (Firefox) */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+}
+
+/* Стилизация скроллбара для WebKit (Chrome, Safari, Edge, MAUI Webview) */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.2);
+    border-radius: 10px;
+    transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.5);
+}
+
+/* 1. Стилизуем конкретно ваш целевой контейнер по ID */
+#scroll-target::-webkit-scrollbar {
+    width: 3px !important;
+    height: 3px !important;
+}
+
+#scroll-target::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+#scroll-target::-webkit-scrollbar-thumb {
+    background-color: rgba(128, 128, 128, 0.65) !important;
+    border-radius: 10px !important;
+}
+
+/* 2. Принудительно применяем overflow: overlay для этого ID */
+#scroll-target {
+    overflow-y: overlay !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(128, 128, 128, 0.65) transparent;
+
+    /* 🚀 GPU Acceleration для плавной прокрутки */
+    transform: translateZ(0);
+    will-change: scroll-position;
+    backface-visibility: hidden;
+
+    /* 🎯 CSS Containment - изолирует скролл от остальной страницы */
+    contain: layout style paint;
+
+    /* 🔒 Изоляция композитного слоя */
+    isolation: isolate;
+}
+
+
+
+.page-layout {
+    height: calc(100vh - 48px);
+    /* AppBar height */
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    /* Background is handled by components or specific slides */
+}
+
+/* СЛОЙ 1: Статистика (Фон) */
+.backdrop-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: var(--premium-gradient);
+    z-index: 1;
+}
+
+.stats-carousel {
+    height: 100%;
+    width: 100%;
+}
+
+.stats-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 10px;
+    align-items: center;
+    color: white;
+    text-align: center;
+}
+
+/* СЛОЙ 2: Скролл (Перекрытие) */
+.scroll-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 2;
+    -webkit-overflow-scrolling: touch;
+}
+
+.header-spacer {
+    height: var(--header-height);
+    width: 100%;
+    position: relative;
+}
+
+/* Скрываем статистику при маленькой высоте (landscape или маленькие экраны) */
+@media (max-height: 450px) {
+    .header-spacer {
+        height: 0 !important;
+    }
+}
+
+/* Область перехвата свайпов */
+.swipe-catcher {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--header-height);
+    z-index: 5;
+}
+
+/* Кастомные буллеты */
+.custom-bullets {
+    position: absolute;
+    bottom: 27px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    z-index: 10;
+}
+
+.bullet {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.bullet.active {
+    background: white;
+    transform: scale(1.2);
+}
+
+/* Лист с транзакциями */
+.content-sheet {
+    background: var(--mud-palette-surface);
+    min-height: 60vh;
+    border-radius: 32px 32px 0 0;
+    margin-top: -24px;
+    padding: 24px 0px 140px 0px;
+    box-shadow: 0px -10px 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 20;
+    color: var(--mud-palette-text-primary);
+}
+
+/* === СТИЛИ ТРАНЗАКЦИЙ (MyTItem) === */
+.content-body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    /* Занимает всё пространство справа от иконки */
+    min-width: 0;
+    /* Важно для работы ellipsis */
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    gap: 0px;
+    /* 🚀 CSS Containment для изоляции перерисовок */
+    contain: layout style paint;
+    content-visibility: auto;
+}
+
+.transaction-item:hover {
+    background: var(--mud-palette-action-default-hover);
+}
+
+/* Оптимизировано: opacity быстрее чем scale */
+.transaction-item:active {
+    opacity: 0.7;
+    transition: opacity 0.1s ease-out;
+}
+
+/* Отключаем hover на тач-устройствах */
+@media (hover: none) and (pointer: coarse) {
+    .transaction-item:hover {
+        background: none !important;
+    }
+}
+
+.icon-container {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.icon-container.income {
+    background: rgba(76, 175, 80, 0.15);
+    color: #4caf50;
+}
+
+.icon-container.expense {
+    background: rgba(244, 67, 54, 0.15);
+    color: #f44336;
+}
+
+/* 🚀 Стили для inline SVG иконок */
+.item-icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.item-title,
+.item-subtitle {
+    flex-grow: 1;
+    /* Растягивается, отдавая остаток под сумму/дату */
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    /* Ограничиваем одной строкой для аккуратности */
+}
+
+.date-text,
+.amount-text {
+    flex-shrink: 0;
+    /* Сумма и дата никогда не сжимаются и не обрезаются */
+    white-space: nowrap;
+    text-align: right;
+}
+
+
+.amount-text.income {
+    color: #4caf50;
+}
+
+.amount-text.expense {
+    color: #f44336;
+}
+
+.item-title {
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.item-subtitle {
+    font-weight: 300;
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.amount-text {
+    font-weight: 600;
+}
+
+.row-1,
+.row-2 {
+    display: flex;
+    justify-content: space-between;
+    /* Текст влево, цифры вправо */
+    align-items: baseline;
+    gap: 8px;
+}
+
+.bottom-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    height: 64px;
+    /* 🚀 Убран backdrop-filter - очень тяжёлый на Android */
+    background: var(--mud-palette-surface);
+    opacity: 0.97;
+    border-radius: 20px;
+    box-shadow: var(--mud-elevation-8);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    border: 1px solid var(--mud-palette-divider);
+}
+
+/* Chart Styles */
+.mud-chart-legend {
+    display: none !important;
+}
+
+.mud-charts-yaxis {
+    display: none !important;
+}
+
+.mud-charts-xaxis text {
+    fill: rgba(255, 255, 255, 0.9) !important;
+    font-size: 13px !important;
+    font-weight: 500;
+}
+
+g.mud-chart-serie path {
+    stroke-width: 4px !important;
+    filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+.mud-charts-grid-line {
+    stroke: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* FAB styles */
+.fab-container {
+    position: fixed;
+    bottom: 110px;
+    right: 24px;
+    z-index: 1000;
+    /* Lower than drawers (1200) */
+}
+
+.mud-fab {
+    opacity: 0.6;
+    transition: opacity 0.3s;
+    backdrop-filter: blur(4px);
+}
+
+.mud-fab:hover {
+    opacity: 1;
+}

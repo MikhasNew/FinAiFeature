@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>FinApp</title>
+    <base href="/" />
+    <link rel="stylesheet" href="_content/EfcToXamarinAndroid.UI/app.css" />
+    <link rel="stylesheet" href="_content/EfcToXamarinAndroid.UI/counter.css" />
+    <link rel="stylesheet" href="MauiAppWithMudBlazor.styles.css" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    
+</head>
+
+<body>
+    <!--<style>
+        /* Делаем фон прозрачным, чтобы видеть GIF в MAUI */
+        /*html, body {
+            background-color: transparent !important;
+            margin: 0;
+            padding: 0;
+        }*/
+
+        /* Анимация плавного появления */
+        @keyframes fadeInApp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Применяем анимацию к контейнеру Blazor */
+        /* Когда Blazor загрузится, содержимое #app плавно проявится за 0.8 сек */
+        #app > div {
+            animation: fadeInApp 1.1s ease-out forwards;
+        }
+    </style>-->
+
+    <div class="status-bar-safe-area"></div>
+
+    <div id="app">
+    </div>
+
+    <div id="blazor-error-ui">
+        Произошла ошибка.
+        <a href="" class="reload">Обновить</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.webview.js" autostart="false"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+
+    <script>
+
+        function scrollToTop() {
+            document.documentElement.scrollTop = 3000;
+            document.documentElement.scrollTop = 0;
+        }
+
+        // Добавленная функция для вычисления доступной высоты (для таблицы с виртуализацией)
+        window.getAvailableHeight = function (selector) {
+            var container = document.querySelector(selector);
+            if (container) {
+                return container.clientHeight;  // Или window.innerHeight - appbar.offsetHeight - tabs.offsetHeight
+            }
+            return 500;
+        };
+        window.setupResizeListener = function (dotnetHelper) {
+            window.addEventListener('resize', function () {
+                dotnetHelper.invokeMethodAsync('OnWindowResize');  // Вызываем метод Blazor
+            });
+        };
+        // Функция для удаления resize listener
+        window.removeResizeListener = function () {
+            if (resizeListener) {
+                window.removeEventListener('resize', resizeListener);
+                resizeListener = null;  // Очищаем переменную
+            }
+        };
+
+    </script>
+
+</body>
+
+</html>

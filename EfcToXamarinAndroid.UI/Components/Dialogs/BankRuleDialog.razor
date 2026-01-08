@@ -1,0 +1,127 @@
+﻿@using MudBlazor
+@using EfcToXamarinAndroid.Core.Configs.ManagerCore
+@using EfcToXamarinAndroid.Core
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTabs Elevation="0" Outlined="true" PanelClass="pa-4" Style="min-height: 400px;">
+            <MudTabPanel Text="Основное">
+                <MudTextField @bind-Value="Model.Name" Label="Название банка" Required="true" Variant="Variant.Outlined" Class="mb-4" />
+                <MudTextField @bind-Value="Model.SmsNumber" Label="Номер отправителя (SMS ID)" Required="true" Variant="Variant.Outlined" HelperText="Например: ALFA-BANK, 1234, ASB.BY" />
+            </MudTabPanel>
+            
+            <MudTabPanel Text="SMS Regex">
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">Используйте регулярные выражения (C# Regex) для извлечения данных из текста SMS.</MudAlert>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.SmsParseRegex.OperacionTyp" Label="Тип операции (Regex)" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.SmsParseRegex.Sum" Label="Сумма (Regex)" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.SmsParseRegex.Date" Label="Дата (Regex)" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.SmsParseRegex.Karta" Label="Карта (Regex)" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="12">
+                        <MudTextField @bind-Value="Model.SmsParseRegex.Descripton" Label="Описание (Regex)" Variant="Variant.Outlined" Dense="true" Lines="2" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.SmsParseRegex.Mcc" Label="MCC (Regex)" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.SmsParseRegex.Balance" Label="Остаток (Regex)" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Шаблоны">
+                <MudText Typo="Typo.body2" Class="mb-2">Укажите через запятую слова, которые определяют тип операции в SMS (результат первого Regex).</MudText>
+                <MudTextField T="string" 
+                              Value="@FormatTemplates(Model.PaymentTemplates)" 
+                              ValueChanged="@(s => Model.PaymentTemplates = ParseTemplates(s))" 
+                              Label="Ключевые слова: ОПЛАТА" 
+                              Variant="Variant.Outlined" 
+                              Class="mb-4" />
+                
+                <MudTextField T="string" 
+                              Value="@FormatTemplates(Model.DepositTemplates)" 
+                              ValueChanged="@(s => Model.DepositTemplates = ParseTemplates(s))" 
+                              Label="Ключевые слова: ЗАЧИСЛЕНИЕ" 
+                              Variant="Variant.Outlined" 
+                              Class="mb-4" />
+                
+                <MudTextField T="string" 
+                              Value="@FormatTemplates(Model.CashTemplates)" 
+                              ValueChanged="@(s => Model.CashTemplates = ParseTemplates(s))" 
+                              Label="Ключевые слова: НАЛИЧНЫЕ" 
+                              Variant="Variant.Outlined" />
+            </MudTabPanel>
+
+            <MudTabPanel Text="PDF (Импорт)">
+                <MudText Typo="Typo.body2" Class="mb-2" Color="Color.Warning">Настройки колонок для PDF парсинга.</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                         <MudTextField @bind-Value="Model.PdfReportTemplate.FirstColumnName" Label="Заголовок первой колонки" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                         <MudNumericField @bind-Value="Model.PdfReportTemplate.CollamnCount" Label="Всего колонок" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="4">
+                         <MudNumericField @bind-Value="Model.PdfReportTemplate.NomrColumnOfOperacionTyp" Label="Колонка Типа" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="4">
+                         <MudTextField @bind-Value="Model.PdfReportTemplate.PaymentsName" Label="Название 'Расход'" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="4">
+                         <MudTextField @bind-Value="Model.PdfReportTemplate.DepositsName" Label="Название 'Доход'" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="4">
+                         <MudNumericField @bind-Value="Model.PdfReportTemplate.NomrColumnOfSum" Label="Колонка Суммы" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                     <MudItem xs="6" sm="4">
+                         <MudNumericField @bind-Value="Model.PdfReportTemplate.NomrColumnOfBalance" Label="Колонка Баланса" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="4">
+                         <MudNumericField @bind-Value="Model.PdfReportTemplate.NomrColumnOfMCC" Label="Колонка MCC" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="4">
+                         <MudNumericField @bind-Value="Model.PdfReportTemplate.NomrColumnOfDescripton" Label="Колонка Описания" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Отмена</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Variant="Variant.Filled">Сохранить</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public BankConfiguration Model { get; set; } = new();
+    [Parameter] public string Title { get; set; } = "Настройка банка";
+
+    private string FormatTemplates(string[] templates) => templates == null ? "" : string.Join(", ", templates);
+    
+    private string[] ParseTemplates(string input) => 
+        string.IsNullOrWhiteSpace(input) ? Array.Empty<string>() : input.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToArray();
+
+    void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Name) || string.IsNullOrWhiteSpace(Model.SmsNumber))
+        {
+            return;
+        }
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+
+    void Cancel() => MudDialog.Cancel();
+}

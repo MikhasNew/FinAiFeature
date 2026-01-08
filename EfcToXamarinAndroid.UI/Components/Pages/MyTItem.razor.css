@@ -1,0 +1,67 @@
+﻿.transaction-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    gap: 12px;
+    /* 🚀 Фиксированная высота для корректной виртуализации */
+    height: 64px;
+    box-sizing: border-box;
+    /* 🚀 CSS Containment для изоляции перерисовок */
+    contain: layout style paint;
+    content-visibility: auto;
+    /* 🚀 Указываем браузеру размер элемента до рендеринга */
+    contain-intrinsic-size: auto 64px;
+}
+
+.content-body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    /* Занимает всё пространство справа от иконки */
+    min-width: 0;
+    /* Важно для работы ellipsis */
+}
+
+.row-1,
+.row-2 {
+    display: flex;
+    justify-content: space-between;
+    /* Текст влево, цифры вправо */
+    align-items: baseline;
+    gap: 8px;
+}
+
+.item-title,
+.item-subtitle {
+    flex-grow: 1;
+    /* Растягивается, отдавая остаток под сумму/дату */
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    /* Ограничиваем одной строкой для аккуратности */
+}
+
+.date-text,
+.amount-text {
+    flex-shrink: 0;
+    /* Сумма и дата никогда не сжимаются и не обрезаются */
+    white-space: nowrap;
+    text-align: right;
+}
+
+/* Специфические стили для визуального веса */
+.item-title {
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.item-subtitle {
+    font-weight: 300;
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.amount-text {
+    font-weight: 600;
+}

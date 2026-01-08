@@ -1,0 +1,38 @@
+@using MudBlazor
+@using System.IO
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>@Message</MudText>
+        <MudTextField @bind-Value="Value" Label="Путь" Variant="Variant.Outlined" Class="mt-4" AutoFocus="true" />
+        
+        @if (Files != null && Files.Any())
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-4">Доступные файлы в папке Downloads:</MudText>
+            <MudList T="string" Dense="true" Clickable="true" @bind-SelectedValue="Value">
+                @foreach (var file in Files)
+                {
+                    <MudListItem Value="@file" Text="@Path.GetFileName(file)" />
+                }
+            </MudList>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Отмена</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">ОК</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public string Title { get; set; }
+    [Parameter] public string Message { get; set; }
+    [Parameter] public string Value { get; set; }
+    [Parameter] public List<string> Files { get; set; }
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(Value));
+    void Cancel() => MudDialog.Cancel();
+}
