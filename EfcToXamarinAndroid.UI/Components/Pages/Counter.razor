@@ -66,15 +66,14 @@
             <MudCarouselItem Transition="Transition.Slide">
                 <div class="stats-card px-1 pt-4 pb-4">
                     <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color: rgba(255,255,255,0.7);">@VM.DynamicsGroupingTitle</MudText>
-                    
-                    @* Summary Numbers *@
-                    @* Summary Numbers *@
-
-
+                  
                     @* Summary Numbers *@
                     <div class="d-flex w-100 justify-space-between px-4 mb-2">
                         @* INCOME STATS *@
                         <div class="d-flex flex-column align-start" style="min-height: 40px;"> 
+                            @if (VM.AvgIncome > 0)
+                            {
+                                  <MudText Typo="Typo.caption" Style="color: #66BB6A; opacity: 0.9; font-size:10px;">ДОХОД (МАКС / СР)</MudText>
                                   <div class="d-flex gap-1 align-baseline">
                                     <MudText Typo="Typo.subtitle2" Style="color: #66BB6A; font-weight:700;">@VM.MaxIncome.ToString("N0")</MudText>
                                     <MudText Typo="Typo.caption" Style="color: #66BB6A; opacity:0.7;">/</MudText>

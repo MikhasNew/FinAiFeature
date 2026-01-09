@@ -106,12 +106,9 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
         #endregion
 
-        public bool IsFiltred => _activeDateRange != null || 
-                                 _activeMinAmount != null || 
-                                 _activeMaxAmount != null || 
-                                 _activeDescription != null || 
-                                 _activeMccDescription != null || 
-                                 _activeTag != null;
+        public bool IsAdvancedFilterActive { get; private set; }
+        
+        public bool IsFiltred => IsAdvancedFilterActive;
 
         #region
         /// <summary>
@@ -164,6 +161,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             _activeDescription = description;
             _activeMccDescription = mccDescription;
             _activeTag = tag;
+            IsAdvancedFilterActive = true;
 
             DataFiltred?.Invoke(this, EventArgs.Empty);
         }
@@ -181,6 +179,9 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             _activeDescription = null;
             _activeMccDescription = null;
             _activeTag = null;
+            
+            IsAdvancedFilterActive = false;
+            ApplyDefaultPeriod();
 
             DataFiltred?.Invoke(this, EventArgs.Empty);
 
