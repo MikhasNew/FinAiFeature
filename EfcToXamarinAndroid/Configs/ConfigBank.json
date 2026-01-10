@@ -3,9 +3,15 @@
     {
       "Name": "Belarusbank",
       "SmsNumber": "ASB.BY",
-      "PaymentTemplates": [ "OPLATA" ],
-      "DepositTemplates": [ "ZACHISLENIE" ],
-      "CashTemplates": [ "NALICHNYE" ],
+      "PaymentTemplates": [
+        "OPLATA"
+      ],
+      "DepositTemplates": [
+        "ZACHISLENIE"
+      ],
+      "CashTemplates": [
+        "NALICHNYE"
+      ],
       "SmsParseRegex": {
         "OperacionTyp": "^[A-Z]{1,}",
         "Sum": "(([0-9]{1,}.[0-9]{1,})(?= BYN | RUB ))",
@@ -33,9 +39,15 @@
     {
       "Name": "Belarusbank",
       "SmsNumber": "Mbank",
-      "PaymentTemplates": [ "OPLATA" ],
-      "DepositTemplates": [ "ZACHISLENIE" ],
-      "CashTemplates": [ "NALICHNYE" ],
+      "PaymentTemplates": [
+        "OPLATA"
+      ],
+      "DepositTemplates": [
+        "ZACHISLENIE"
+      ],
+      "CashTemplates": [
+        "NALICHNYE"
+      ],
       "SmsParseRegex": {
         "OperacionTyp": "^[A-Z]{1,}",
         "Sum": "(([0-9]{1,}.[0-9]{1,})(?= BYN | RUB ))",
@@ -63,9 +75,18 @@
     {
       "Name": "AlfaBank",
       "SmsNumber": "Alfa-Bank",
-      "PaymentTemplates": [ "Spisanie", "Oplata" ],
-      "DepositTemplates": [ "Popolnenie", "Vnesenie nalichnyh", "Postuplenie" ],
-      "CashTemplates": [ "Nalichnie" ],
+      "PaymentTemplates": [
+        "Spisanie",
+        "Oplata"
+      ],
+      "DepositTemplates": [
+        "Popolnenie",
+        "Vnesenie nalichnyh",
+        "Postuplenie"
+      ],
+      "CashTemplates": [
+        "Nalichnie"
+      ],
       "SmsParseRegex": {
         "OperacionTyp": "(?<=(Karta [0-9 .]{1,}\\n))[a-zA-Z ]{1,}",
         "Sum": "(?<=Summa:)([ 0-9.]{1,})(?= BYN| RUB)",
@@ -93,9 +114,15 @@
     {
       "Name": "MTBANK",
       "SmsNumber": "MTBANK",
-      "PaymentTemplates": [ "OPLATA" ],
-      "DepositTemplates": [ "POPOLNENIE" ],
-      "CashTemplates": [ "NALICHNYE" ],
+      "PaymentTemplates": [
+        "OPLATA"
+      ],
+      "DepositTemplates": [
+        "POPOLNENIE"
+      ],
+      "CashTemplates": [
+        "NALICHNYE"
+      ],
       "SmsParseRegex": {
         "OperacionTyp": "(?<=(\\d\\d\\d\\d\\-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d)(\\r\\n|\\r|\\n)).{1,}(?= [0-9]{1,}.[0-9 ]{1,}(BYN|RUB))",
         "Sum": "(?<=(\\d\\d\\d\\d\\-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d)(\\r\\n|\\r|\\n.{1,}))[0-9]{1,}.[0-9 ]{1,}(?=(BYN|RUB))",
@@ -123,9 +150,16 @@
     {
       "Name": "2222222",
       "SmsNumber": "1111111111111111",
-      "PaymentTemplates": [ "OPLATA", "OPLATE" ],
-      "DepositTemplates": [ "ZACHISLENIE" ],
-      "CashTemplates": [ "NALICHNYE" ],
+      "PaymentTemplates": [
+        "OPLATA",
+        "OPLATE"
+      ],
+      "DepositTemplates": [
+        "ZACHISLENIE"
+      ],
+      "CashTemplates": [
+        "NALICHNYE"
+      ],
       "SmsParseRegex": {
         "OperacionTyp": "^[A-Z]{1,}",
         "Sum": "(([0-9]{1,}.[0-9]{1,})(?= BYN | RUB ))",
@@ -147,7 +181,22 @@
         "NomrColumnOfBalance": "9"
       }
     }
+  ],
+  "ReceiptConfigurations": [
+    {
+      "Name": "Cinema/Ticket",
+      "SenderEmail": "no-reply@cinema.by",
+      "ParseRegex": {
+        "ShopName": "Получатель платежа:\\s*(.+?)(?=\\r?\\n|УНП)",
+        "ReceiptDate": "Дата:\\s*([\\d\\.\\s:]+)",
+        "TotalSum": "Сумма всего\\s*:\\s*([\\d\\.,]+)",
+        "Currency": "(BYN|руб)",
+        "RegNumber": "Рег\\. номер:\\s*(\\d+)",
+        "CardNumber": "Карта:\\s*([\\d\\*]+)",
+        "EripPayerNumber": "Номер плательщика ЕРИП:\\s*(\\d+)",
+        "OrderNumber": "Заказ №(\\d+)",
+        "Subject": "Оплата билетов на:\\s*(.+)"
+      }
+    }
   ]
 }
-
-                                                 
