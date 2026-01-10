@@ -18,22 +18,103 @@
 
     <MudText Typo="Typo.h5" Class="mt-4">Настройки Email (для чеков)</MudText>
     <MudPaper Class="pa-4 mt-2">
-        <MudTextField Label="IMAP Host" @bind-Value="Config.EmailSettings.ImapHost" />
-        <MudNumericField Label="IMAP Port" @bind-Value="Config.EmailSettings.ImapPort" />
-        <MudTextField Label="Email" @bind-Value="Config.EmailSettings.Email" />
-        <MudTextField Label="Пароль" @bind-Value="Config.EmailSettings.Password" InputType="InputType.Password" />
+        <MudSwitch Label="Использовать OAuth2 (Google)" @bind-Value="Config.EmailSettings.UseOAuth" Color="Color.Primary" Class="my-3"/>
+        
+        @if (Config.EmailSettings.UseOAuth)
+        {
+              <MudStack Row="true" Class="mt-2">
+                  <MudTextField @bind-Value="Config.EmailSettings.ClientId" Label="Client ID" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                               HelperText="Оставьте пустым для встроенного конфига" />
+                  <MudTextField @bind-Value="Config.EmailSettings.ClientSecret" Label="Client Secret" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                               InputType="InputType.Password" HelperText="Оставьте пустым для встроенного конфига" />
+              </MudStack>
+              
+              <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-4">
+                  <MudButton OnClick="SignInGoogle" Variant="Variant.Filled" StartIcon="@Icons.Custom.Brands.Google" Color="Color.Error">Войти через Google</MudButton>
+                  @if (!string.IsNullOrEmpty(Config.EmailSettings.AccessToken))
+                  {
+                      <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.Check">Токен получен</MudChip>
+                  }
+              </MudStack>
+             
+             <MudTextField Label="Access Token (Debug)" @bind-Value="Config.EmailSettings.AccessToken" ReadOnly="true" Variant="Variant.Text" Class="mt-2"/>
+        }
+        else
+        {
+             <MudTextField Label="Пароль (App Password)" @bind-Value="Config.EmailSettings.Password" InputType="InputType.Password" />
+        }
+
         <MudCheckBox Label="Использовать SSL" @bind-Value="Config.EmailSettings.UseSsl" Color="Color.Primary" />
         
         <MudText Typo="Typo.subtitle2" Class="mt-2">Фильтры</MudText>
         <MudTextField Label="Папка (по умолчанию INBOX)" @bind-Value="Config.EmailSettings.FolderToScan" />
         <MudTextField Label="Фильтр по отправителю" @bind-Value="Config.EmailSettings.SenderFilter" HelperText="Например: receipts@ofd.ru" />
+        
+        <MudStack Row="true" Class="mt-4">
+            <MudButton OnClick="TestConnection" Variant="Variant.Outlined" Color="Color.Secondary">Проверить соединение</MudButton>
+            <MudButton OnClick="SyncReceipts" Variant="Variant.Filled" Color="Color.Success">Синхронизировать чеки</MudButton>
+        </MudStack>
     </MudPaper>
 </MudContainer>
 
 @code {
+    [Inject] private EfcToXamarinAndroid.Core.Services.IEmailService EmailService { get; set; }
+    [Inject] private EfcToXamarinAndroid.Core.Services.OAuthService OAuthService { get; set; }
+    [Inject] private NavigationManager Navigation { get; set; }
+    [Inject] private ISnackbar Snackbar { get; set; }
+    
     private AppConfiguration Config => ConfigurationManager.ConfigManager.BankConfigurationFromJson;
 
     private void Save() => ConfigurationManager.ConfigManager.Save();
+
+    private void SignInGoogle()
+    {
+        // Prefer settings if entered manually, else use loaded from file
+        var clientId = !string.IsNullOrEmpty(Config.EmailSettings.ClientId) ? Config.EmailSettings.ClientId : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientId;
+        
+        if (string.IsNullOrEmpty(clientId) || clientId == "YOUR_CLIENT_ID_HERE")
+        {
+             Snackbar.Add("Ошибка: Client ID не настроен (проверьте google_secrets.json или введите в поле выше)", Severity.Error);
+             return;
+        }
+
+        // Determine Redirect URI
+        var callbackPath = "oauth-callback";
+        var baseUri = Navigation.BaseUri;
+        var redirectUri = baseUri + callbackPath;
+
+        var authUrl = OAuthService.GenerateAuthUrl(clientId, redirectUri);
+        
+        // Save current state just in case
+        Save();
+        
+        // Navigate
+        Navigation.NavigateTo(authUrl);
+    }
+
+    private async Task TestConnection()
+    {
+        bool success = await EmailService.TestConnectionAsync();
+        if (success)
+            Snackbar.Add("Соединение успешно!", Severity.Success);
+        else
+            Snackbar.Add("Ошибка соединения. Проверьте настройки.", Severity.Error);
+    }
+
+    private async Task SyncReceipts()
+    {
+        Snackbar.Add("Начало синхронизации...", Severity.Info);
+        try
+        {
+            await EmailService.SyncReceiptsAsync();
+            Snackbar.Add("Синхронизация завершена!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Settings] Sync Error: {ex}");
+            Snackbar.Add($"Ошибка: {ex.Message}", Severity.Error);
+        }
+    }
 
     private string GetDescription(DisplayPeriod val)
     {

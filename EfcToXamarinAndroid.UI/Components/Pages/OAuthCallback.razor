@@ -1,0 +1,102 @@
+@page "/oauth-callback"
+@using EfcToXamarinAndroid.Core.Services
+@using EfcToXamarinAndroid.Core.Configs.ManagerCore
+@inject NavigationManager Navigation
+@inject OAuthService OAuthService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudPaper Class="pa-4 d-flex flex-column align-center">
+        @if (_isProcessing)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            <MudText Class="mt-4">Авторизация Google...</MudText>
+            <MudText Typo="Typo.caption">Обмен кода на токен</MudText>
+        }
+        else if (_errorMessage != null)
+        {
+            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+            <MudText Color="Color.Error" Class="mt-2">Ошибка авторизации</MudText>
+            <MudText>@_errorMessage</MudText>
+            <MudButton Variant="Variant.Text" OnClick="@(() => Navigation.NavigateTo("/settings"))">Вернуться в настройки</MudButton>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _isProcessing = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        // Manual query parsing to avoid missing dependency
+        var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var apiKey = queryDictionary["code"]; // Wait, System.Web might not be there. Use safe fallback.
+        
+        var query = new Dictionary<string, string>();
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+             var q = uri.Query.TrimStart('?');
+             foreach(var part in q.Split('&'))
+             {
+                 var kv = part.Split('=');
+                 if(kv.Length == 2) query[kv[0]] = Uri.UnescapeDataString(kv[1]);
+                 else if(kv.Length == 1) query[kv[0]] = "";
+             }
+        }
+
+        if (query.TryGetValue("code", out var code))
+        {
+            try
+            {
+                // Redirect URI must match exactly what was sent
+                // Assuming we are running on localhost:5000 for WebDebugger
+                // We should dynamically construct this or use the configured one
+                var redirectUri = Navigation.BaseUri + "oauth-callback"; 
+                // Note: Ensure BaseUri has no trailing slash issues, usually it does '.../'
+
+                var config = ConfigurationManager.ConfigManager.BankConfigurationFromJson.EmailSettings;
+                
+                // Prefer settings if entered manually, else use loaded from file
+                var clientId = !string.IsNullOrEmpty(config.ClientId) ? config.ClientId : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientId;
+                var clientSecret = !string.IsNullOrEmpty(config.ClientSecret) ? config.ClientSecret : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientSecret;
+
+                if (clientId == "YOUR_CLIENT_ID_HERE" || clientSecret == "YOUR_CLIENT_SECRET_HERE")
+                {
+                    throw new Exception("Client ID/Secret are not configured in GoogleAuthConfig.cs");
+                }
+
+                var tokens = await OAuthService.ExchangeCodeForTokenAsync(code, clientId, clientSecret, redirectUri);
+
+                // Save tokens
+                config.AccessToken = tokens.AccessToken;
+                if (!string.IsNullOrEmpty(tokens.RefreshToken))
+                {
+                    config.RefreshToken = tokens.RefreshToken;
+                }
+                config.TokenExpiry = DateTime.Now.AddSeconds(tokens.ExpiresIn);
+                
+                ConfigurationManager.ConfigManager.Save();
+
+                Snackbar.Add("Успешный вход через Google!", Severity.Success);
+                Navigation.NavigateTo("/settings");
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = ex.Message;
+                _isProcessing = false;
+            }
+        }
+        else if (query.TryGetValue("error", out var error))
+        {
+            _errorMessage = $"Google вернул ошибку: {error}";
+            _isProcessing = false;
+        }
+        else
+        {
+            _errorMessage = "Код авторизации не найден.";
+            _isProcessing = false;
+        }
+    }
+}

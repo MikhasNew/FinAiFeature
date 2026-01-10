@@ -5,3 +5,6 @@
 *.suo
 *.userosscache
 *.sln.docstates
+
+# Google OAuth Secrets
+google_secrets.json

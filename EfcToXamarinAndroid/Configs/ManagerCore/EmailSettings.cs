@@ -1,3 +1,5 @@
+using System;
+
 namespace EfcToXamarinAndroid.Core.Configs.ManagerCore
 {
     public class EmailSettings
@@ -10,5 +12,13 @@ namespace EfcToXamarinAndroid.Core.Configs.ManagerCore
         public string? FolderToScan { get; set; } = "INBOX";
         public string? SubjectFilter { get; set; }
         public string? SenderFilter { get; set; }
+
+        // OAuth2 Settings
+        public bool UseOAuth { get; set; } = false;
+        public string? ClientId { get; set; }
+        public string? ClientSecret { get; set; }
+        public string? AccessToken { get; set; }
+        public string? RefreshToken { get; set; }
+        public DateTime? TokenExpiry { get; set; }
     }
 }

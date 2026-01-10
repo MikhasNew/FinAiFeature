@@ -20,6 +20,12 @@ namespace EfcToXamarinAndroid.Core
         public string? Address { get; set; }
         public DateTime ReceiptDate { get; set; }
         public float TotalSum { get; set; }
+        public string? Currency { get; set; } = "RUB";
+        public string? RegNumber { get; set; }
+        public string? CardNumber { get; set; }
+        public string? EripPayerNumber { get; set; }
+        public string? OrderNumber { get; set; }
+        public string? Subject { get; set; }
         public string? RawData { get; set; }
 
         public List<ReceiptItem>? Items { get; set; }

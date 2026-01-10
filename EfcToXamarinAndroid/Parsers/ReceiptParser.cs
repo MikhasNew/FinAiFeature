@@ -69,6 +69,24 @@ namespace EfcToXamarinAndroid.Core.Parsers
                receipt.TotalSum = float.TryParse(Regex.Match(content, regex.TotalSum).Value.Replace(",", "."), NumberStyles.Any, ci, out float sum) ? sum : 0;
             }
 
+            if (!string.IsNullOrEmpty(regex.Currency))
+                receipt.Currency = GetRegexValue(content, regex.Currency);
+
+            if (!string.IsNullOrEmpty(regex.RegNumber))
+                receipt.RegNumber = GetRegexValue(content, regex.RegNumber);
+
+            if (!string.IsNullOrEmpty(regex.CardNumber))
+                receipt.CardNumber = GetRegexValue(content, regex.CardNumber);
+
+            if (!string.IsNullOrEmpty(regex.EripPayerNumber))
+                receipt.EripPayerNumber = GetRegexValue(content, regex.EripPayerNumber);
+
+            if (!string.IsNullOrEmpty(regex.OrderNumber))
+                receipt.OrderNumber = GetRegexValue(content, regex.OrderNumber);
+
+            if (!string.IsNullOrEmpty(regex.Subject))
+                receipt.Subject = GetRegexValue(content, regex.Subject);
+
             // Parse Items
             if (!string.IsNullOrEmpty(regex.ItemLine))
             {
@@ -99,6 +117,16 @@ namespace EfcToXamarinAndroid.Core.Parsers
             }
 
             return receipt;
+        }
+
+        private static string GetRegexValue(string input, string pattern)
+        {
+            var match = Regex.Match(input, pattern, RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                return match.Groups.Count > 1 ? match.Groups[1].Value.Trim() : match.Value.Trim();
+            }
+            return string.Empty;
         }
 
         private static bool TryParseAnyDate(string input, out DateTime value)
