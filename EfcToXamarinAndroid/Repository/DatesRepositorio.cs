@@ -26,8 +26,6 @@ namespace EfcToXamarinAndroid.Core.Repository
 
         private static readonly string dbFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
         private static readonly string fileName = "Cats.db";
-        private static readonly string dbFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
-        private static readonly string fileName = "Cats.db";
         public static string DbFullPath => Path.Combine(dbFolder, fileName);
 
         public static event EventHandler PaymentsChanged;
@@ -40,7 +38,7 @@ namespace EfcToXamarinAndroid.Core.Repository
             {
                 if (DataItems.Count == 0)
                 {
-                    using (var db = new DataItemContext(dbFullPath))
+                    using (var db = new DataItemContext(DbFullPath))
                     {
                         await db.Database.MigrateAsync(); //We need to ensure the latest Migration was added. This is different than EnsureDatabaseCreated.
                         DataItems = await db.Cats.AsNoTracking().ToListAsync();
@@ -62,7 +60,7 @@ namespace EfcToXamarinAndroid.Core.Repository
             NewDataItems = newDataItems;//will move
             try
             {
-                using (var db = new DataItemContext(dbFullPath))
+                using (var db = new DataItemContext(DbFullPath))
                 {
                     await db.Database.MigrateAsync(); //We need to ensure the latest Migration was added. This is different than EnsureDatabaseCreated.
                     if (newDataItems.Count > 0)
@@ -87,7 +85,7 @@ namespace EfcToXamarinAndroid.Core.Repository
             UpdateAutLists(DataItems);
             try
             {
-                using (var db = new DataItemContext(dbFullPath))
+                using (var db = new DataItemContext(DbFullPath))
                 {
                     await db.Database.MigrateAsync(); //We need to ensure the latest Migration was added. This is different than EnsureDatabaseCreated.
                     db.Entry(dataItem).State = EntityState.Deleted;
@@ -104,7 +102,7 @@ namespace EfcToXamarinAndroid.Core.Repository
         {
             try
             {
-                using (var db = new DataItemContext(dbFullPath))
+                using (var db = new DataItemContext(DbFullPath))
                 {
                     var allItems = await db.Cats.ToListAsync();
                     db.Cats.RemoveRange(allItems);
@@ -268,7 +266,7 @@ namespace EfcToXamarinAndroid.Core.Repository
                 item?.SetNewValues(newValue);
             try
             {
-                using (var db = new DataItemContext(dbFullPath))
+                using (var db = new DataItemContext(DbFullPath))
                 {
                     var result = db.Cats.SingleOrDefault(x => x.Id == id);
                     if (result != null)
