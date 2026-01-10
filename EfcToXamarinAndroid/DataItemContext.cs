@@ -5,6 +5,8 @@ namespace EfcToXamarinAndroid.Core
     public class DataItemContext : DbContext
     {
         public DbSet<DataItem>? Cats { get; set; }
+        public DbSet<Receipt>? Receipts { get; set; }
+        public DbSet<ReceiptItem>? ReceiptItems { get; set; }
 
         private string DatabasePath { get; set; }
 

@@ -19,6 +19,8 @@
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Tabula" Version="0.1.5" />
+    <PackageReference Include="MailKit" Version="4.3.0" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.54" />
   </ItemGroup>
 
 </Project>

@@ -26,7 +26,9 @@ namespace EfcToXamarinAndroid.Core.Repository
 
         private static readonly string dbFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
         private static readonly string fileName = "Cats.db";
-        private static readonly string dbFullPath = Path.Combine(dbFolder, fileName);
+        private static readonly string dbFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+        private static readonly string fileName = "Cats.db";
+        public static string DbFullPath => Path.Combine(dbFolder, fileName);
 
         public static event EventHandler PaymentsChanged;
         public static event EventHandler DepositsChanged;

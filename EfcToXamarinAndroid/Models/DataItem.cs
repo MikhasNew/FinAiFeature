@@ -35,6 +35,8 @@ namespace EfcToXamarinAndroid.Core
         [NotMapped]
         public bool IsNewDataItem { get; set; }
 
+        public Receipt? Receipt { get; set; }
+
 
 
         public DataItem(OperacionTyps operacionTyp, DateTime dateTime)
