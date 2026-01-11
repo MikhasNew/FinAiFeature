@@ -39,8 +39,26 @@ namespace EfcToXamarinAndroid.Core.Services
         public async Task<bool> TestConnectionAsync()
         {
             var settings = _configuration.EmailSettings;
-            if (string.IsNullOrEmpty(settings.ImapHost) || string.IsNullOrEmpty(settings.Email) || string.IsNullOrEmpty(settings.Password))
-                return false;
+
+            if (string.IsNullOrEmpty(settings.ImapHost))
+                throw new Exception("Не указан IMAP хост.");
+
+            if (settings.ImapPort <= 0)
+                throw new Exception("Не указан порт IMAP.");
+
+            if (string.IsNullOrEmpty(settings.Email))
+                throw new Exception("Не указан Email адрес.");
+
+            if (settings.UseOAuth)
+            {
+                if (string.IsNullOrEmpty(settings.AccessToken) && string.IsNullOrEmpty(settings.RefreshToken))
+                    throw new Exception("Для OAuth2 требуется авторизация (AccessToken/RefreshToken отсутствует).");
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(settings.Password))
+                    throw new Exception("Не указан пароль приложения.");
+            }
 
             try
             {
@@ -54,7 +72,7 @@ namespace EfcToXamarinAndroid.Core.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Email Connection Test Failed: {ex.Message}");
-                return false;
+                throw new Exception($"Ошибка подключения: {ex.Message}");
             }
         }
 
@@ -63,123 +81,102 @@ namespace EfcToXamarinAndroid.Core.Services
             var settings = _configuration.EmailSettings;
             var receipts = new List<Receipt>();
 
-            if (string.IsNullOrEmpty(settings.ImapHost) || string.IsNullOrEmpty(settings.Email) || string.IsNullOrEmpty(settings.Password))
+            // --- ИСПРАВЛЕННАЯ ПРОВЕРКА ---
+            // Для OAuth пароль не нужен, но нужен Email и AccessToken. 
+            // Хост проверяем всегда.
+            bool isHostValid = !string.IsNullOrEmpty(settings.ImapHost);
+            bool isAuthValid = settings.UseOAuth
+                ? (!string.IsNullOrEmpty(settings.Email) && !string.IsNullOrEmpty(settings.AccessToken))
+                : (!string.IsNullOrEmpty(settings.Email) && !string.IsNullOrEmpty(settings.Password));
+
+            if (!isHostValid || !isAuthValid)
+            {
+                Console.WriteLine("[EmailService] Validation failed: Check ImapHost, Email or Credentials.");
                 return receipts;
+            }
+            // ----------------------------
 
             try
             {
                 using (var client = new ImapClient())
                 {
+                    // Здесь ConnectAsync должен уметь работать с OAuth2
                     await ConnectAsync(client, settings);
 
                     var folderName = string.IsNullOrEmpty(settings.FolderToScan) ? "INBOX" : settings.FolderToScan;
                     var inbox = client.GetFolder(folderName);
                     await inbox.OpenAsync(FolderAccess.ReadOnly);
 
-                    // Build search query
+                    // Поиск писем (оставляем вашу логику)
                     SearchQuery query = SearchQuery.All;
                     if (!string.IsNullOrEmpty(settings.SenderFilter))
-                    {
                         query = SearchQuery.FromContains(settings.SenderFilter);
-                    }
-                    if (!string.IsNullOrEmpty(settings.SubjectFilter)) // Assuming SubjectFilter exists in settings or we use it here
+
+                    if (!string.IsNullOrEmpty(settings.SubjectFilter))
                     {
                         var subjectQuery = SearchQuery.SubjectContains(settings.SubjectFilter);
                         query = query == SearchQuery.All ? subjectQuery : query.And(subjectQuery);
                     }
 
-                    // Limit to recent emails to avoid full scan every time? 
-                    // For now, let's fetch last 20 messages for demo or use logic to find unseen
-                    // query = query.And(SearchQuery.NotSeen); // Optional: only read unread
-
                     var uids = await inbox.SearchAsync(query);
-                    Console.WriteLine($"[EmailService] Search returned {uids.Count} emails.");
-                    // Take last 20
+                    // Берем последние 20 для производительности
                     var recentUids = uids.OrderByDescending(x => x).Take(20).ToList();
 
                     foreach (var uid in recentUids)
                     {
                         var message = await inbox.GetMessageAsync(uid);
-                        var body = !string.IsNullOrEmpty(message.HtmlBody) ? message.HtmlBody : message.TextBody;
                         var sender = message.From.Mailboxes.FirstOrDefault()?.Address;
 
-                        Console.WriteLine($"[EmailService] Processing email from: {sender}, Subject: {message.Subject}");
-
-                        // 1. Try parsing body
+                        // 1. Пытаемся найти чек в теле письма
+                        var body = !string.IsNullOrEmpty(message.HtmlBody) ? message.HtmlBody : message.TextBody;
                         if (!string.IsNullOrEmpty(body))
                         {
                             var receipt = _receiptParser.Parse(body, sender, true);
                             if (receipt != null)
                             {
-                                Console.WriteLine($"[EmailService] Found receipt in body. Sum: {receipt.TotalSum}");
                                 receipts.Add(receipt);
-                                continue; 
+                                continue;
                             }
                         }
 
-                        // 2. Try parsing attachments (PDF)
-                        if (message.Attachments.Any())
+                        // 2. Проверяем вложения (PDF)
+                        foreach (var attachment in message.Attachments.OfType<MimePart>())
                         {
-                            Console.WriteLine($"[EmailService] Checking {message.Attachments.Count()} attachments...");
-                        }
-                        
-                        foreach (var attachment in message.Attachments)
-                        {
-                             if (attachment is MimePart mimePart && 
-                                (mimePart.ContentType.MimeType == "application/pdf" || mimePart.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)))
-                             {
-                                  Console.WriteLine($"[EmailService] Found PDF attachment: {mimePart.FileName}");
-                                  using (var stream = new System.IO.MemoryStream())
-                                  {
-                                        await mimePart.Content.DecodeToAsync(stream);
-                                        stream.Position = 0;
-                                        try 
+                            if (attachment.ContentType.MimeType == "application/pdf" ||
+                                attachment.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                            {
+                                using (var stream = new System.IO.MemoryStream())
+                                {
+                                    await attachment.Content.DecodeToAsync(stream);
+                                    stream.Position = 0;
+
+                                    try
+                                    {
+                                        using (var document = UglyToad.PdfPig.PdfDocument.Open(stream))
                                         {
-                                            using (var document = UglyToad.PdfPig.PdfDocument.Open(stream))
-                                            {
-                                                 var text = string.Join(" ", document.GetPages().Select(p => p.Text));
-                                                 Console.WriteLine($"[EmailService] Extracted text length: {text.Length}");
-                                                 Console.WriteLine($"[EmailService] TEXT PREVIEW: {text.Substring(0, Math.Min(text.Length, 500))}..."); // Log first 500 chars
-                                                 
-                                                 var receipt = _receiptParser.Parse(text, sender, true);
-                                                 if (receipt != null) 
-                                                 {
-                                                     Console.WriteLine($"[EmailService] Parsed receipt from PDF. Sum: {receipt.TotalSum}");
-                                                     receipts.Add(receipt);
-                                                     break; // Found in attachment
-                                                 }
-                                                 else if (sender == "mikail.petrovik@gmail.com")
-                                                 {
-                                                     // Hardcoded test/fallback
-                                                     Console.WriteLine($"[EmailService] Using fallback parser for {sender}...");
-                                                     var testReceipt = ParseTestPdf(text);
-                                                     if (testReceipt != null) 
-                                                     {
-                                                         Console.WriteLine($"[EmailService] Fallback parsed receipt. Sum: {testReceipt.TotalSum}");
-                                                         receipts.Add(testReceipt);
-                                                     }
-                                                     else
-                                                     {
-                                                         Console.WriteLine($"[EmailService] Fallback extraction failed.");
-                                                     }
-                                                 }
-                                            }
+                                            var text = string.Join(" ", document.GetPages().Select(p => p.Text));
+                                            var receipt = _receiptParser.Parse(text, sender, true);
+
+                                            if (receipt == null && sender == "mikail.petrovik@gmail.com")
+                                                receipt = ParseTestPdf(text); // Ваш fallback
+
+                                            if (receipt != null) receipts.Add(receipt);
                                         }
-                                        catch (Exception ex)
-                                        {
-                                            Console.WriteLine($"[EmailService] Error parsing PDF: {ex.Message}");
-                                        }
-                                  }
-                             }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine($"[EmailService] Error parsing PDF {attachment.FileName}: {ex.Message}");
+                                    }
+                                }
+                            }
                         }
                     }
-
                     await client.DisconnectAsync(true);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching emails: {ex.Message}");
+                Console.WriteLine($"[EmailService] Error fetching emails: {ex.Message}");
             }
 
             return receipts;

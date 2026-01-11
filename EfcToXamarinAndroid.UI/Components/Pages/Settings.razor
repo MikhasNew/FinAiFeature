@@ -18,6 +18,13 @@
 
     <MudText Typo="Typo.h5" Class="mt-4">Настройки Email (для чеков)</MudText>
     <MudPaper Class="pa-4 mt-2">
+        <MudTextField Label="Email адрес" @bind-Value="Config.EmailSettings.Email" Variant="Variant.Outlined" Class="mb-4" />
+
+        <MudStack Row="true" Class="mb-4">
+            <MudTextField Label="IMAP Хост" @bind-Value="Config.EmailSettings.ImapHost" Placeholder="imap.gmail.com" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudNumericField Label="Порт" @bind-Value="Config.EmailSettings.ImapPort" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width: 100px;" />
+        </MudStack>
+
         <MudSwitch Label="Использовать OAuth2 (Google)" @bind-Value="Config.EmailSettings.UseOAuth" Color="Color.Primary" Class="my-3"/>
         
         @if (Config.EmailSettings.UseOAuth)
@@ -94,11 +101,16 @@
 
     private async Task TestConnection()
     {
-        bool success = await EmailService.TestConnectionAsync();
-        if (success)
-            Snackbar.Add("Соединение успешно!", Severity.Success);
-        else
-            Snackbar.Add("Ошибка соединения. Проверьте настройки.", Severity.Error);
+        try
+        {
+            bool success = await EmailService.TestConnectionAsync();
+            if (success)
+                Snackbar.Add("Соединение успешно!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
     }
 
     private async Task SyncReceipts()
