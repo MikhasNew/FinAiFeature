@@ -3,13 +3,25 @@
 @using EfcToXamarinAndroid.Core
 @using EfcToXamarinAndroid.UI.Components.Dialogs
 @using Newtonsoft.Json
+@using Microsoft.JSInterop
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
     <div class="d-flex align-center mb-6">
         <MudText Typo="Typo.h5" Style="font-weight: bold;">Правила парсинга чеков</MudText>
         <MudSpacer />
+        <MudButtonGroup Variant="Variant.Outlined" Class="mr-2">
+            <MudButton StartIcon="@Icons.Material.Filled.FileDownload" 
+                       OnClick="ExportRules" 
+                       Disabled="@(_rules == null || !_rules.Any())">
+                Экспорт
+            </MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.FileUpload" OnClick="ImportRules">
+                Импорт
+            </MudButton>
+        </MudButtonGroup>
         <MudButton Variant="Variant.Filled" 
                    Color="Color.Primary" 
                    StartIcon="@Icons.Material.Filled.Add" 
@@ -164,6 +176,90 @@
             ConfigurationManager.ConfigManager.Save();
             Snackbar.Add("Правило удалено", Severity.Warning);
             StateHasChanged();
+        }
+    }
+
+    private async Task ExportRules()
+    {
+        try
+        {
+            var json = JsonConvert.SerializeObject(_rules, Formatting.Indented);
+            var fileName = $"receipt-rules-{DateTime.Now:yyyy-MM-dd}.json";
+            
+            // Convert to base64 and download
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            var base64 = Convert.ToBase64String(bytes);
+            
+            await JS.InvokeVoidAsync("eval", $@"
+                (function() {{
+                    var link = document.createElement('a');
+                    link.href = 'data:application/json;base64,{base64}';
+                    link.download = '{fileName}';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }})()
+            ");
+            
+            Snackbar.Add($"Экспортировано {_rules.Count} правил", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Ошибка экспорта: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ImportRules()
+    {
+        var parameters = new DialogParameters 
+        { 
+            ["ContentText"] = "Вставьте содержимое JSON-файла с правилами:",
+            ["ButtonText"] = "Импортировать",
+            ["Color"] = Color.Primary
+        };
+        
+        var dialog = await DialogService.ShowAsync<PathInputDialog>("Импорт правил", parameters);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled && result.Data is string jsonContent && !string.IsNullOrWhiteSpace(jsonContent))
+        {
+            try
+            {
+                var importedRules = JsonConvert.DeserializeObject<List<ReceiptConfiguration>>(jsonContent);
+                
+                if (importedRules == null || !importedRules.Any())
+                {
+                    Snackbar.Add("Не найдено правил для импорта", Severity.Warning);
+                    return;
+                }
+
+                bool? confirmed = await DialogService.ShowMessageBox(
+                    "Подтверждение импорта",
+                    $"Найдено {importedRules.Count} правил. Добавить к существующим или заменить?",
+                    yesText: "Добавить",
+                    noText: "Заменить",
+                    cancelText: "Отмена");
+
+                if (confirmed == null) return;
+
+                if (confirmed == false) // Replace
+                {
+                    _rules.Clear();
+                }
+                
+                foreach (var rule in importedRules)
+                {
+                    _rules.Add(rule);
+                }
+                
+                ConfigurationManager.ConfigManager.Save();
+                Snackbar.Add($"Импортировано {importedRules.Count} правил", Severity.Success);
+                StateHasChanged();
+            }
+            catch (JsonException ex)
+            {
+                Snackbar.Add($"Ошибка парсинга JSON: {ex.Message}", Severity.Error);
+            }
         }
     }
 }

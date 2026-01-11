@@ -57,7 +57,7 @@ namespace EfcToXamarinAndroid.Core.Parsers
 
             if (!string.IsNullOrEmpty(regex.ReceiptDate))
             {
-                string dateStr = Regex.Match(content, regex.ReceiptDate).Value;
+                string dateStr = GetRegexValue(content, regex.ReceiptDate);
                 if (TryParseAnyDate(dateStr, out DateTime date))
                 {
                     receipt.ReceiptDate = date;
@@ -66,7 +66,8 @@ namespace EfcToXamarinAndroid.Core.Parsers
 
             if (!string.IsNullOrEmpty(regex.TotalSum))
             {
-               receipt.TotalSum = float.TryParse(Regex.Match(content, regex.TotalSum).Value.Replace(",", "."), NumberStyles.Any, ci, out float sum) ? sum : 0;
+                string val = GetRegexValue(content, regex.TotalSum);
+                receipt.TotalSum = float.TryParse(val.Replace(",", "."), NumberStyles.Any, ci, out float sum) ? sum : 0;
             }
 
             if (!string.IsNullOrEmpty(regex.Currency))
@@ -97,20 +98,19 @@ namespace EfcToXamarinAndroid.Core.Parsers
                     var item = new ReceiptItem();
 
                     if (!string.IsNullOrEmpty(regex.ItemName))
-                        item.Name = Regex.Match(itemBlock, regex.ItemName).Groups[1].Value.Trim();
-                        if (string.IsNullOrEmpty(item.Name)) item.Name = Regex.Match(itemBlock, regex.ItemName).Value.Trim();
+                        item.Name = GetRegexValue(itemBlock, regex.ItemName);
 
                     if (!string.IsNullOrEmpty(regex.ItemQuantity))
-                        item.Quantity = double.TryParse(Regex.Match(itemBlock, regex.ItemQuantity).Value.Replace(",", "."), NumberStyles.Any, ci, out double q) ? q : 0;
+                        item.Quantity = double.TryParse(GetRegexValue(itemBlock, regex.ItemQuantity).Replace(",", "."), NumberStyles.Any, ci, out double q) ? q : 0;
 
                     if (!string.IsNullOrEmpty(regex.ItemPrice))
-                        item.Price = float.TryParse(Regex.Match(itemBlock, regex.ItemPrice).Value.Replace(",", "."), NumberStyles.Any, ci, out float p) ? p : 0;
+                        item.Price = float.TryParse(GetRegexValue(itemBlock, regex.ItemPrice).Replace(",", "."), NumberStyles.Any, ci, out float p) ? p : 0;
 
                     if (!string.IsNullOrEmpty(regex.ItemSum))
-                        item.Sum = float.TryParse(Regex.Match(itemBlock, regex.ItemSum).Value.Replace(",", "."), NumberStyles.Any, ci, out float s) ? s : 0;
+                        item.Sum = float.TryParse(GetRegexValue(itemBlock, regex.ItemSum).Replace(",", "."), NumberStyles.Any, ci, out float s) ? s : 0;
 
                     if (!string.IsNullOrEmpty(regex.ItemCode))
-                        item.Code = Regex.Match(itemBlock, regex.ItemCode).Value.Trim();
+                        item.Code = GetRegexValue(itemBlock, regex.ItemCode);
 
                     receipt.Items.Add(item);
                 }

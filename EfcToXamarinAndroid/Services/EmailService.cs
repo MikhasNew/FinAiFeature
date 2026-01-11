@@ -126,48 +126,55 @@ namespace EfcToXamarinAndroid.Core.Services
                     {
                         var message = await inbox.GetMessageAsync(uid);
                         var sender = message.From.Mailboxes.FirstOrDefault()?.Address;
+                        Console.WriteLine($"[EmailService] Processing email from: {sender}, Subject: {message.Subject}");
 
                         // 1. Пытаемся найти чек в теле письма
                         var body = !string.IsNullOrEmpty(message.HtmlBody) ? message.HtmlBody : message.TextBody;
                         if (!string.IsNullOrEmpty(body))
                         {
                             var receipt = _receiptParser.Parse(body, sender, true);
-                            if (receipt != null)
+                            if (receipt != null && receipt.TotalSum > 0)
                             {
+                                Console.WriteLine($"[EmailService] Found valid receipt in email body. Sum: {receipt.TotalSum}");
                                 receipts.Add(receipt);
-                                continue;
+                                continue; // Пропускаем PDF только если нашли чек с суммой
                             }
                         }
 
-                        // 2. Проверяем вложения (PDF)
-                        foreach (var attachment in message.Attachments.OfType<MimePart>())
+                        // 2. Проверяем ВСЕ части письма на наличие PDF (рекурсивно)
+                        var pdfParts = FindPdfParts(message.Body);
+                        Console.WriteLine($"[EmailService] Found {pdfParts.Count} PDF parts in message");
+                        
+                        foreach (var pdfPart in pdfParts)
                         {
-                            if (attachment.ContentType.MimeType == "application/pdf" ||
-                                attachment.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                            Console.WriteLine($"[EmailService] Processing PDF: {pdfPart.FileName}");
+                            using (var stream = new System.IO.MemoryStream())
                             {
-                                using (var stream = new System.IO.MemoryStream())
+                                await pdfPart.Content.DecodeToAsync(stream);
+                                stream.Position = 0;
+
+                                try
                                 {
-                                    await attachment.Content.DecodeToAsync(stream);
-                                    stream.Position = 0;
-
-                                    try
+                                    using (var document = UglyToad.PdfPig.PdfDocument.Open(stream))
                                     {
-                                        using (var document = UglyToad.PdfPig.PdfDocument.Open(stream))
+                                        var text = string.Join(" ", document.GetPages().Select(p => p.Text));
+                                        
+                                        var receipt = _receiptParser.Parse(text, sender, true);
+
+                                        // Fallback: try generic parser for PDF receipts if no config matched
+                                        if (receipt == null)
+                                            receipt = ParseTestPdf(text);
+
+                                        if (receipt != null && receipt.TotalSum > 0)
                                         {
-                                            var text = string.Join(" ", document.GetPages().Select(p => p.Text));
-                                            var receipt = _receiptParser.Parse(text, sender, true);
-
-                                            // Fallback: try generic parser for PDF receipts if no config matched
-                                            if (receipt == null)
-                                                receipt = ParseTestPdf(text);
-
-                                            if (receipt != null) receipts.Add(receipt);
+                                            Console.WriteLine($"[EmailService] Parsed valid receipt from PDF. Sum: {receipt.TotalSum}, Date: {receipt.ReceiptDate}");
+                                            receipts.Add(receipt);
                                         }
                                     }
-                                    catch (Exception ex)
-                                    {
-                                        Console.WriteLine($"[EmailService] Error parsing PDF {attachment.FileName}: {ex.Message}");
-                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"[EmailService] Error parsing PDF {pdfPart.FileName}: {ex.Message}");
                                 }
                             }
                         }
@@ -175,9 +182,25 @@ namespace EfcToXamarinAndroid.Core.Services
                     await client.DisconnectAsync(true);
                 }
             }
+            catch (MailKit.Security.AuthenticationException authEx)
+            {
+                Console.WriteLine($"[EmailService] Auth failed: {authEx.Message}");
+                throw new Exception("Ошибка аутентификации. Проверьте токен или пароль.", authEx);
+            }
+            catch (MailKit.Net.Imap.ImapProtocolException imapEx)
+            {
+                Console.WriteLine($"[EmailService] IMAP error: {imapEx.Message}");
+                throw new Exception("Ошибка IMAP протокола. Проверьте настройки сервера.", imapEx);
+            }
+            catch (System.Net.Sockets.SocketException socketEx)
+            {
+                Console.WriteLine($"[EmailService] Network error: {socketEx.Message}");
+                throw new Exception("Ошибка сети. Проверьте подключение к интернету.", socketEx);
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"[EmailService] Error fetching emails: {ex.Message}");
+                Console.WriteLine($"[EmailService] Unexpected error: {ex}");
+                throw new Exception($"Ошибка при получении писем: {ex.Message}", ex);
             }
 
             return receipts;
@@ -251,6 +274,44 @@ namespace EfcToXamarinAndroid.Core.Services
             return string.Empty;
         }
 
+        /// <summary>
+        /// Рекурсивно ищет все PDF-части в структуре MIME-сообщения
+        /// </summary>
+        private List<MimePart> FindPdfParts(MimeEntity entity)
+        {
+            var pdfParts = new List<MimePart>();
+            
+            if (entity is MimePart part)
+            {
+                // Проверяем MIME-тип и расширение файла
+                bool hasPdfExtension = part.FileName?.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) == true;
+                bool isPdf = part.ContentType?.MimeType == "application/pdf" ||
+                             (part.ContentType?.MimeType == "application/octet-stream" && hasPdfExtension);
+                
+                if (isPdf)
+                {
+                    pdfParts.Add(part);
+                }
+            }
+            else if (entity is Multipart multipart)
+            {
+                // Рекурсивно обходим все части multipart
+                foreach (var child in multipart)
+                {
+                    pdfParts.AddRange(FindPdfParts(child));
+                }
+            }
+            else if (entity is MessagePart messagePart)
+            {
+                // Обрабатываем вложенные сообщения (forwarded emails)
+                if (messagePart.Message?.Body != null)
+                {
+                    pdfParts.AddRange(FindPdfParts(messagePart.Message.Body));
+                }
+            }
+            
+            return pdfParts;
+        }
 
 
         private async Task ConnectAsync(ImapClient client, EmailSettings settings)

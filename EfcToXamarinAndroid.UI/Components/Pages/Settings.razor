@@ -41,6 +41,17 @@
                   @if (!string.IsNullOrEmpty(Config.EmailSettings.AccessToken))
                   {
                       <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.Check">Токен получен</MudChip>
+                      @if (Config.EmailSettings.TokenExpiry.HasValue)
+                      {
+                          var isExpiringSoon = Config.EmailSettings.TokenExpiry.Value < DateTime.Now.AddDays(1);
+                          var isExpired = Config.EmailSettings.TokenExpiry.Value < DateTime.Now;
+                          <MudChip T="string" 
+                                   Color="@(isExpired ? Color.Error : isExpiringSoon ? Color.Warning : Color.Default)" 
+                                   Size="Size.Small"
+                                   Icon="@(isExpired ? Icons.Material.Filled.Error : Icons.Material.Filled.Schedule)">
+                              @(isExpired ? "Истёк" : $"До: {Config.EmailSettings.TokenExpiry.Value:dd.MM HH:mm}")
+                          </MudChip>
+                      }
                   }
               </MudStack>
              
@@ -59,7 +70,13 @@
         
         @if (_isSyncing)
         {
-            <MudProgressLinear Indeterminate="true" Color="Color.Success" Class="my-2" />
+            <MudPaper Elevation="0" Class="pa-3 my-2" Style="background: var(--mud-palette-background-grey);">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                    <MudText Typo="Typo.body2">@_syncStatus</MudText>
+                </MudStack>
+                <MudProgressLinear Indeterminate="true" Color="Color.Success" Class="mt-2" />
+            </MudPaper>
         }
 
         <MudStack Row="true" Class="mt-4">
@@ -77,6 +94,7 @@
     
     private AppConfiguration Config => ConfigurationManager.ConfigManager.BankConfigurationFromJson;
     private bool _isSyncing = false;
+    private string _syncStatus = "Подключение к серверу...";
 
     private void Save() => ConfigurationManager.ConfigManager.Save();
 
@@ -133,11 +151,18 @@
     private async Task SyncReceipts()
     {
         _isSyncing = true;
+        _syncStatus = "Подключение к серверу...";
         StateHasChanged();
-        Snackbar.Add("Начало синхронизации...", Severity.Info);
+        
         try
         {
+            _syncStatus = "Получение списка писем...";
+            StateHasChanged();
+            await Task.Delay(100); // Allow UI to update
+            
             await EmailService.SyncReceiptsAsync();
+            
+            _syncStatus = "Готово!";
             Snackbar.Add("Синхронизация завершена!", Severity.Success);
         }
         catch (Exception ex)

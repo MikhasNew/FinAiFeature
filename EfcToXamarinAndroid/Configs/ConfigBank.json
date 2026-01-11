@@ -197,6 +197,22 @@
         "OrderNumber": "Заказ №(\\d+)",
         "Subject": "Оплата билетов на:\\s*(.+)"
       }
+    },
+    {
+      "Name": "Беларусбанк М-Банкинг (Email)",
+      "SenderEmail": "mikail.petrovik@gmail.com",
+      "ParseRegex": {
+        "ShopName": "Получатель платежа:\\s*(.+?)(?=,\\s*УНП)",
+        "ShopInn": "УНП\\s*(\\d+)",
+        "ReceiptDate": "Дата:\\s*(\\d{2}\\.\\d{2}\\.\\d{4}\\s\\d{2}:\\d{2})",
+        "TotalSum": "Сумма всего\\s*:\\s*(\\d+)",
+        "Currency": "BYN",
+        "RegNumber": "Рег\\.\\s*номер:\\s*(\\d+)",
+        "CardNumber": "Карта:\\s*([\\d\\*]+)",
+        "EripPayerNumber": "Номер плательщика ЕРИП:\\s*(\\d+)",
+        "OrderNumber": "Заказ\\s*№(\\d+)",
+        "Subject": "Оплата билетов на:\\s*(.+?)(?=Сумма)"
+      }
     }
   ]
 }

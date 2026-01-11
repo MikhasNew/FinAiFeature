@@ -1,6 +1,9 @@
 @using MudBlazor
 @using EfcToXamarinAndroid.Core.Configs.ManagerCore
 @using EfcToXamarinAndroid.Core
+@using EfcToXamarinAndroid.Core.Parsers
+@using System.Text.RegularExpressions
+@inject ISnackbar Snackbar
 
 <MudDialog>
     <TitleContent>
@@ -22,13 +25,16 @@
                 </MudAlert>
                 <MudGrid>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="Model.ParseRegex.ShopName" Label="Магазин/Получатель" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="Model.ParseRegex.ShopName" Label="Магазин/Получатель" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                     HelperText="Пример: Магазин:\s*(.+)" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="Model.ParseRegex.TotalSum" Label="Сумма" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="Model.ParseRegex.TotalSum" Label="Сумма" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                     HelperText="Пример: Сумма:\s*(\d+[.,]\d{2})" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="Model.ParseRegex.ReceiptDate" Label="Дата" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="Model.ParseRegex.ReceiptDate" Label="Дата" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                     HelperText="Пример: Дата:\s*([\d\.]+\s[\d:]+)" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="Model.ParseRegex.Currency" Label="Валюта" Variant="Variant.Outlined" Margin="Margin.Dense" />
@@ -83,6 +89,78 @@
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
+
+            <MudTabPanel Text="Тест" Icon="@Icons.Material.Filled.Science">
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+                    Вставьте текст чека для проверки regex-паттернов
+                </MudAlert>
+                <MudTextField @bind-Value="_testInput" 
+                              Label="Тестовый текст чека" 
+                              Lines="8" 
+                              Variant="Variant.Outlined"
+                              Placeholder="Вставьте сюда текст чека или email..."
+                              Class="mb-4" />
+                <MudButton OnClick="TestRegex" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.PlayArrow"
+                           Disabled="@string.IsNullOrWhiteSpace(_testInput)">
+                    Проверить парсинг
+                </MudButton>
+                
+                @if (_testResult != null)
+                {
+                    <MudPaper Elevation="2" Class="pa-4 mt-4">
+                        <MudText Typo="Typo.subtitle1" Color="Color.Success" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" />
+                            Результат парсинга:
+                        </MudText>
+                        <MudSimpleTable Dense="true" Hover="true">
+                            <tbody>
+                                @if (!string.IsNullOrEmpty(_testResult.ShopName))
+                                {
+                                    <tr><td><strong>Магазин:</strong></td><td>@_testResult.ShopName</td></tr>
+                                }
+                                @if (_testResult.TotalSum > 0)
+                                {
+                                    <tr><td><strong>Сумма:</strong></td><td>@_testResult.TotalSum @_testResult.Currency</td></tr>
+                                }
+                                @if (_testResult.ReceiptDate != default)
+                                {
+                                    <tr><td><strong>Дата:</strong></td><td>@_testResult.ReceiptDate.ToString("dd.MM.yyyy HH:mm")</td></tr>
+                                }
+                                @if (!string.IsNullOrEmpty(_testResult.RegNumber))
+                                {
+                                    <tr><td><strong>Рег. номер:</strong></td><td>@_testResult.RegNumber</td></tr>
+                                }
+                                @if (!string.IsNullOrEmpty(_testResult.CardNumber))
+                                {
+                                    <tr><td><strong>Карта:</strong></td><td>@_testResult.CardNumber</td></tr>
+                                }
+                                @if (!string.IsNullOrEmpty(_testResult.OrderNumber))
+                                {
+                                    <tr><td><strong>№ заказа:</strong></td><td>@_testResult.OrderNumber</td></tr>
+                                }
+                                @if (!string.IsNullOrEmpty(_testResult.Subject))
+                                {
+                                    <tr><td><strong>Назначение:</strong></td><td>@_testResult.Subject</td></tr>
+                                }
+                                @if (_testResult.Items?.Count > 0)
+                                {
+                                    <tr><td><strong>Товаров:</strong></td><td>@_testResult.Items.Count позиций</td></tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudPaper>
+                }
+                else if (_testExecuted)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mt-4">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-1" />
+                        Не удалось распарсить данные. Проверьте regex-паттерны.
+                    </MudAlert>
+                }
+            </MudTabPanel>
         </MudTabs>
     </DialogContent>
     <DialogActions>
@@ -97,19 +175,102 @@
     [Parameter] public ReceiptConfiguration Model { get; set; } = new();
     [Parameter] public string Title { get; set; } = "Настройка правила";
 
+    private string _testInput = "";
+    private Receipt? _testResult;
+    private bool _testExecuted = false;
+
     protected override void OnInitialized()
     {
         // Ensure ParseRegex is not null
         Model.ParseRegex ??= new ReceiptParseRegex();
     }
 
+    void TestRegex()
+    {
+        _testExecuted = true;
+        _testResult = null;
+        
+        if (string.IsNullOrWhiteSpace(_testInput))
+        {
+            Snackbar.Add("Введите текст для тестирования", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var testConfig = new ReceiptConfiguration
+            {
+                Name = Model.Name,
+                SenderEmail = Model.SenderEmail ?? "test@test.com",
+                ParseRegex = Model.ParseRegex
+            };
+            
+            var parser = new ReceiptParser(new List<ReceiptConfiguration> { testConfig });
+            _testResult = parser.Parse(_testInput, testConfig.SenderEmail, true);
+            
+            if (_testResult != null && _testResult.TotalSum > 0)
+            {
+                Snackbar.Add("Парсинг успешен!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Данные не найдены. Проверьте regex-паттерны.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Ошибка парсинга: {ex.Message}", Severity.Error);
+        }
+        
+        StateHasChanged();
+    }
+
     void Submit()
     {
         if (string.IsNullOrWhiteSpace(Model.Name))
         {
+            Snackbar.Add("Введите название правила", Severity.Warning);
             return;
         }
+        
+        // Validate all regex patterns
+        var regexFields = new Dictionary<string, string?>
+        {
+            { "Магазин", Model.ParseRegex?.ShopName },
+            { "Сумма", Model.ParseRegex?.TotalSum },
+            { "Дата", Model.ParseRegex?.ReceiptDate },
+            { "Валюта", Model.ParseRegex?.Currency },
+            { "URL паттерн", Model.UrlPattern },
+            { "Строка товара", Model.ParseRegex?.ItemLine }
+        };
+
+        foreach (var field in regexFields)
+        {
+            if (!ValidateRegexPattern(field.Value, out string? error))
+            {
+                Snackbar.Add($"Некорректный regex в поле \"{field.Key}\": {error}", Severity.Error);
+                return;
+            }
+        }
+        
         MudDialog.Close(DialogResult.Ok(Model));
+    }
+
+    bool ValidateRegexPattern(string? pattern, out string? error)
+    {
+        error = null;
+        if (string.IsNullOrEmpty(pattern)) return true;
+        
+        try
+        {
+            _ = new Regex(pattern, RegexOptions.None, TimeSpan.FromSeconds(1));
+            return true;
+        }
+        catch (ArgumentException ex)
+        {
+            error = ex.Message;
+            return false;
+        }
     }
 
     void Cancel() => MudDialog.Cancel();
