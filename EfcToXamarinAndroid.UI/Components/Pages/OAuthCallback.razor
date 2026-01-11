@@ -31,10 +31,6 @@
     protected override async Task OnInitializedAsync()
     {
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-        // Manual query parsing to avoid missing dependency
-        var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        var apiKey = queryDictionary["code"]; // Wait, System.Web might not be there. Use safe fallback.
-        
         var query = new Dictionary<string, string>();
         if (!string.IsNullOrEmpty(uri.Query))
         {

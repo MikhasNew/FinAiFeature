@@ -36,6 +36,7 @@ builder.Services.AddScoped<EfcToXamarinAndroid.Core.Parsers.ReceiptParser>(provi
     var config = provider.GetRequiredService<EfcToXamarinAndroid.Core.Configs.ManagerCore.AppConfiguration>();
     return new EfcToXamarinAndroid.Core.Parsers.ReceiptParser(config.ReceiptConfigurations);
 });
+builder.Services.AddScoped<EfcToXamarinAndroid.Core.Services.ReceiptProcessor>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<OAuthService>();
 

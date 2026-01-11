@@ -19,12 +19,12 @@ namespace EfcToXamarinAndroid.Core.Services
         private readonly ReceiptProcessor _receiptProcessor;
         private readonly OAuthService _oauthService;
 
-        public EmailService(AppConfiguration configuration, ReceiptParser receiptParser, OAuthService oauthService)
+        public EmailService(AppConfiguration configuration, ReceiptParser receiptParser, OAuthService oauthService, ReceiptProcessor receiptProcessor)
         {
             _configuration = configuration;
             _receiptParser = receiptParser;
             _oauthService = oauthService;
-            _receiptProcessor = new ReceiptProcessor(); 
+            _receiptProcessor = receiptProcessor;
         }
 
         public async Task SyncReceiptsAsync()
@@ -157,8 +157,9 @@ namespace EfcToXamarinAndroid.Core.Services
                                             var text = string.Join(" ", document.GetPages().Select(p => p.Text));
                                             var receipt = _receiptParser.Parse(text, sender, true);
 
-                                            if (receipt == null && sender == "mikail.petrovik@gmail.com")
-                                                receipt = ParseTestPdf(text); // Ваш fallback
+                                            // Fallback: try generic parser for PDF receipts if no config matched
+                                            if (receipt == null)
+                                                receipt = ParseTestPdf(text);
 
                                             if (receipt != null) receipts.Add(receipt);
                                         }

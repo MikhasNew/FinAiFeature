@@ -25,7 +25,7 @@
             <MudNumericField Label="Порт" @bind-Value="Config.EmailSettings.ImapPort" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width: 100px;" />
         </MudStack>
 
-        <MudSwitch Label="Использовать OAuth2 (Google)" @bind-Value="Config.EmailSettings.UseOAuth" Color="Color.Primary" Class="my-3"/>
+        <MudSwitch Label="Использовать OAuth2 (Google)" Value="Config.EmailSettings.UseOAuth" ValueChanged="OnOAuthChanged" T="bool" Color="Color.Primary" Class="my-3"/>
         
         @if (Config.EmailSettings.UseOAuth)
         {
@@ -57,9 +57,14 @@
         <MudTextField Label="Папка (по умолчанию INBOX)" @bind-Value="Config.EmailSettings.FolderToScan" />
         <MudTextField Label="Фильтр по отправителю" @bind-Value="Config.EmailSettings.SenderFilter" HelperText="Например: receipts@ofd.ru" />
         
+        @if (_isSyncing)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Success" Class="my-2" />
+        }
+
         <MudStack Row="true" Class="mt-4">
-            <MudButton OnClick="TestConnection" Variant="Variant.Outlined" Color="Color.Secondary">Проверить соединение</MudButton>
-            <MudButton OnClick="SyncReceipts" Variant="Variant.Filled" Color="Color.Success">Синхронизировать чеки</MudButton>
+            <MudButton OnClick="TestConnection" Variant="Variant.Outlined" Color="Color.Secondary" Disabled="_isSyncing">Проверить соединение</MudButton>
+            <MudButton OnClick="SyncReceipts" Variant="Variant.Filled" Color="Color.Success" Disabled="_isSyncing">Синхронизировать чеки</MudButton>
         </MudStack>
     </MudPaper>
 </MudContainer>
@@ -71,8 +76,20 @@
     [Inject] private ISnackbar Snackbar { get; set; }
     
     private AppConfiguration Config => ConfigurationManager.ConfigManager.BankConfigurationFromJson;
+    private bool _isSyncing = false;
 
     private void Save() => ConfigurationManager.ConfigManager.Save();
+
+    private void OnOAuthChanged(bool useOAuth)
+    {
+        Config.EmailSettings.UseOAuth = useOAuth;
+        if (useOAuth && string.IsNullOrEmpty(Config.EmailSettings.ImapHost))
+        {
+            Config.EmailSettings.ImapHost = "imap.gmail.com";
+            Config.EmailSettings.ImapPort = 993;
+            Config.EmailSettings.UseSsl = true;
+        }
+    }
 
     private void SignInGoogle()
     {
@@ -115,6 +132,8 @@
 
     private async Task SyncReceipts()
     {
+        _isSyncing = true;
+        StateHasChanged();
         Snackbar.Add("Начало синхронизации...", Severity.Info);
         try
         {
@@ -125,6 +144,11 @@
         {
             Console.WriteLine($"[Settings] Sync Error: {ex}");
             Snackbar.Add($"Ошибка: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSyncing = false;
+            StateHasChanged();
         }
     }
 

@@ -1,0 +1,169 @@
+@page "/receipt-rules"
+@using EfcToXamarinAndroid.Core.Configs.ManagerCore
+@using EfcToXamarinAndroid.Core
+@using EfcToXamarinAndroid.UI.Components.Dialogs
+@using Newtonsoft.Json
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <div class="d-flex align-center mb-6">
+        <MudText Typo="Typo.h5" Style="font-weight: bold;">Правила парсинга чеков</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Add" 
+                   OnClick="AddRule">
+            Добавить правило
+        </MudButton>
+    </div>
+
+    @if (_rules == null || !_rules.Any())
+    {
+        <MudAlert Severity="Severity.Warning">
+            Правила парсинга чеков не настроены. Добавьте первое правило для обработки email-чеков.
+        </MudAlert>
+    }
+    else
+    {
+        <MudTable Items="@_rules" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="4" Dense="false" Class="mb-8">
+            <HeaderContent>
+                <MudTh>Название</MudTh>
+                <MudTh>Источник</MudTh>
+                <MudTh Style="width: 180px; text-align: center;">Действия</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Название">@context.Name</MudTd>
+                <MudTd DataLabel="Источник">
+                    @if (!string.IsNullOrEmpty(context.SenderEmail))
+                    {
+                        <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Email">
+                            @context.SenderEmail
+                        </MudChip>
+                    }
+                    else if (!string.IsNullOrEmpty(context.UrlPattern))
+                    {
+                        <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Link">
+                            URL Pattern
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Default" Size="Size.Small" Variant="Variant.Text">Не указан</MudChip>
+                    }
+                </MudTd>
+                <MudTd Style="text-align: center;">
+                    <div class="d-flex justify-center">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                       Color="Color.Primary" 
+                                       OnClick="@(() => EditRule(context))" 
+                                       Size="Size.Small" />
+                        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" 
+                                       Color="Color.Default" 
+                                       OnClick="@(() => DuplicateRule(context))" 
+                                       Size="Size.Small" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                       Color="Color.Error" 
+                                       OnClick="@(() => DeleteRule(context))" 
+                                       Size="Size.Small" />
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager InfoFormat="Всего {all_items}" RowsPerPageString="Рядов на странице:" />
+            </PagerContent>
+        </MudTable>
+    }
+
+    <MudExpansionPanels MultiExpansion="true" Class="mt-4">
+        <MudExpansionPanel Text="Как это работает?">
+            <MudText Typo="Typo.body2">
+                При обработке email-писем или PDF-вложений система ищет подходящее правило по адресу отправителя или URL. 
+                Если правило найдено, текст обрабатывается регулярными выражениями для извлечения данных чека.
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mt-2" Style="font-weight: bold;">Типичный процесс:</MudText>
+            <MudList T="string" Dense="true">
+                <MudListItem Text="1. Поиск правила по email отправителя (напр. 'receipts@ofd.ru')." />
+                <MudListItem Text="2. Извлечение данных чека: магазин, сумма, дата." />
+                <MudListItem Text="3. Опционально: парсинг позиций товаров." />
+                <MudListItem Text="4. Создание или связывание с существующей транзакцией." />
+            </MudList>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+</MudContainer>
+
+@code {
+    private List<ReceiptConfiguration> _rules => ConfigurationManager.ConfigManager.BankConfigurationFromJson.ReceiptConfigurations;
+
+    private async Task AddRule()
+    {
+        var newRule = new ReceiptConfiguration
+        {
+            Name = "Новое правило",
+            SenderEmail = "",
+            ParseRegex = new ReceiptParseRegex()
+        };
+
+        var parameters = new DialogParameters { ["Model"] = newRule, ["Title"] = "Добавить правило парсинга" };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ReceiptRuleDialog>("Настройка правила", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            _rules.Add((ReceiptConfiguration)result.Data);
+            ConfigurationManager.ConfigManager.Save();
+            Snackbar.Add("Правило добавлено", Severity.Success);
+            StateHasChanged();
+        }
+    }
+
+    private async Task EditRule(ReceiptConfiguration rule)
+    {
+        var clone = JsonConvert.DeserializeObject<ReceiptConfiguration>(JsonConvert.SerializeObject(rule));
+        
+        var parameters = new DialogParameters { ["Model"] = clone, ["Title"] = $"Редактирование: {rule.Name}" };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ReceiptRuleDialog>("Настройка правила", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            var index = _rules.IndexOf(rule);
+            if (index != -1)
+            {
+                _rules[index] = (ReceiptConfiguration)result.Data;
+                ConfigurationManager.ConfigManager.Save();
+                Snackbar.Add("Изменения сохранены", Severity.Success);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void DuplicateRule(ReceiptConfiguration rule)
+    {
+        var clone = JsonConvert.DeserializeObject<ReceiptConfiguration>(JsonConvert.SerializeObject(rule));
+        clone.Name += " (Копия)";
+        
+        _rules.Add(clone);
+        ConfigurationManager.ConfigManager.Save();
+        Snackbar.Add($"Правило '{rule.Name}' скопировано", Severity.Info);
+        StateHasChanged();
+    }
+
+    private async Task DeleteRule(ReceiptConfiguration rule)
+    {
+        bool? confirmed = await DialogService.ShowMessageBox(
+            "Удаление правила", 
+            $"Удалить правило '{rule.Name}'? Это повлияет на будущий парсинг чеков от этого источника.", 
+            yesText: "Удалить", noText: "Отмена");
+
+        if (confirmed == true)
+        {
+            _rules.Remove(rule);
+            ConfigurationManager.ConfigManager.Save();
+            Snackbar.Add("Правило удалено", Severity.Warning);
+            StateHasChanged();
+        }
+    }
+}

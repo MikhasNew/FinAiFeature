@@ -1,0 +1,116 @@
+@using MudBlazor
+@using EfcToXamarinAndroid.Core.Configs.ManagerCore
+@using EfcToXamarinAndroid.Core
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTabs Elevation="0" Outlined="true" PanelClass="pa-4" Style="min-height: 450px;">
+            <MudTabPanel Text="Основное">
+                <MudTextField @bind-Value="Model.Name" Label="Название правила" Required="true" Variant="Variant.Outlined" Class="mb-4" />
+                <MudTextField @bind-Value="Model.SenderEmail" Label="Email отправителя" Variant="Variant.Outlined" Class="mb-4" 
+                             HelperText="Например: no-reply@shop.by" />
+                <MudTextField @bind-Value="Model.UrlPattern" Label="Паттерн URL (Regex)" Variant="Variant.Outlined" 
+                             HelperText="Для парсинга QR/Web чеков" />
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Regex (Чек)">
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+                    Regex для извлечения данных чека. Используйте группу захвата (скобки) для значения.
+                </MudAlert>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.ShopName" Label="Магазин/Получатель" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.TotalSum" Label="Сумма" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.ReceiptDate" Label="Дата" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.Currency" Label="Валюта" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.RegNumber" Label="Рег. номер" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.CardNumber" Label="Номер карты" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.EripPayerNumber" Label="Номер ЕРИП" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.OrderNumber" Label="Номер заказа" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.ShopInn" Label="ИНН/УНП" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.Address" Label="Адрес" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="Model.ParseRegex.Subject" Label="Тема/Назначение платежа" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Regex (Товары)">
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-4">
+                    Опционально: для чеков с несколькими позициями. ItemLine должен находить каждую строку товара.
+                </MudAlert>
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="Model.ParseRegex.ItemLine" Label="Паттерн строки товара" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     HelperText="Regex, который матчит одну позицию товара" Lines="2" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.ItemName" Label="Название товара" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.ItemQuantity" Label="Количество" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.ItemPrice" Label="Цена за единицу" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.ItemSum" Label="Сумма позиции" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="Model.ParseRegex.ItemCode" Label="Код товара" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Отмена</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Variant="Variant.Filled">Сохранить</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public ReceiptConfiguration Model { get; set; } = new();
+    [Parameter] public string Title { get; set; } = "Настройка правила";
+
+    protected override void OnInitialized()
+    {
+        // Ensure ParseRegex is not null
+        Model.ParseRegex ??= new ReceiptParseRegex();
+    }
+
+    void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Name))
+        {
+            return;
+        }
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+
+    void Cancel() => MudDialog.Cancel();
+}
