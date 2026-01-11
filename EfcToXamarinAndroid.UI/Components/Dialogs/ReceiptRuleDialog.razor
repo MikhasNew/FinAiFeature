@@ -3,6 +3,7 @@
 @using EfcToXamarinAndroid.Core
 @using EfcToXamarinAndroid.Core.Parsers
 @using System.Text.RegularExpressions
+@using Microsoft.AspNetCore.Components.Forms
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -92,13 +93,44 @@
 
             <MudTabPanel Text="Тест" Icon="@Icons.Material.Filled.Science">
                 <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
-                    Вставьте текст чека для проверки regex-паттернов
+                    Вставьте текст чека или загрузите PDF-файл для проверки regex-паттернов
                 </MudAlert>
+                
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+                    <MudFileUpload T="IBrowserFile" 
+                                   Accept=".pdf" 
+                                   FilesChanged="OnPdfFileSelected"
+                                   MaximumFileCount="1">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Secondary"
+                                       StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                                       Disabled="@_isLoadingPdf">
+                                @if (_isLoadingPdf)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                    <span>Загрузка...</span>
+                                }
+                                else
+                                {
+                                    <span>Загрузить PDF</span>
+                                }
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                    @if (!string.IsNullOrEmpty(_loadedFileName))
+                    {
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">
+                            @_loadedFileName
+                        </MudChip>
+                    }
+                </MudStack>
+                
                 <MudTextField @bind-Value="_testInput" 
-                              Label="Тестовый текст чека" 
+                              Label="Текст чека" 
                               Lines="8" 
                               Variant="Variant.Outlined"
-                              Placeholder="Вставьте сюда текст чека или email..."
+                              Placeholder="Вставьте текст или загрузите PDF..."
                               Class="mb-4" />
                 <MudButton OnClick="TestRegex" 
                            Variant="Variant.Filled" 
@@ -178,11 +210,56 @@
     private string _testInput = "";
     private Receipt? _testResult;
     private bool _testExecuted = false;
+    private bool _isLoadingPdf = false;
+    private string? _loadedFileName;
 
     protected override void OnInitialized()
     {
         // Ensure ParseRegex is not null
         Model.ParseRegex ??= new ReceiptParseRegex();
+    }
+
+    async Task OnPdfFileSelected(IBrowserFile file)
+    {
+        if (file == null) return;
+        
+        _isLoadingPdf = true;
+        _loadedFileName = null;
+        StateHasChanged();
+        
+        try
+        {
+            // Max 10MB
+            const long maxSize = 10 * 1024 * 1024;
+            
+            using var stream = new System.IO.MemoryStream();
+            await file.OpenReadStream(maxSize).CopyToAsync(stream);
+            stream.Position = 0;
+            
+            using var document = UglyToad.PdfPig.PdfDocument.Open(stream);
+            var textBuilder = new System.Text.StringBuilder();
+            
+            foreach (var page in document.GetPages())
+            {
+                textBuilder.AppendLine(page.Text);
+            }
+            
+            _testInput = textBuilder.ToString();
+            _loadedFileName = file.Name;
+            _testResult = null;
+            _testExecuted = false;
+            
+            Snackbar.Add($"Текст извлечен из PDF ({document.NumberOfPages} стр.)", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Ошибка чтения PDF: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoadingPdf = false;
+            StateHasChanged();
+        }
     }
 
     void TestRegex()
