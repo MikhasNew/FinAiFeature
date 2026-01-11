@@ -4,7 +4,9 @@
 @using EfcToXamarinAndroid.Core.Parsers
 @using System.Text.RegularExpressions
 @using Microsoft.AspNetCore.Components.Forms
+@using Newtonsoft.Json
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 
 <MudDialog>
     <TitleContent>
@@ -192,6 +194,39 @@
                         Не удалось распарсить данные. Проверьте regex-паттерны.
                     </MudAlert>
                 }
+                <MudExpansionPanels Class="mt-4">
+                    <MudExpansionPanel Text="🧠 Помощь AI (ChatGPT/Claude/Gemini)" Icon="@Icons.Material.Filled.SmartToy">
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                            Чтобы получить готовые Regex-выражения:
+                            <ol class="ma-0 pl-4">
+                                <li>Скопируйте <b>Текст чека</b> и <b>JSON структуру</b></li>
+                                <li>Отправьте их в AI чат с промоптом: <i>"Напиши Regex pattern-ы (C#) для извлечения данных из этого текста в эту JSON структуру"</i></li>
+                                <li>Вставьте полученные паттерны в настройки правила</li>
+                            </ol>
+                        </MudAlert>
+                        
+                        <MudStack Row="true" Spacing="2" Class="mb-2">
+                            <MudButton Variant="Variant.Outlined" 
+                                       StartIcon="@Icons.Material.Filled.ContentCopy" 
+                                       OnClick="CopyTextCleanup"
+                                       Disabled="@string.IsNullOrWhiteSpace(_testInput)">
+                                Копировать текст чека
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" 
+                                       StartIcon="@Icons.Material.Filled.ContentCopy" 
+                                       OnClick="CopyJsonStructure">
+                                Копировать JSON структуру
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.AutoAwesome" 
+                                       OnClick="CopyFullPrompt"
+                                       Disabled="@string.IsNullOrWhiteSpace(_testInput)">
+                                Копировать готовый ПРОМПТ
+                            </MudButton>
+                        </MudStack>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
             </MudTabPanel>
         </MudTabs>
     </DialogContent>
@@ -348,6 +383,74 @@
             error = ex.Message;
             return false;
         }
+    }
+
+    async Task CopyTextCleanup()
+    {
+        if (string.IsNullOrWhiteSpace(_testInput)) return;
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _testInput);
+        Snackbar.Add("Текст чека скопирован", Severity.Success);
+    }
+
+    async Task CopyJsonStructure()
+    {
+        var dummyReceipt = new Receipt
+        {
+            ShopName = "Название Магазина",
+            TotalSum = 123.45f,
+            ReceiptDate = DateTime.Now,
+            Currency = "BYN",
+            CardNumber = "**** 1234",
+            RegNumber = "УНП 123456789",
+            OrderNumber = "Check #12345",
+            Items = new List<ReceiptItem>
+            {
+                new ReceiptItem { Name = "Товар 1", Price = 10.00f, Quantity = 2, Sum = 20.00f }
+            }
+        };
+        var json = JsonConvert.SerializeObject(dummyReceipt, Formatting.Indented);
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", json);
+        Snackbar.Add("JSON структура скопирована", Severity.Success);
+    }
+
+    async Task CopyFullPrompt()
+    {
+        if (string.IsNullOrWhiteSpace(_testInput)) return;
+        
+        var dummyReceipt = new Receipt
+        {
+            ShopName = "String value",
+            TotalSum = 0.00f,
+            ReceiptDate = DateTime.Now,
+            Currency = "ISO Code",
+            CardNumber = "String",
+            RegNumber = "String",
+            Items = new List<ReceiptItem>
+            {
+                new ReceiptItem { Name = "String", Price = 0.00f, Quantity = 0, Sum = 0.00f }
+            }
+        };
+        var json = JsonConvert.SerializeObject(dummyReceipt, Formatting.Indented);
+        
+        var prompt = $@"I need C# Regex patterns to parse the following receipt text into the provided JSON structure.
+
+RECEIPT TEXT:
+{_testInput}
+
+TARGET JSON STRUCTURE:
+{json}
+
+Please provide specific Regex strings for:
+- ShopName
+- TotalSum
+- ReceiptDate
+- ItemLine (to match each item row)
+- ItemName
+- ItemPrice
+- ItemQuantity";
+
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", prompt);
+        Snackbar.Add("Сгенерированный промпт скопирован!", Severity.Success);
     }
 
     void Cancel() => MudDialog.Cancel();
