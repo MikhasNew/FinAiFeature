@@ -197,7 +197,7 @@ namespace EfcToXamarinAndroid.Core.Repository
                 return false;
             }
         }
-        private static List<DataItem> GetNewDatas(List<DataItem> dataItems)
+        public static List<DataItem> GetNewDatas(List<DataItem> dataItems)
         {
             //var stopWatch = new Stopwatch();
             //stopWatch.Start();
