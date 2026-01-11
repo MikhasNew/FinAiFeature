@@ -86,6 +86,93 @@ namespace EfcToXamarinAndroid.MigrationsHelper.Migrations
                     b.ToTable("Cats");
                 });
 
+            modelBuilder.Entity("EfcToXamarinAndroid.Core.Receipt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CardNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DataItemId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EripPayerNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OrderNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RawData")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ReceiptDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RegNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ShopInn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ShopName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Subject")
+                        .HasColumnType("TEXT");
+
+                    b.Property<float>("TotalSum")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DataItemId")
+                        .IsUnique();
+
+                    b.ToTable("Receipts");
+                });
+
+            modelBuilder.Entity("EfcToXamarinAndroid.Core.ReceiptItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Code")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<float>("Price")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Quantity")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("ReceiptId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<float>("Sum")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Unit")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiptId");
+
+                    b.ToTable("ReceiptItems");
+                });
+
             modelBuilder.Entity("EfcToXamarinAndroid.Core.SybCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -105,6 +192,28 @@ namespace EfcToXamarinAndroid.MigrationsHelper.Migrations
                     b.ToTable("SybCategory");
                 });
 
+            modelBuilder.Entity("EfcToXamarinAndroid.Core.Receipt", b =>
+                {
+                    b.HasOne("EfcToXamarinAndroid.Core.DataItem", "DataItem")
+                        .WithOne("Receipt")
+                        .HasForeignKey("EfcToXamarinAndroid.Core.Receipt", "DataItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DataItem");
+                });
+
+            modelBuilder.Entity("EfcToXamarinAndroid.Core.ReceiptItem", b =>
+                {
+                    b.HasOne("EfcToXamarinAndroid.Core.Receipt", "Receipt")
+                        .WithMany("Items")
+                        .HasForeignKey("ReceiptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Receipt");
+                });
+
             modelBuilder.Entity("EfcToXamarinAndroid.Core.SybCategory", b =>
                 {
                     b.HasOne("EfcToXamarinAndroid.Core.DataItem", null)
@@ -114,7 +223,14 @@ namespace EfcToXamarinAndroid.MigrationsHelper.Migrations
 
             modelBuilder.Entity("EfcToXamarinAndroid.Core.DataItem", b =>
                 {
+                    b.Navigation("Receipt");
+
                     b.Navigation("SubCategorys");
+                });
+
+            modelBuilder.Entity("EfcToXamarinAndroid.Core.Receipt", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

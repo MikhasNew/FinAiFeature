@@ -21,13 +21,13 @@ namespace EfcToXamarinAndroid.Core.Services
                     foreach (var receipt in receipts)
                     {
                         Console.WriteLine($"[ReceiptProcessor] Processing receipt: {receipt.ShopName}, Sum: {receipt.TotalSum}, Date: {receipt.ReceiptDate}");
-                        
+
                         // Try to find existing transaction
                         // Criteria: 
                         // 1. Same Sum (tolerance 0.01)
                         // 2. Date match (tolerance +/- 24 hours to be safe)
                         // 3. Not already linked to a receipt
-                        
+
                         var receiptSum = receipt.TotalSum;
                         if (receiptSum == 0 && receipt.Items != null && receipt.Items.Any())
                         {
@@ -35,10 +35,10 @@ namespace EfcToXamarinAndroid.Core.Services
                             receipt.TotalSum = receiptSum;
                         }
 
-                        if (receiptSum == 0) 
+                        if (receiptSum == 0)
                         {
-                             Console.WriteLine($"[ReceiptProcessor] Skipping empty sum.");
-                             continue; 
+                            Console.WriteLine($"[ReceiptProcessor] Skipping empty sum.");
+                            continue;
                         }
 
                         var existingItem = await context.Cats
@@ -46,38 +46,36 @@ namespace EfcToXamarinAndroid.Core.Services
                             .Where(x => x.Receipt == null)
                             .ToListAsync(); // Fetch candidates
 
-                         Console.WriteLine($"[ReceiptProcessor] Found {existingItem.Count} candidates by sum.");
+                        Console.WriteLine($"[ReceiptProcessor] Found {existingItem.Count} candidates by sum.");
 
-                         var match = existingItem
-                            .Where(x => Math.Abs((x.Date - receipt.ReceiptDate).TotalHours) < 24)
-                            .FirstOrDefault();
+                        var match = existingItem
+                           .Where(x => Math.Abs((x.Date - receipt.ReceiptDate).TotalHours) < 24)
+                           .FirstOrDefault();
 
                         if (match != null)
                         {
                             Console.WriteLine($"[ReceiptProcessor] MATCH FOUND! ID: {match.Id}");
                             // Update existing
                             match.Receipt = receipt;
-                            if (string.IsNullOrEmpty(match.Title) && !string.IsNullOrEmpty(receipt.ShopName))
+                            if (string.IsNullOrEmpty(match.Descripton) && !string.IsNullOrEmpty(receipt.ShopName))
                             {
-                                match.Title = receipt.ShopName;
+                                match.Descripton = receipt.ShopName;
                             }
-                           context.Receipts.Add(receipt); 
+                            context.Receipts.Add(receipt);
                         }
                         else
                         {
                             Console.WriteLine($"[ReceiptProcessor] NO MATCH. Creating new DataItem.");
                             // Create new
-                            var newItem = new DataItem
-                            {
-                                Date = receipt.ReceiptDate,
-                                Sum = receiptSum,
-                                OperacionTyp = OperacionTyps.OPLATA, // Default to expense
-                                Title = receipt.ShopName ?? "Receipt",
-                                Descripton = "Added from Receipt",
-                                Receipt = receipt,
-                                IsNewDataItem = true
-                            };
-                             context.Cats.Add(newItem);
+                            DataItem newItem = new DataItem(OperacionTyps.OPLATA, (DateTime)receipt.ReceiptDate);
+                            newItem.Sum = receiptSum;
+                            newItem.OperacionTyp = OperacionTyps.OPLATA; // Default to expense
+                            newItem.Descripton = receipt.ShopName ?? "Receipt";
+                            newItem.Receipt = receipt;
+                            newItem.IsNewDataItem = true;
+
+                            context.Cats.Add(newItem);
+
                         }
                     }
 
@@ -85,14 +83,14 @@ namespace EfcToXamarinAndroid.Core.Services
                     await context.SaveChangesAsync();
                     Console.WriteLine($"[ReceiptProcessor] Saved successfully.");
                 }
-                
+
                 // Trigger UI update
                 await DatesRepositorio.SetDatasFromDB();
             }
             catch (Exception ex)
             {
-                 Console.WriteLine($"[ReceiptProcessor] CRITICAL ERROR: {ex}");
-                 throw;
+                Console.WriteLine($"[ReceiptProcessor] CRITICAL ERROR: {ex}");
+                throw;
             }
         }
     }

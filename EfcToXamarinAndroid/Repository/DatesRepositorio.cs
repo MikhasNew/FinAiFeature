@@ -34,23 +34,102 @@ namespace EfcToXamarinAndroid.Core.Repository
         public static event EventHandler UnreachableChanged;
         public static async Task<bool> SetDatasFromDB()
         {
-            try
+            // Убрали try-catch для проброса ошибок в ViewModel
+            if (DataItems.Count == 0)
             {
-                if (DataItems.Count == 0)
+                using (var db = new DataItemContext(DbFullPath))
                 {
-                    using (var db = new DataItemContext(DbFullPath))
-                    {
-                        await db.Database.MigrateAsync(); //We need to ensure the latest Migration was added. This is different than EnsureDatabaseCreated.
-                        DataItems = await db.Cats.AsNoTracking().ToListAsync();
-                        UpdateAutLists(DataItems);
-                    }
+                    // "Лечим" рассинхрон миграций
+                    await EnsureMigrationHistory(db);
+
+                    await db.Database.MigrateAsync(); 
+                    DataItems = await db.Cats.AsNoTracking().ToListAsync();
+                    UpdateAutLists(DataItems);
                 }
-                return true;
+            }
+            return true;
+        }
+
+        private static async Task EnsureMigrationHistory(DataItemContext db)
+        {
+            try 
+            {
+                var connection = db.Database.GetDbConnection();
+                await connection.OpenAsync();
+                
+                // --- FIX 1: Legacy "UnreachableText" migration ---
+                bool catsTableExists = await TableExists(connection, "Cats");
+
+                // Если таблицы Cats нет, значит база пустая или совсем новая - ничего не делаем, миграции сами накатятся
+                if (catsTableExists)
+                {
+                    await InjectMigrationIfMissing(connection, "20220816143004_UnreachableText", "3.1.0");
+                }
+
+                // --- FIX 2: "AddReceipts" migration (previously manual) ---
+                bool receiptsTableExists = await TableExists(connection, "Receipts");
+
+                // Если таблица Receipts уже есть (создана вручную), но EF не знает об этом - инжектим миграцию
+                if (receiptsTableExists)
+                {
+                    // Версия может отличаться, но для истории это не критично (ставим 8.0.0 как текущую)
+                    await InjectMigrationIfMissing(connection, "20260111160000_AddReceipts", "8.0.0");
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
-                return false;
+                System.Diagnostics.Debug.WriteLine($"EnsureMigrationHistory Error: {ex}");
+            }
+            finally
+            {
+                if (db.Database.GetDbConnection().State == System.Data.ConnectionState.Open)
+                    db.Database.CloseConnection();
+            }
+        }
+
+        private static async Task<bool> TableExists(System.Data.Common.DbConnection connection, string tableName)
+        {
+             using (var cmd = connection.CreateCommand())
+             {
+                 cmd.CommandText = $"SELECT count(*) FROM sqlite_master WHERE type='table' AND name='{tableName}';";
+                 var result = await cmd.ExecuteScalarAsync();
+                 return (Convert.ToInt32(result) > 0);
+             }
+        }
+
+        private static async Task InjectMigrationIfMissing(System.Data.Common.DbConnection connection, string migrationId, string productVersion)
+        {
+            // 1. Проверяем таблицу истории
+            bool historyTableExists = await TableExists(connection, "__EFMigrationsHistory");
+
+            // 2. Если таблицы истории нет, создаем её (чтобы можно было вставить запись)
+            if (!historyTableExists)
+            {
+                 using (var cmd = connection.CreateCommand())
+                 {
+                     cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"__EFMigrationsHistory\" (\"MigrationId\" TEXT NOT NULL CONSTRAINT \"PK___EFMigrationsHistory\" PRIMARY KEY, \"ProductVersion\" TEXT NOT NULL);";
+                     await cmd.ExecuteNonQueryAsync();
+                 }
+            }
+
+            // 3. Проверяем, есть ли уже эта миграция
+            bool migrationExists = false;
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = $"SELECT count(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = '{migrationId}';";
+                var result = await cmd.ExecuteScalarAsync();
+                migrationExists = (Convert.ToInt32(result) > 0);
+            }
+
+            // 4. Инжектим, если нет
+            if (!migrationExists)
+            {
+                System.Diagnostics.Debug.WriteLine($"FIX: Injecting migration {migrationId} into history...");
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = $"INSERT OR IGNORE INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('{migrationId}', '{productVersion}');";
+                    await cmd.ExecuteNonQueryAsync();
+                }
             }
         }
         public static async Task<bool> AddDatas(List<DataItem> dataItems)
