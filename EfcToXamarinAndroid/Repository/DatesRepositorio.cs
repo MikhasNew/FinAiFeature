@@ -35,14 +35,15 @@ namespace EfcToXamarinAndroid.Core.Repository
         public static async Task<bool> SetDatasFromDB()
         {
             // Убрали try-catch для проброса ошибок в ViewModel
-            if (DataItems.Count == 0)
+            using (var db = new DataItemContext(DbFullPath))
             {
-                using (var db = new DataItemContext(DbFullPath))
-                {
-                    // "Лечим" рассинхрон миграций
-                    await EnsureMigrationHistory(db);
+                // "Лечим" рассинхрон миграций
+                await EnsureMigrationHistory(db);
 
-                    await db.Database.MigrateAsync(); 
+                await db.Database.MigrateAsync();
+
+                if (DataItems.Count == 0)
+                {
                     DataItems = await db.Cats.AsNoTracking().ToListAsync();
                     UpdateAutLists(DataItems);
                 }
@@ -369,6 +370,24 @@ namespace EfcToXamarinAndroid.Core.Repository
         public static async Task<DataItem> GetDataItem(int id)
         {
             return DataItems.SingleOrDefault(x => x.Id == id);
+        }
+
+        public static async Task<Receipt?> GetReceiptByDataItemIdAsync(int dataItemId)
+        {
+            try
+            {
+                using (var db = new DataItemContext(DbFullPath))
+                {
+                    return await db.Receipts
+                        .Include(r => r.Items)
+                        .FirstOrDefaultAsync(r => r.DataItemId == dataItemId);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetReceiptByDataItemIdAsync Error: {ex}");
+                return null;
+            }
         }
 
         public static List<DataItem> GetPayments(List<DataItem> dataItems)

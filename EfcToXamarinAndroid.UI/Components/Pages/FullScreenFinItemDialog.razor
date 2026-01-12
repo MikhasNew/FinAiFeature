@@ -1,5 +1,7 @@
 @using EfcToXamarinAndroid.UI.Components.Models
 @using EfcToXamarinAndroid.Core.ViewModels
+@using EfcToXamarinAndroid.Core.Repository
+@using EfcToXamarinAndroid.Core
 @inject NavigationManager NavManager
 
 <MudContainer Class="align-center" MaxWidth="MaxWidth.ExtraLarge" Style="padding:0px; overflow:auto">
@@ -14,6 +16,38 @@
         </TitleContent>
         <DialogContent >
             <FinItemPage Item="@Item" VM="@VM" Editable="@IsEditanle" />
+            
+            @if (_receipt != null)
+            {
+                <MudExpansionPanel Text="Детали чека" Class="mt-4">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.h6">@_receipt.ShopName</MudText>
+                            <MudText Typo="Typo.caption">@_receipt.ReceiptDate.ToString("g")</MudText>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTable Items="@_receipt.Items" Dense="true" Hover="true" Striped="true" Elevation="0">
+                                <HeaderContent>
+                                    <MudTh>Товар</MudTh>
+                                    <MudTh>Цена</MudTh>
+                                    <MudTh>Кол-во</MudTh>
+                                    <MudTh>Сумма</MudTh>
+                                </HeaderContent>
+                                <RowTemplate Context="row">
+                                    <MudTd DataLabel="Товар">@row.Name</MudTd>
+                                    <MudTd DataLabel="Цена">@row.Price.ToString("N2")</MudTd>
+                                    <MudTd DataLabel="Кол-во">@row.Quantity.ToString("G29")</MudTd>
+                                    <MudTd DataLabel="Сумма">@row.Sum.ToString("N2")</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudItem>
+                        <MudItem xs="12" Class="d-flex justify-end">
+                             <MudText Typo="Typo.h6">Итого: @_receipt.TotalSum.ToString("N2")</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudExpansionPanel>
+            }
+            
         </DialogContent>
         <DialogActions>
             <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -24,8 +58,6 @@
 
 @code {
 
-
-
     [CascadingParameter]
     private IMudDialogInstance  MudDialog { get; set; }
     [Parameter]
@@ -34,7 +66,7 @@
     public MainViewModel VM { get; set; }
 
     bool IsEditanle;
-
+    private Receipt? _receipt;
 
     private async Task Submit() 
     {
@@ -45,20 +77,21 @@
 
     private async Task Cancel() 
     {
-
-        // await VM.ResetFinItem(Item);
-        
         MudDialog.Cancel();
         NavManager.NavigateTo(NavManager.Uri, replace: true);
-
     }
 
     private void Edit() => IsEditanle = !IsEditanle;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnInitialized();
+        await base.OnInitializedAsync();
+        if (Item?.Id != null)
+        {
+            _receipt = await DatesRepositorio.GetReceiptByDataItemIdAsync(Item.Id);
+        }
     }
+    
     public void Dispose()
     {
         VM.Dispose();
