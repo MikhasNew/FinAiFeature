@@ -417,6 +417,36 @@ namespace EfcToXamarinAndroid.Core.Repository
             }
         }
 
+        public static async Task SaveReceiptAsync(Receipt receipt)
+        {
+            try
+            {
+                using (var db = new DataItemContext(DbFullPath))
+                {
+                    // Check if receipt already exists for this DataItemId
+                    var existingReceipt = await db.Receipts
+                        .FirstOrDefaultAsync(r => r.DataItemId == receipt.DataItemId);
+
+                    if (existingReceipt != null)
+                    {
+                        // Optionally update or just skip. 
+                        // For now we assume we might want to update it if it was partial, 
+                        // but simple logic is: if exists, remove old and add new or just update fields.
+                        // Let's remove old one and add new to be safe with sub-items
+                        db.Receipts.Remove(existingReceipt);
+                        await db.SaveChangesAsync();
+                    }
+
+                    await db.Receipts.AddAsync(receipt);
+                    await db.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SaveReceiptAsync Error: {ex}");
+            }
+        }
+
         public static List<DataItem> GetPayments(List<DataItem> dataItems)
         {
             MccConfigurationManager mccManager = MccConfigurationManager.ConfigManager;

@@ -82,7 +82,7 @@
     private async Task Submit()
     {
         MudDialog.Close(DialogResult.Ok(Item));
-        await VM.UpdateItemValueAsync(Item.Id, Item);
+        await VM.UpdateItemValueAsync(Item.Id, Item, _receipt);
         NavManager.NavigateTo(NavManager.Uri, replace: true);
     }
 

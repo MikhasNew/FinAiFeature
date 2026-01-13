@@ -1070,7 +1070,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 await _uiService.ShowToastAsync(message);
             }
         }
-        public async Task UpdateItemValueAsync(int id, FinanceItem item)
+        public async Task UpdateItemValueAsync(int id, FinanceItem item, Receipt? receipt = null)
         {
             DataItem dataItem = new DataItem(item.OperationType, item.Date);
 
@@ -1083,14 +1083,48 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             dataItem.IsNewDataItem = item.IsNewDataItem;
             dataItem.Balance = item.Balance;
 
+            int dataItemId = id;
+
             if (id == 0)
             {
+                // Note: AddDatas works with a list and internally updates items... 
+                // But AddDatas implementation in Repositorio is a bit complex with dedup.
+                // However, the 'newDataItems' list handling suggests it updates specific properties.
+                // The critical part is obtaining the ID of the newly inserted item. 
+                // DatesRepositorio.AddDatas does NOT return the ID directly easily.
+                
+                // Workaround: We set a unique temporary ID (HashId) or use the object reference if possible, 
+                // but AddDatas creates NEW objects. 
+                
+                // Better approach: We rely on the fact that AddDatas will add it to DataItems list. 
+                // We can find it by HashId or similar properties.
+                
                 await DatesRepositorio.AddDatas(new List<DataItem> { dataItem });
                 await RefreshData();
+                
+                // Find the item we just added. 
+                // Assumptions: exact Sum, Date, Description match.
+                var addedItem = DatesRepositorio.DataItems
+                    .OrderByDescending(x => x.Id)
+                    .FirstOrDefault(x => 
+                        x.Sum == dataItem.Sum && 
+                        x.Date == dataItem.Date &&
+                        x.Descripton == dataItem.Descripton);
+                        
+                if (addedItem != null)
+                {
+                    dataItemId = addedItem.Id;
+                }
             }
             else
             {
                 await DatesRepositorio.UpdateItemValue(id, dataItem);
+            }
+
+            if (receipt != null && dataItemId != 0)
+            {
+                receipt.DataItemId = dataItemId;
+                await DatesRepositorio.SaveReceiptAsync(receipt);
             }
         }
         public async Task<FinanceItem> GetFinItem(int id)
