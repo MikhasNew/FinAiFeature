@@ -1,0 +1,56 @@
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<MudDialog>
+    <DialogContent>
+        <div class="d-flex justify-center aling-center" style="background-color: black; width: 100%; height: 300px; position:relative; overflow: hidden;">
+            <video @ref="videoElement" style="width: 100%; height: 100%; object-fit: cover;" muted playsinline></video>
+            <canvas @ref="canvasElement" hidden></canvas>
+             @if (!isScanning)
+             {
+                 <MudText Color="Color.Error">Initializing Camera...</MudText>
+             }
+        </div>
+        <MudText Align="Align.Center" Typo="Typo.caption" Class="mt-2">Point camera at receipt QR code</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    private ElementReference videoElement;
+    private ElementReference canvasElement;
+    private bool isScanning = false;
+    private DotNetObjectReference<QrScannerDialog> _dotNetHelper;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetHelper = DotNetObjectReference.Create(this);
+            isScanning = await JS.InvokeAsync<bool>("qrScanner.start", _dotNetHelper, videoElement, canvasElement);
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public void OnQrCodeScanned(string code)
+    {
+        MudDialog.Close(DialogResult.Ok(code));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await JS.InvokeVoidAsync("qrScanner.stop");
+        _dotNetHelper?.Dispose();
+    }
+}

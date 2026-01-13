@@ -3,6 +3,10 @@
 @using EfcToXamarinAndroid.Core.Repository
 @using EfcToXamarinAndroid.Core
 @inject NavigationManager NavManager
+@inject IDialogService DialogService
+@inject IQrCodeService QrCodeService
+@using EfcToXamarinAndroid.Core.Parsers
+@using EfcToXamarinAndroid.UI.Components.Dialogs
 
 <MudContainer Class="align-center" MaxWidth="MaxWidth.ExtraLarge" Style="padding:0px; overflow:auto">
     <MudDialog Style="padding:0px;">
@@ -10,6 +14,7 @@
             <MudAppBar Dense="true" Elevation="0">
                 <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack" Color="Color.Inherit" OnClick="Cancel" />
                 <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.QrCodeScanner" OnClick="ScanQrCode" Color="Color.Inherit" />
                 <MudIconButton Icon="@Icons.Material.Outlined.Edit" OnClick="Edit" />
                 <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
             </MudAppBar>
@@ -82,6 +87,36 @@
     }
 
     private void Edit() => IsEditanle = !IsEditanle;
+
+    private async Task ScanQrCode()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<QrScannerDialog>("Scan QR", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is string qrCode)
+        {
+            var data = FnsQrParser.Parse(qrCode);
+            if (data.Date.HasValue)
+            {
+                Item.Date = data.Date.Value;
+            }
+            if (data.Sum.HasValue)
+            {
+                Item.Sum = data.Sum.Value;
+            }
+            else
+            {
+                //
+            }
+
+            
+            
+            // Allow editing after scan so user can verify/correct
+            IsEditanle = true; 
+            StateHasChanged();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

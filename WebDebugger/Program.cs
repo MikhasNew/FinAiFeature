@@ -26,6 +26,7 @@ builder.Services.AddScoped<MainViewModel>();
 builder.Services.AddSingleton<ISmsReader, WebSmsReader>();
 builder.Services.AddScoped<IFileService, WebFileService>();
 builder.Services.AddScoped<IUIService, WebUIService>();
+builder.Services.AddScoped<IQrCodeService, QrCodeService>();
 builder.Services.AddSingleton<IPermissionService, WebPermissionService>();
 
 // Email & Receipt Services
