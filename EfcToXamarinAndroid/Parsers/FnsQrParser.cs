@@ -10,12 +10,21 @@ namespace EfcToXamarinAndroid.Core.Parsers
         {
             public DateTime? Date { get; set; }
             public float? Sum { get; set; }
+            public string? TransactionCode { get; set; }
         }
 
         public static FnsQrData Parse(string qrString)
         {
             var data = new FnsQrData();
             if (string.IsNullOrWhiteSpace(qrString)) return data;
+
+            // Check for 24-char hex transaction code directly
+            // Format check: 24 hex characters
+            if (Regex.IsMatch(qrString, @"^[0-9A-Fa-f]{24}$"))
+            {
+                data.TransactionCode = qrString.ToUpperInvariant();
+                return data;
+            }
 
             // Example format: t=20200810T143600&s=173.00&fn=9282440300681577&i=39540&fp=2155057088&n=1
             

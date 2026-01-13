@@ -19,9 +19,9 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
             </MudAppBar>
         </TitleContent>
-        <DialogContent >
+        <DialogContent>
             <FinItemPage Item="@Item" VM="@VM" Editable="@IsEditanle" />
-            
+
             @if (_receipt != null)
             {
                 <MudExpansionPanel Text="Детали чека" Class="mt-4">
@@ -47,12 +47,12 @@
                             </MudTable>
                         </MudItem>
                         <MudItem xs="12" Class="d-flex justify-end">
-                             <MudText Typo="Typo.h6">Итого: @_receipt.TotalSum.ToString("N2")</MudText>
+                            <MudText Typo="Typo.h6">Итого: @_receipt.TotalSum.ToString("N2")</MudText>
                         </MudItem>
                     </MudGrid>
                 </MudExpansionPanel>
             }
-            
+
         </DialogContent>
         <DialogActions>
             <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -63,8 +63,14 @@
 
 @code {
 
+
+
+
+
+
+
     [CascadingParameter]
-    private IMudDialogInstance  MudDialog { get; set; }
+    private IMudDialogInstance MudDialog { get; set; }
     [Parameter]
     public FinanceItem Item { get; set; }
     [Parameter]
@@ -73,14 +79,14 @@
     bool IsEditanle;
     private Receipt? _receipt;
 
-    private async Task Submit() 
+    private async Task Submit()
     {
         MudDialog.Close(DialogResult.Ok(Item));
         await VM.UpdateItemValueAsync(Item.Id, Item);
         NavManager.NavigateTo(NavManager.Uri, replace: true);
     }
 
-    private async Task Cancel() 
+    private async Task Cancel()
     {
         MudDialog.Cancel();
         NavManager.NavigateTo(NavManager.Uri, replace: true);
@@ -97,23 +103,42 @@
         if (!result.Canceled && result.Data is string qrCode)
         {
             var data = FnsQrParser.Parse(qrCode);
-            if (data.Date.HasValue)
+
+            if (!string.IsNullOrEmpty(data.TransactionCode) && Item.Date != default)
             {
-                Item.Date = data.Date.Value;
-            }
-            if (data.Sum.HasValue)
-            {
-                Item.Sum = data.Sum.Value;
+                var receipt = await QrCodeService.GetReceiptByTransactionCodeAsync(Item.Date, data.TransactionCode);
+                if (receipt != null)
+                {
+                    _receipt = receipt;
+                    // If we got a receipt, we can also update item sum if it wasn't set
+                    if (Item.Sum == 0)
+                    {
+                        Item.Sum = receipt.TotalSum;
+                    }
+
+                    if (Item.Description == default)
+
+                        Item.Description = receipt.Subject;
+
+                   
+                }
             }
             else
             {
-                //
+                if (data.Date.HasValue)
+                {
+                    Item.Date = data.Date.Value;
+                }
+                if (data.Sum.HasValue)
+                {
+                    Item.Sum = data.Sum.Value;
+                }
             }
 
-            
-            
+
+
             // Allow editing after scan so user can verify/correct
-            IsEditanle = true; 
+            IsEditanle = true;
             StateHasChanged();
         }
     }
@@ -126,7 +151,7 @@
             _receipt = await DatesRepositorio.GetReceiptByDataItemIdAsync(Item.Id);
         }
     }
-    
+
     public void Dispose()
     {
         VM.Dispose();

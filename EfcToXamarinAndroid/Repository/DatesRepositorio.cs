@@ -67,14 +67,41 @@ namespace EfcToXamarinAndroid.Core.Repository
                     await InjectMigrationIfMissing(connection, "20220816143004_UnreachableText", "3.1.0");
                 }
 
-                // --- FIX 2: "AddReceipts" migration (previously manual) ---
+                // --- FIX 2: "AddReceiptsTable" migration (consolidated) ---
                 bool receiptsTableExists = await TableExists(connection, "Receipts");
 
-                // Если таблица Receipts уже есть (создана вручную), но EF не знает об этом - инжектим миграцию
                 if (receiptsTableExists)
                 {
-                    // Версия может отличаться, но для истории это не критично (ставим 8.0.0 как текущую)
-                    await InjectMigrationIfMissing(connection, "20260111160000_AddReceipts", "8.0.0");
+                    // Check if new column exists
+                    bool columnExists = false;
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = "PRAGMA table_info(Receipts);";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var name = reader["name"].ToString();
+                                if (name == "ReceiptDateString")
+                                {
+                                    columnExists = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!columnExists)
+                    {
+                        using (var cmd = connection.CreateCommand())
+                        {
+                            cmd.CommandText = "ALTER TABLE Receipts ADD COLUMN ReceiptDateString TEXT NULL;";
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                    }
+
+                    // Mark migration as applied so EF doesn't try to create tables
+                    await InjectMigrationIfMissing(connection, "20260113183533_AddReceiptsTable", "8.0.0");
                 }
             }
             catch (Exception ex)

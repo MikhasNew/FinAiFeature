@@ -1,12 +1,14 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace EfcToXamarinAndroid.MigrationsHelper.Migrations
 {
-    public partial class AddReceipts : Migration
+    /// <inheritdoc />
+    public partial class AddReceiptsTable : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -20,6 +22,7 @@ namespace EfcToXamarinAndroid.MigrationsHelper.Migrations
                     ShopInn = table.Column<string>(type: "TEXT", nullable: true),
                     Address = table.Column<string>(type: "TEXT", nullable: true),
                     ReceiptDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ReceiptDateString = table.Column<string>(type: "TEXT", nullable: true),
                     TotalSum = table.Column<float>(type: "REAL", nullable: false),
                     Currency = table.Column<string>(type: "TEXT", nullable: true),
                     RegNumber = table.Column<string>(type: "TEXT", nullable: true),
@@ -66,17 +69,18 @@ namespace EfcToXamarinAndroid.MigrationsHelper.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ReceiptItems_ReceiptId",
+                table: "ReceiptItems",
+                column: "ReceiptId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Receipts_DataItemId",
                 table: "Receipts",
                 column: "DataItemId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ReceiptItems_ReceiptId",
-                table: "ReceiptItems",
-                column: "ReceiptId");
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
