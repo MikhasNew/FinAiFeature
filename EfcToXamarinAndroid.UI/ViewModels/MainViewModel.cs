@@ -1092,13 +1092,16 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 // However, the 'newDataItems' list handling suggests it updates specific properties.
                 // The critical part is obtaining the ID of the newly inserted item. 
                 // DatesRepositorio.AddDatas does NOT return the ID directly easily.
-                
+
                 // Workaround: We set a unique temporary ID (HashId) or use the object reference if possible, 
                 // but AddDatas creates NEW objects. 
-                
+
                 // Better approach: We rely on the fact that AddDatas will add it to DataItems list. 
                 // We can find it by HashId or similar properties.
-                
+                if (receipt != null)
+                {
+                    dataItem.Date = receipt.ReceiptDate;
+                }
                 await DatesRepositorio.AddDatas(new List<DataItem> { dataItem });
                 await RefreshData();
                 

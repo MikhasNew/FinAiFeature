@@ -64,11 +64,6 @@
 @code {
 
 
-
-
-
-
-
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
     [Parameter]
@@ -110,6 +105,10 @@
                 if (receipt != null)
                 {
                     _receipt = receipt;
+                    // Update Item.Date with the precise time from the receipt
+                    if (Item.Id == default)
+                        Item.Date = receipt.ReceiptDate;
+
                     // If we got a receipt, we can also update item sum if it wasn't set
                     if (Item.Sum == 0)
                     {
@@ -120,7 +119,7 @@
 
                         Item.Description = receipt.Subject;
 
-                   
+
                 }
             }
             else

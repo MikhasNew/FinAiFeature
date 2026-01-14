@@ -390,10 +390,6 @@ namespace EfcToXamarinAndroid.Core.Repository
             }
         }
 
-
-
-
-
         public static async Task<DataItem> GetDataItem(int id)
         {
             return DataItems.SingleOrDefault(x => x.Id == id);
