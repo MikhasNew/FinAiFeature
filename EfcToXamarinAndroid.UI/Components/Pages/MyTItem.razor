@@ -20,7 +20,20 @@
 
         <div class="row-2">
             <p class="item-subtitle">@ItemLabel</p>
-            <p class="amount-text @(infoTitleColor == "green" ? "income" : "expense")">@infoTitle</p>
+            <div class="d-flex align-center gap-1">
+                @if (Item is EfcToXamarinAndroid.UI.Components.Models.FinanceItem finItem && !string.IsNullOrEmpty(finItem.PendingQrCode))
+                {
+                    <span @onclick:stopPropagation="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.QrCode" 
+                                       Color="Color.Warning" 
+                                       Size="Size.Small" 
+                                       OnClick="() => OnRetryReceipt.InvokeAsync(Item)" 
+                                       Style="padding: 0; transform: scale(0.8);"
+                                       Title="Есть сохраненный QR-код. Нажмите, чтобы проверить чек." />
+                    </span>
+                }
+                <p class="amount-text @(infoTitleColor == "green" ? "income" : "expense")">@infoTitle</p>
+            </div>
         </div>
     </div>
 </div>
@@ -34,23 +47,28 @@
     [Parameter] public string infoLabel { get; set; } = string.Empty;
     [Parameter] public TItem Item { get; set; }
     [Parameter] public EventCallback<TItem> OnItemClick { get; set; }
+    [Parameter] public EventCallback<TItem> OnRetryReceipt { get; set; }
     
     // 🚀 ShouldRender оптимизация: перерисовываем только при изменении данных
     private string? _prevTitle;
     private string? _prevSum;
     private string? _prevLabel;
+    private string? _prevPendingQr;
     
     protected override bool ShouldRender()
     {
+        var currentPendingQr = (Item as EfcToXamarinAndroid.UI.Components.Models.FinanceItem)?.PendingQrCode;
         var changed = _prevTitle != ItemTitle || 
                       _prevSum != infoTitle || 
-                      _prevLabel != infoLabel;
+                      _prevLabel != infoLabel ||
+                      _prevPendingQr != currentPendingQr;
         
         if (changed)
         {
             _prevTitle = ItemTitle;
             _prevSum = infoTitle;
             _prevLabel = infoLabel;
+            _prevPendingQr = currentPendingQr;
         }
         
         return changed;

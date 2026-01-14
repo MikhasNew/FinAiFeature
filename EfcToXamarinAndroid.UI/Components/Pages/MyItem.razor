@@ -14,6 +14,16 @@
         <div style="width:100%; display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-start;">
             <p class="info-title">@infoTitle</p>
             <p class="info-label">@infoLabel</p>
+            @if (!string.IsNullOrEmpty(Item?.PendingQrCode))
+            {
+                <span @onclick:stopPropagation="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.QrCode" 
+                                   Color="Color.Warning" 
+                                   Size="Size.Small" 
+                                   OnClick="() => OnRetryReceipt.InvokeAsync(Item)" 
+                                   Title="Есть сохраненный QR-код. Нажмите, чтобы проверить чек." />
+                </span>
+            }
         </div>
     </MudPaper>
 </MudPaper>
@@ -27,5 +37,5 @@
     [Parameter] public string infoLabel { get; set; } = string.Empty;
     [Parameter] public FinanceItem Item { get; set; }
     [Parameter] public EventCallback<FinanceItem> OnItemClick { get; set; }
-   
+    [Parameter] public EventCallback<FinanceItem> OnRetryReceipt { get; set; }
 }

@@ -26,6 +26,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         private readonly IDataService _dataService;
         private readonly IUIService _uiService;
         private readonly IPermissionService _permissionService;
+        private readonly IQrCodeService _qrCodeService;
         private readonly AppConfiguration _appConfiguration;
 
         public OperacionTyps CurentType { get; private set; }
@@ -196,13 +197,15 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             IFileService fileService,
             IDataService dataService,
             IUIService uiService,
-            IPermissionService permissionService)
+            IPermissionService permissionService,
+            IQrCodeService qrCodeService)
         {
             _smsReader = smsReader;
             _fileService = fileService;
             _dataService = dataService;
             _uiService = uiService;
             _permissionService = permissionService;
+            _qrCodeService = qrCodeService;
             var configManager = EfcToXamarinAndroid.Core.Configs.ManagerCore.ConfigurationManager.ConfigManager;
             _appConfiguration = configManager.BankConfigurationFromJson;
         }
@@ -272,7 +275,8 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                     UnreachableText = item.UnreachableText,
                     OperationType = item.OperacionTyp,
                     IsNewDataItem = item.IsNewDataItem,
-                    Balance = item.Balance
+                    Balance = item.Balance,
+                    PendingQrCode = item.PendingQrCode
                 })
                 .OrderByDescending(x => x.Date)
                 .ToList();
@@ -1130,6 +1134,39 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 receipt.DataItemId = dataItemId;
                 await DatesRepositorio.SaveReceiptAsync(receipt);
             }
+        }
+
+        public async Task<bool> RetryReceiptAsync(FinanceItem item)
+        {
+            if (string.IsNullOrEmpty(item.PendingQrCode)) return false;
+
+            try 
+            {
+                var data = EfcToXamarinAndroid.Core.Parsers.FnsQrParser.Parse(item.PendingQrCode);
+                if (string.IsNullOrEmpty(data.TransactionCode)) return false;
+
+                // Use date from QR or from item
+                var dateToUse = data.Date ?? item.Date;
+                
+                var receipt = await _qrCodeService.GetReceiptByTransactionCodeAsync(dateToUse, data.TransactionCode);
+                if (receipt != null)
+                {
+                    // Update item properties from receipt
+                    item.Sum = receipt.TotalSum;
+                    item.Description = receipt.Subject;
+                    item.PendingQrCode = null; // Clear pending code
+                    
+                    // Save changes to DataItem
+                    await UpdateItemValueAsync(item.Id, item, receipt, null);
+                    await RefreshData();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"RetryReceiptAsync Error: {ex.Message}");
+            }
+            return false;
         }
         public async Task<FinanceItem> GetFinItem(int id)
         {

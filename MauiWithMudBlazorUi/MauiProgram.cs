@@ -1,4 +1,4 @@
-using Microsoft.Maui.Hosting;
+п»їusing Microsoft.Maui.Hosting;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using EfcToXamarinAndroid.Core.Services;
@@ -31,6 +31,10 @@ namespace MauiAppWithMudBlazor
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddMudServices();
+            var config = EfcToXamarinAndroid.Core.Configs.ManagerCore.ConfigurationManager.ConfigManager.BankConfigurationFromJson;
+            builder.Services.AddSingleton(config);
+            builder.Services.AddSingleton<EfcToXamarinAndroid.Core.Parsers.ReceiptParser>(new EfcToXamarinAndroid.Core.Parsers.ReceiptParser(config.ReceiptConfigurations));
+            builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
@@ -51,16 +55,16 @@ namespace MauiAppWithMudBlazor
                 {
                     var platformWebView = (Android.Webkit.WebView)handler.PlatformView;
 
-                    // Устанавливаем стиль скролла поверх контента
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                     platformWebView.ScrollBarStyle = Android.Views.ScrollbarStyles.InsideOverlay;
 
-                    // Разрешаем системный вертикальный скролл (чтобы CSS мог им управлять)
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ CSS пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
                     platformWebView.VerticalScrollBarEnabled = true;
 
-                    // Убираем синее "свечение" при достижении конца списка
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                     platformWebView.OverScrollMode = Android.Views.OverScrollMode.Never;
 
-                    //Отключите аппаратное ускорение для WebView (только для теста)
+                    //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ WebView (пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ)
                     //platformWebView.SetLayerType(Android.Views.LayerType.Software, null);
                 }
             });

@@ -11,6 +11,7 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject MainViewModel VM
+@inject ISnackbar Snackbar
 
 
 <div class="page-layout">
@@ -327,7 +328,8 @@
                                      infoTitle="@item.FormattedSum"
                                      infoTitleColor="@item.AmountColor"
                                      infoLabel="@item.ShortFormattedLabel"
-                                     OnItemClick="ItemClicked" />
+                                     OnItemClick="ItemClicked"
+                                     OnRetryReceipt="RetryReceipt" />
                         </Virtualize>
 
                 </div>
@@ -598,6 +600,19 @@
         NavManager.NavigateTo(NavManager.Uri + "#edit");
         var parameters = new DialogParameters<FullScreenFinItemDialog> { { x => x.Item, item.ThisFinanceItem }, { x => x.VM, VM } };
         await DialogService.ShowAsync<FullScreenFinItemDialog>("Details", parameters, new DialogOptions { FullScreen = true });
+    }
+
+    private async Task RetryReceipt(FinanceItem item)
+    {
+        var success = await VM.RetryReceiptAsync(item);
+        if (success)
+        {
+            Snackbar.Add("Чек успешно получен!", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Не удалось получить чек. Попробуйте позже.", Severity.Error);
+        }
     }
 
     private async Task AddItem()

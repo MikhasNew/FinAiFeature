@@ -1,4 +1,4 @@
-@page "/counter2"
+п»ї@page "/counter2"
 @using EfcToXamarinAndroid.UI.Components.Models
 @using EfcToXamarinAndroid.Core.Repository
 @using EfcToXamarinAndroid.Core
@@ -7,6 +7,7 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject MainViewModel VM
+@inject ISnackbar Snackbar
 @inject ISmsReader SmsReader
 @inject IFileService FileService
 
@@ -48,7 +49,7 @@
                         Height="100%"
                         Style="overflow: auto;">
                             <RowTemplate>
-                                <MyItem ItemTitle="@context.DisplayTitle"
+                                <MyItem Item="@context" ItemTitle="@context.DisplayTitle"
                                 ItemLabel="@context.DisplayDescription"
                                 infoTitle="@context.FormattedSum"
                                 infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
@@ -66,7 +67,7 @@
                           Height="100%"
                           Style="overflow: auto;">
                     <RowTemplate>
-                        <MyItem ItemTitle="@context.DisplayTitle"
+                        <MyItem Item="@context" ItemTitle="@context.DisplayTitle"
                                 ItemLabel="@context.DisplayDescription"
                                 infoTitle="@context.FormattedSum"
                                 infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
@@ -84,7 +85,7 @@
                           Height="100%"
                           Style="overflow: auto;">
                     <RowTemplate>
-                        <MyItem ItemTitle="@context.DisplayTitle"
+                        <MyItem Item="@context" ItemTitle="@context.DisplayTitle"
                                 ItemLabel="@context.DisplayDescription"
                                 infoTitle="@context.FormattedSum"
                                 infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
@@ -102,7 +103,7 @@
                           Height="100%"
                           Style="overflow: auto;">
                     <RowTemplate>
-                        <MyItem ItemTitle="@context.DisplayTitle"
+                        <MyItem Item="@context" ItemTitle="@context.DisplayTitle"
                                 ItemLabel="@context.DisplayDescription"
                                 infoTitle="@context.FormattedSum"
                                 infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
@@ -119,7 +120,7 @@
                           Height="100%"
                           Style="overflow: auto;">
                     <RowTemplate>
-                        <MyItem ItemTitle="@context.DisplayTitle"
+                        <MyItem Item="@context" ItemTitle="@context.DisplayTitle"
                                 ItemLabel="@context.DisplayDescription"
                                 infoTitle="@context.FormattedSum"
                                 infoLabel=@($"{context.FormattedTime}\n{context.FormattedDate}") />
@@ -154,17 +155,17 @@
 </div>
 
 <style>
-    /* Это основной контейнер для всего представления страницы */
+    /* пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
     .page-container {
     display: flex;
     flex-direction: column;
     height: calc(100vh - var(--mud-appbar-height) + 1rem);
     }
 
-    /* Этот контейнер содержит таблицу */
+    /* пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
     .content-container {
     display: flex;
-    flex-direction: column; /* или row */
+    flex-direction: column; /* пїЅпїЅпїЅ row */
     overflow: hidden;
 
     }
@@ -200,10 +201,16 @@
     private async Task RowClickEvent(TableRowClickEventArgs<FinanceItem> e)
     {
         var item = e.Item;
-        System.Diagnostics.Debug.WriteLine($"Операция: {item.DisplayTitle} — {item.FormattedSum}");
+        System.Diagnostics.Debug.WriteLine($"пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {item.DisplayTitle} пїЅ {item.FormattedSum}");
     }
 
     void OnFabButtonClick()
+    private async Task RetryReceipt(FinanceItem item)
+    {
+        var success = await VM.RetryReceiptAsync(item);
+        if (success) Snackbar.Add("Receipt loaded!", Severity.Success);
+        else Snackbar.Add("Failed to load receipt.", Severity.Error);
+    }
     {
         JSRuntime.InvokeVoidAsync("scrollToTop", "#scroll-area"); // Pass selector for better targeting
     }
@@ -211,13 +218,13 @@
     {
         if (firstRender)
         {
-            var height = await JSRuntime.InvokeAsync<double>("getAvailableHeight", "#scroll-area");  // ID вашего контейнера
+            var height = await JSRuntime.InvokeAsync<double>("getAvailableHeight", "#scroll-area");  // ID пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             if ($"{height}px" != TableHeight)
             {
                 TableHeight = $"{height}px";
                 await InvokeAsync(StateHasChanged);
             }
-            // Установка resize listener
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ resize listener
             dotnetHelper = DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync("setupResizeListener", dotnetHelper);
         }
@@ -225,20 +232,20 @@
     [JSInvokable]
     public async Task OnWindowResize()
     {
-        var height = await JSRuntime.InvokeAsync<double>("getAvailableHeight", "#scroll-area");  // ID вашего контейнера
+        var height = await JSRuntime.InvokeAsync<double>("getAvailableHeight", "#scroll-area");  // ID пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         if ($"{height}px" != TableHeight)
         {
             TableHeight = $"{height}px";
             await InvokeAsync(StateHasChanged);
         }
     }
-    // Метод Dispose для очистки
+    // пїЅпїЅпїЅпїЅпїЅ Dispose пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     public async ValueTask DisposeAsync()
     {
         if (dotnetHelper != null)
         {
-            await JSRuntime.InvokeVoidAsync("removeResizeListener");  // Вызываем удаление listener
-            dotnetHelper.Dispose();  // Очищаем ссылку на .NET-объект
+            await JSRuntime.InvokeVoidAsync("removeResizeListener");  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ listener
+            dotnetHelper.Dispose();  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ .NET-пїЅпїЅпїЅпїЅпїЅпїЅ
         }
     }
 }
