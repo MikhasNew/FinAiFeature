@@ -5,16 +5,20 @@
 @inject NavigationManager NavManager
 @inject IDialogService DialogService
 @inject IQrCodeService QrCodeService
+@inject ISnackbar Snackbar
 @using EfcToXamarinAndroid.Core.Parsers
 @using EfcToXamarinAndroid.UI.Components.Dialogs
 
 <MudContainer Class="align-center" MaxWidth="MaxWidth.ExtraLarge" Style="padding:0px; overflow:auto">
+    <MudOverlay Visible="_isLoading" DarkBackground="true" Absolute="true">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudOverlay>
     <MudDialog Style="padding:0px;">
         <TitleContent>
             <MudAppBar Dense="true" Elevation="0">
                 <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack" Color="Color.Inherit" OnClick="Cancel" />
                 <MudSpacer />
-                <MudIconButton Icon="@Icons.Material.Filled.QrCodeScanner" OnClick="ScanQrCode" Color="Color.Inherit" />
+                <MudIconButton Icon="@Icons.Material.Filled.QrCodeScanner" OnClick="ScanQrCode" Color="Color.Inherit" Disabled="_isLoading" />
                 <MudIconButton Icon="@Icons.Material.Outlined.Edit" OnClick="Edit" />
                 <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
             </MudAppBar>
@@ -55,15 +59,13 @@
 
         </DialogContent>
         <DialogActions>
-            <MudButton OnClick="Cancel">Cancel</MudButton>
-            <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+            <MudButton OnClick="Cancel">Отмена</MudButton>
+            <MudButton Color="Color.Primary" OnClick="Submit" Disabled="_isLoading">Сохранить</MudButton>
         </DialogActions>
     </MudDialog>
 </MudContainer>
 
 @code {
-
-
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
     [Parameter]
@@ -73,11 +75,13 @@
 
     bool IsEditanle;
     private Receipt? _receipt;
+    private bool _isLoading = false;
+    private string? _pendingQrCode; // Сохраняем QR-код, если не удалось загрузить
 
     private async Task Submit()
     {
         MudDialog.Close(DialogResult.Ok(Item));
-        await VM.UpdateItemValueAsync(Item.Id, Item, _receipt);
+        await VM.UpdateItemValueAsync(Item.Id, Item, _receipt, _pendingQrCode);
         NavManager.NavigateTo(NavManager.Uri, replace: true);
     }
 
@@ -92,51 +96,84 @@
     private async Task ScanQrCode()
     {
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = DialogService.Show<QrScannerDialog>("Scan QR", options);
+        var dialog = DialogService.Show<QrScannerDialog>("Сканирование QR", options);
         var result = await dialog.Result;
 
         if (!result.Canceled && result.Data is string qrCode)
         {
             var data = FnsQrParser.Parse(qrCode);
 
-            if (!string.IsNullOrEmpty(data.TransactionCode) && Item.Date != default)
+            if (!string.IsNullOrEmpty(data.TransactionCode))
             {
-                var receipt = await QrCodeService.GetReceiptByTransactionCodeAsync(Item.Date, data.TransactionCode);
-                if (receipt != null)
-                {
-                    _receipt = receipt;
-                    // Update Item.Date with the precise time from the receipt
-                    if (Item.Id == default)
-                        Item.Date = receipt.ReceiptDate;
+                _isLoading = true;
+                StateHasChanged();
 
-                    // If we got a receipt, we can also update item sum if it wasn't set
-                    if (Item.Sum == 0)
+                try
+                {
+                    // Используем дату из QR-кода, если она есть, иначе из Item
+                    var dateToUse = data.Date ?? Item.Date;
+                    
+                    if (dateToUse == default)
                     {
-                        Item.Sum = receipt.TotalSum;
+                        Snackbar.Add("Укажите дату транзакции перед сканированием", Severity.Warning);
+                        _pendingQrCode = qrCode;
+                        return;
                     }
 
-                    if (Item.Description == default)
+                    var receipt = await QrCodeService.GetReceiptByTransactionCodeAsync(dateToUse, data.TransactionCode);
+                    
+                    if (receipt != null)
+                    {
+                        _receipt = receipt;
+                        _pendingQrCode = null; // Сбрасываем, т.к. чек получен
+                        
+                        // Обновляем дату/время из чека (только для новых транзакций)
+                        if (Item.Id == default)
+                            Item.Date = receipt.ReceiptDate;
 
-                        Item.Description = receipt.Subject;
+                        // Обновляем сумму, если не была задана
+                        if (Item.Sum == 0)
+                            Item.Sum = receipt.TotalSum;
 
+                        // Обновляем описание
+                        if (string.IsNullOrEmpty(Item.Description))
+                            Item.Description = receipt.Subject;
 
+                        Snackbar.Add("Чек успешно загружен!", Severity.Success);
+                    }
+                    else
+                    {
+                        // Чек не найден — возможно, неверная дата
+                        Snackbar.Add("Чек не найден. Проверьте дату транзакции.", Severity.Warning);
+                        _pendingQrCode = qrCode;
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    Snackbar.Add("Нет подключения к интернету. QR-код сохранён.", Severity.Error);
+                    _pendingQrCode = qrCode;
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Ошибка: {ex.Message}", Severity.Error);
+                    _pendingQrCode = qrCode;
+                }
+                finally
+                {
+                    _isLoading = false;
                 }
             }
             else
             {
+                // Старый формат QR — просто парсим дату и сумму
                 if (data.Date.HasValue)
-                {
                     Item.Date = data.Date.Value;
-                }
                 if (data.Sum.HasValue)
-                {
                     Item.Sum = data.Sum.Value;
-                }
+                    
+                Snackbar.Add("Данные из QR-кода применены", Severity.Info);
             }
 
-
-
-            // Allow editing after scan so user can verify/correct
             IsEditanle = true;
             StateHasChanged();
         }
@@ -145,7 +182,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        if (Item?.Id != null)
+        if (Item?.Id != null && Item.Id != 0)
         {
             _receipt = await DatesRepositorio.GetReceiptByDataItemIdAsync(Item.Id);
         }
@@ -156,5 +193,3 @@
         VM.Dispose();
     }
 }
-
-

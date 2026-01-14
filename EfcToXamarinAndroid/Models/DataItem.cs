@@ -35,6 +35,11 @@ namespace EfcToXamarinAndroid.Core
         [NotMapped]
         public bool IsNewDataItem { get; set; }
 
+        /// <summary>
+        /// QR-код чека, сохранённый для повторной проверки (при ошибке сети)
+        /// </summary>
+        public string? PendingQrCode { get; set; }
+
         public Receipt? Receipt { get; set; }
 
 

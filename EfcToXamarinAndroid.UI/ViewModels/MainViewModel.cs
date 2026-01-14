@@ -1070,7 +1070,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 await _uiService.ShowToastAsync(message);
             }
         }
-        public async Task UpdateItemValueAsync(int id, FinanceItem item, Receipt? receipt = null)
+        public async Task UpdateItemValueAsync(int id, FinanceItem item, Receipt? receipt = null, string? pendingQrCode = null)
         {
             DataItem dataItem = new DataItem(item.OperationType, item.Date);
 
@@ -1082,6 +1082,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             dataItem.UnreachableText = item.UnreachableText;
             dataItem.IsNewDataItem = item.IsNewDataItem;
             dataItem.Balance = item.Balance;
+            dataItem.PendingQrCode = pendingQrCode; // Сохраняем QR-код для повторной проверки
 
             int dataItemId = id;
 
@@ -1145,7 +1146,8 @@ namespace EfcToXamarinAndroid.Core.ViewModels
                 UnreachableText = item.UnreachableText,
                 OperationType = item.OperacionTyp,
                 IsNewDataItem = item.IsNewDataItem,
-                Balance = item.Balance
+                Balance = item.Balance,
+                PendingQrCode = item.PendingQrCode
             };
             return finItem;
         }
@@ -1165,6 +1167,7 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             item.OperationType = oldItem.OperacionTyp;
             item.IsNewDataItem = oldItem.IsNewDataItem;
             item.Balance = oldItem.Balance;
+            item.PendingQrCode = oldItem.PendingQrCode;
 
         }
 

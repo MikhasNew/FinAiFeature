@@ -1,15 +1,15 @@
-using System;
-using EfcToXamarinAndroid.Core; // Предполагаю наличие enum OperacionTyps здесь
+п»їusing System;
+using EfcToXamarinAndroid.Core; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ enum OperacionTyps пїЅпїЅпїЅпїЅпїЅ
 
 namespace EfcToXamarinAndroid.UI.Components.Models
 {
     public class FinanceItem
     {
         // ==========================================
-        // Исходные данные (Raw Data)
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (Raw Data)
         // ==========================================
 
-        // Используем backing fields для свойств, изменение которых влияет на UI
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ backing fields пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ UI
         private DateTime _date;
         private float _sum;
         private OperacionTyps _operationType;
@@ -27,7 +27,7 @@ namespace EfcToXamarinAndroid.UI.Components.Models
                 if (_date != value)
                 {
                     _date = value;
-                    // Сбрасываем кеш зависимых свойств
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                     _formattedDate = null;
                     _formattedTime = null;
                     _shortFormattedLabel = null;
@@ -43,8 +43,8 @@ namespace EfcToXamarinAndroid.UI.Components.Models
                 if (Math.Abs(_sum - value) > 0.001f)
                 {
                     _sum = value;
-                    _formattedSum = null; // Сброс кеша
-                    // Цвет пересчитывается дешево, но можно тоже кешировать логику
+                    _formattedSum = null; // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+                    // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                 }
             }
         }
@@ -57,8 +57,8 @@ namespace EfcToXamarinAndroid.UI.Components.Models
                 if (_operationType != value)
                 {
                     _operationType = value;
-                    _displayIcon = null; // Сброс иконки
-                    _formattedSum = null; // Сумма зависит от типа (знак +/-)
+                    _displayIcon = null; // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+                    _formattedSum = null; // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅ +/-)
                 }
             }
         }
@@ -83,7 +83,7 @@ namespace EfcToXamarinAndroid.UI.Components.Models
             }
         }
 
-        // Остальные простые свойства
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         public string? Title { get; set; }
         public string? Icon { get; set; }
         public int MCC { get; set; }
@@ -91,14 +91,19 @@ namespace EfcToXamarinAndroid.UI.Components.Models
         public bool IsNewDataItem { get; set; }
         public float Balance { get; set; }
 
-        // Бесполезное свойство для биндинга (лучше убрать, если не критично для XAML хаков)
+        /// <summary>
+        /// QR-РєРѕРґ С‡РµРєР°, РѕР¶РёРґР°СЋС‰РёР№ РїРѕРІС‚РѕСЂРЅРѕР№ РїСЂРѕРІРµСЂРєРё
+        /// </summary>
+        public string? PendingQrCode { get; set; }
+
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ XAML пїЅпїЅпїЅпїЅпїЅ)
         public FinanceItem ThisFinanceItem => this;
 
         // ==========================================
-        // ОПТИМИЗИРОВАННЫЕ UI СВОЙСТВА (Lazy Loading)
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ UI пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (Lazy Loading)
         // ==========================================
 
-        // 1. Форматированная сумма
+        // 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         private string? _formattedSum;
         public string FormattedSum
         {
@@ -112,7 +117,7 @@ namespace EfcToXamarinAndroid.UI.Components.Models
             }
         }
 
-        // 2. Цвет суммы
+        // 2. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         private string? _amountColor;
         public string AmountColor
         {
@@ -128,8 +133,8 @@ namespace EfcToXamarinAndroid.UI.Components.Models
 
         private void CalculateSumAndColor()
         {
-            // Логика вынесена в один метод. 
-            // Сравнение Enum напрямую (быстро), без ToString()
+            // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ. 
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Enum пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅ), пїЅпїЅпїЅ ToString()
             bool isExpense = OperationType == OperacionTyps.OPLATA ||
                              OperationType == OperacionTyps.NALICHNYE;
 
@@ -137,7 +142,7 @@ namespace EfcToXamarinAndroid.UI.Components.Models
             {
                 float displaySum = _sum > 0 ? -_sum : _sum;
                 _amountColor = "red";
-                _formattedSum = displaySum.ToString("F2"); // Создаем строку 1 раз
+                _formattedSum = displaySum.ToString("F2"); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 1 пїЅпїЅпїЅ
             }
             else
             {
@@ -147,21 +152,21 @@ namespace EfcToXamarinAndroid.UI.Components.Models
             }
         }
 
-        // 3. Дата и Время
+        // 3. пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ
         private string? _formattedDate;
         public string FormattedDate => _formattedDate ??= _date.ToString("dd.MM.yyyy");
 
         private string? _formattedTime;
         public string FormattedTime => _formattedTime ??= _date.ToString("HH:mm:ss");
 
-        // 4. Заголовки (Упрощенная логика)
+        // 4. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
         private string? _displayTitle;
-        public string DisplayTitle => _displayTitle ??= string.IsNullOrEmpty(_description) ? "Операция" : _description!;
+        public string DisplayTitle => _displayTitle ??= string.IsNullOrEmpty(_description) ? "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" : _description!;
 
         private string? _displayDescription;
-        public string DisplayDescription => _displayDescription ??= string.IsNullOrEmpty(_mccDescription) ? "Без описания" : _mccDescription!;
+        public string DisplayDescription => _displayDescription ??= string.IsNullOrEmpty(_mccDescription) ? "пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" : _mccDescription!;
 
-        // 5. Иконка
+        // 5. пїЅпїЅпїЅпїЅпїЅпїЅ
         private string? _displayIcon;
         public string DisplayIcon
         {
@@ -169,7 +174,7 @@ namespace EfcToXamarinAndroid.UI.Components.Models
             {
                 if (_displayIcon == null)
                 {
-                    // SWITCH по Enum, а не по строке! Это в 100 раз быстрее.
+                    // SWITCH пїЅпїЅ Enum, пїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ! пїЅпїЅпїЅ пїЅ 100 пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
                     _displayIcon = OperationType switch
                     {
                         OperacionTyps.OPLATA => "@Icons.Material.Filled.Payment",
@@ -183,7 +188,7 @@ namespace EfcToXamarinAndroid.UI.Components.Models
             }
         }
 
-        // 6. Кеширование для метода с параметром
+        // 6. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         public static int CurrentYear = DateTime.Now.Year;
         private string? _shortFormattedLabel;
       
@@ -191,20 +196,20 @@ namespace EfcToXamarinAndroid.UI.Components.Models
         {
             get
             {
-                // ОПТИМИЗАЦИЯ: Если строка уже сформирована, возвращаем её сразу (быстрее не бывает)
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
                 if (_shortFormattedLabel != null)
                 {
                     return _shortFormattedLabel;
                 }
 
-                // ЛОГИКА: Формируем строку только один раз, используя общее статическое значение
+                // пїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 if (_date.Year == CurrentYear)
                 {
-                    _shortFormattedLabel = $"{_date:HH:mm} · {_date:dd.MM}";
+                    _shortFormattedLabel = $"{_date:HH:mm} пїЅ {_date:dd.MM}";
                 }
                 else
                 {
-                    _shortFormattedLabel = $"{_date:HH:mm} · {_date:dd.MM.yyyy}";
+                    _shortFormattedLabel = $"{_date:HH:mm} пїЅ {_date:dd.MM.yyyy}";
                 }
 
                 return _shortFormattedLabel;

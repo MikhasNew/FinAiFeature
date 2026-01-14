@@ -103,6 +103,23 @@ namespace EfcToXamarinAndroid.Core.Repository
                     // Mark migration as applied so EF doesn't try to create tables
                     await InjectMigrationIfMissing(connection, "20260113183533_AddReceiptsTable", "8.0.0");
                 }
+
+                // --- FIX 3: "AddPendingQrCode" migration ---
+                if (catsTableExists)
+                {
+                    bool pendingQrCodeExists = await ColumnExists(connection, "Cats", "PendingQrCode");
+                    
+                    if (!pendingQrCodeExists)
+                    {
+                        using (var cmd = connection.CreateCommand())
+                        {
+                            cmd.CommandText = "ALTER TABLE Cats ADD COLUMN PendingQrCode TEXT NULL;";
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                    }
+                    
+                    await InjectMigrationIfMissing(connection, "20260114191500_AddPendingQrCode", "9.0.0");
+                }
             }
             catch (Exception ex)
             {
@@ -123,6 +140,24 @@ namespace EfcToXamarinAndroid.Core.Repository
                  var result = await cmd.ExecuteScalarAsync();
                  return (Convert.ToInt32(result) > 0);
              }
+        }
+
+        private static async Task<bool> ColumnExists(System.Data.Common.DbConnection connection, string tableName, string columnName)
+        {
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = $"PRAGMA table_info({tableName});";
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var name = reader["name"].ToString();
+                        if (name == columnName)
+                            return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private static async Task InjectMigrationIfMissing(System.Data.Common.DbConnection connection, string migrationId, string productVersion)
