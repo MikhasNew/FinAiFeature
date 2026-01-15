@@ -1,8 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EfcToXamarinAndroid.Core.Configs.ManagerCore;
 using EfcToXamarinAndroid.Core.Parsers;
+using Newtonsoft.Json.Linq;
 
 namespace EfcToXamarinAndroid.Core.Services
 {
@@ -17,7 +22,7 @@ namespace EfcToXamarinAndroid.Core.Services
             _configuration = configuration;
             _receiptParser = receiptParser;
             _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
         }
 
         public async Task<Receipt?> GetReceiptByUrlAsync(string url)
@@ -41,85 +46,327 @@ namespace EfcToXamarinAndroid.Core.Services
 
         public async Task<Receipt?> ParseRawReceiptDataAsync(string rawData, string identifier)
         {
-            // The logic here is mostly handled by ReceiptParser which works on the raw content
-            // We pass the URL as the identifier to help select the right configuration
             return await Task.Run(() => _receiptParser.Parse(rawData, identifier, false));
         }
 
-        public async Task<Receipt?> GetReceiptByTransactionCodeAsync(DateTime date, string code)
+        public async Task<Receipt?> GetReceiptByQrCodeAsync(string qrString, DateTime? dateHint = null)
         {
+            var config = GetDefaultQrConfiguration();
+            if (config == null)
+            {
+                Console.WriteLine("No default QR configuration found");
+                return null;
+            }
+            return await GetReceiptByQrCodeAsync(qrString, config, dateHint);
+        }
+
+        public async Task<Receipt?> GetReceiptByQrCodeAsync(string qrString, ReceiptConfiguration config, DateTime? dateHint = null)
+        {
+            if (config.ApiConfig == null || string.IsNullOrEmpty(config.ApiConfig.Url))
+            {
+                Console.WriteLine($"Configuration '{config.Name}' has no API config");
+                return null;
+            }
+
             try
             {
-                var content = new MultipartFormDataContent();
+                var qrParams = ExtractQrParameters(qrString, config.QrCodePattern);
+                
+                if (dateHint.HasValue && !qrParams.ContainsKey("date"))
+                {
+                    qrParams["date"] = dateHint.Value.ToString(config.ApiConfig.DateFormat);
+                }
 
-                // »зменили им€ параметра на то, которое требует сервер
-                content.Add(new StringContent(date.ToString("yyyy-MM-dd")), "orig_date");
+                if (!qrParams.ContainsKey("code") && !string.IsNullOrEmpty(qrString))
+                {
+                    qrParams["code"] = qrString;
+                }
 
-                content.Add(new StringContent(code), "orig_ui");
-
-                var response = await _httpClient.PostAsync("https://ch.info-center.by/ajax/check1.php", content);
-                response.EnsureSuccessStatusCode();
-
-                var jsonString = await response.Content.ReadAsStringAsync();
-
-                // “еперь jsonString должен содержать {"status":"success", ...}
-                var apiResponse = System.Text.Json.JsonSerializer.Deserialize<CheckApiResponse>(jsonString);
-
-
-                if (apiResponse?.Message == null || apiResponse.Status != "success")
+                var jsonResponse = await CallApiAsync(config.ApiConfig, qrParams);
+                if (string.IsNullOrEmpty(jsonResponse))
                 {
                     return null;
                 }
 
-                var msg = apiResponse.Message;
+                if (config.JsonPaths != null)
+                {
+                    return ParseJsonResponse(jsonResponse, config.JsonPaths, dateHint);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetReceiptByQrCodeAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<Receipt?> GetReceiptByTransactionCodeAsync(DateTime date, string code)
+        {
+            return await GetReceiptByQrCodeAsync(code, date);
+        }
+
+        public ReceiptConfiguration? GetDefaultQrConfiguration()
+        {
+            return _configuration.ReceiptConfigurations?.Find(c => 
+                c.IsActive && c.IsDefault && c.ApiConfig != null);
+        }
+
+        public List<ReceiptConfiguration> GetActiveQrConfigurations()
+        {
+            return _configuration.ReceiptConfigurations?
+                .FindAll(c => c.IsActive && c.ApiConfig != null) ?? new List<ReceiptConfiguration>();
+        }
+
+        private Dictionary<string, string> ExtractQrParameters(string qrString, string? pattern)
+        {
+            var result = new Dictionary<string, string>();
+
+            if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(qrString))
+            {
+                return result;
+            }
+
+            try
+            {
+                var match = Regex.Match(qrString, pattern, RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    foreach (var groupName in match.Groups.Keys)
+                    {
+                        if (groupName != "0" && !string.IsNullOrEmpty(match.Groups[groupName].Value))
+                        {
+                            result[groupName] = match.Groups[groupName].Value;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error extracting QR parameters: {ex.Message}");
+            }
+
+            return result;
+        }
+
+        private async Task<string?> CallApiAsync(ReceiptApiConfig apiConfig, Dictionary<string, string> parameters)
+        {
+            try
+            {
+                if (apiConfig.Headers != null)
+                {
+                    foreach (var header in apiConfig.Headers)
+                    {
+                        if (!_httpClient.DefaultRequestHeaders.Contains(header.Key))
+                        {
+                            _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                        }
+                    }
+                }
+
+                var requestParams = new Dictionary<string, string>();
+                foreach (var mapping in apiConfig.ParameterMapping)
+                {
+                    var apiParamName = mapping.Key;
+                    var sourceParamName = mapping.Value;
+
+                    if (parameters.TryGetValue(sourceParamName, out var value))
+                    {
+                        requestParams[apiParamName] = value;
+                    }
+                }
+
+                HttpResponseMessage response;
+
+                if (apiConfig.Method.Equals("GET", StringComparison.OrdinalIgnoreCase))
+                {
+                    var queryString = string.Join("&", 
+                        requestParams.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
+                    var url = apiConfig.Url + (apiConfig.Url.Contains("?") ? "&" : "?") + queryString;
+                    response = await _httpClient.GetAsync(url);
+                }
+                else
+                {
+                    HttpContent content;
+                    if (apiConfig.ContentType.Equals("Json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var json = Newtonsoft.Json.JsonConvert.SerializeObject(requestParams);
+                        content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                    }
+                    else
+                    {
+                        content = new MultipartFormDataContent();
+                        foreach (var param in requestParams)
+                        {
+                            ((MultipartFormDataContent)content).Add(new StringContent(param.Value), param.Key);
+                        }
+                    }
+
+                    response = await _httpClient.PostAsync(apiConfig.Url, content);
+                }
+
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"API call error: {ex.Message}");
+                return null;
+            }
+        }
+
+        private Receipt? ParseJsonResponse(string jsonString, ReceiptJsonPaths paths, DateTime? dateHint)
+        {
+            try
+            {
+                var json = JObject.Parse(jsonString);
+
+                if (!string.IsNullOrEmpty(paths.StatusPath) && !string.IsNullOrEmpty(paths.SuccessValue))
+                {
+                    var status = json.SelectToken(paths.StatusPath)?.ToString();
+                    if (status != paths.SuccessValue)
+                    {
+                        Console.WriteLine($"API returned non-success status: {status}");
+                        return null;
+                    }
+                }
 
                 var receipt = new Receipt
                 {
-                    ReceiptDate = date,
-                    TotalSum = (float)msg.TotalAmount,
-                    ShopName = msg.NameTo ?? msg.NameSpd,
-                    ShopInn = msg.Unp,
-                    Address = $"{msg.NameNp}, {msg.StreetTo}, {msg.HouseTo}",
-                    ReceiptDateString = msg.IssuedAt, 
                     RawData = jsonString,
-                    Currency = msg.Currency,
-                    Items = new System.Collections.Generic.List<ReceiptItem>()
+                    ReceiptDate = dateHint ?? DateTime.Now,
+                    Items = new List<ReceiptItem>()
                 };
 
-                // Try to parse the date from the response if possible, to be more precise
-                if (DateTime.TryParseExact(msg.IssuedAt, "dd/MM/yyyy, HH:mm:ss", 
-                    System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var issuedDate))
+                if (!string.IsNullOrEmpty(paths.TotalSum))
                 {
-                    receipt.ReceiptDate = issuedDate;
+                    var sumToken = json.SelectToken(paths.TotalSum);
+                    if (sumToken != null && float.TryParse(sumToken.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out float sum))
+                    {
+                        receipt.TotalSum = sum;
+                    }
                 }
 
-                // Parse positions (nested JSON string)
-                if (!string.IsNullOrEmpty(msg.Positions))
+                if (!string.IsNullOrEmpty(paths.ShopName))
                 {
-                    try 
+                    receipt.ShopName = json.SelectToken(paths.ShopName)?.ToString();
+                }
+
+                if (!string.IsNullOrEmpty(paths.ShopInn))
+                {
+                    receipt.ShopInn = json.SelectToken(paths.ShopInn)?.ToString();
+                }
+
+                if (!string.IsNullOrEmpty(paths.Currency))
+                {
+                    receipt.Currency = json.SelectToken(paths.Currency)?.ToString();
+                }
+
+                if (!string.IsNullOrEmpty(paths.ReceiptDate))
+                {
+                    var dateStr = json.SelectToken(paths.ReceiptDate)?.ToString();
+                    if (!string.IsNullOrEmpty(dateStr))
                     {
-                        var positions = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<CheckApiPosition>>(msg.Positions);
-                        if (positions != null)
+                        receipt.ReceiptDateString = dateStr;
+                        
+                        if (!string.IsNullOrEmpty(paths.DateFormat))
                         {
-                            foreach (var pos in positions)
+                            if (DateTime.TryParseExact(dateStr, paths.DateFormat, 
+                                CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
                             {
-                                if (float.TryParse(pos.Amount, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float amount) &&
-                                    float.TryParse(pos.ProductCount, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float quantity))
-                                {
-                                     receipt.Items.Add(new ReceiptItem
-                                     {
-                                         Name = pos.ProductName,
-                                         Quantity = quantity,
-                                         Sum = amount,
-                                         Price = quantity != 0 ? amount / quantity : 0
-                                     });
-                                }
+                                receipt.ReceiptDate = parsedDate;
                             }
                         }
+                        else if (DateTime.TryParse(dateStr, out var parsedDate2))
+                        {
+                            receipt.ReceiptDate = parsedDate2;
+                        }
                     }
-                    catch (Exception ex)
+                }
+
+                if (!string.IsNullOrEmpty(paths.AddressTemplate))
+                {
+                    var address = paths.AddressTemplate;
+                    var placeholderRegex = new Regex(@"\{(\w+)\}");
+                    address = placeholderRegex.Replace(address, match =>
                     {
-                        Console.WriteLine($"Error parsing positions JSON: {ex.Message}");
+                        var fieldName = match.Groups[1].Value;
+                        var token = json.SelectToken($"$.message.{fieldName}") ?? json.SelectToken($"$.{fieldName}");
+                        return token?.ToString() ?? "";
+                    });
+                    receipt.Address = address.Trim(' ', ',');
+                }
+                else if (!string.IsNullOrEmpty(paths.Address))
+                {
+                    receipt.Address = json.SelectToken(paths.Address)?.ToString();
+                }
+
+                if (!string.IsNullOrEmpty(paths.ItemsArray))
+                {
+                    var itemsToken = json.SelectToken(paths.ItemsArray);
+                    JArray? itemsArray = null;
+
+                    if (itemsToken is JValue jValue && jValue.Type == JTokenType.String)
+                    {
+                        try
+                        {
+                            itemsArray = JArray.Parse(jValue.ToString());
+                        }
+                        catch
+                        {
+                            Console.WriteLine("Failed to parse nested JSON items array");
+                        }
+                    }
+                    else if (itemsToken is JArray arr)
+                    {
+                        itemsArray = arr;
+                    }
+
+                    if (itemsArray != null)
+                    {
+                        foreach (var itemToken in itemsArray)
+                        {
+                            var item = new ReceiptItem();
+
+                            if (!string.IsNullOrEmpty(paths.ItemName))
+                            {
+                                item.Name = itemToken[paths.ItemName]?.ToString();
+                            }
+
+                            if (!string.IsNullOrEmpty(paths.ItemQuantity))
+                            {
+                                var qtyStr = itemToken[paths.ItemQuantity]?.ToString();
+                                if (double.TryParse(qtyStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double qty))
+                                {
+                                    item.Quantity = qty;
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(paths.ItemAmount))
+                            {
+                                var amtStr = itemToken[paths.ItemAmount]?.ToString();
+                                if (float.TryParse(amtStr, NumberStyles.Any, CultureInfo.InvariantCulture, out float amt))
+                                {
+                                    item.Sum = amt;
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(paths.ItemPrice))
+                            {
+                                var priceStr = itemToken[paths.ItemPrice]?.ToString();
+                                if (float.TryParse(priceStr, NumberStyles.Any, CultureInfo.InvariantCulture, out float price))
+                                {
+                                    item.Price = price;
+                                }
+                            }
+                            else if (item.Quantity > 0 && item.Sum > 0)
+                            {
+                                item.Price = (float)(item.Sum / item.Quantity);
+                            }
+
+                            receipt.Items.Add(item);
+                        }
                     }
                 }
 
@@ -127,63 +374,9 @@ namespace EfcToXamarinAndroid.Core.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching receipt by transaction code: {ex.Message}");
+                Console.WriteLine($"Error parsing JSON response: {ex.Message}");
                 return null;
             }
-        }
-
-        private class CheckApiResponse
-        {
-            [System.Text.Json.Serialization.JsonPropertyName("status")]
-            public string Status { get; set; }
-            
-            [System.Text.Json.Serialization.JsonPropertyName("message")]
-            public CheckApiMessage Message { get; set; }
-        }
-
-        private class CheckApiMessage
-        {
-            [System.Text.Json.Serialization.JsonPropertyName("total_amount")]
-            public double TotalAmount { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("unp")]
-            public string Unp { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("issued_at")]
-            public string IssuedAt { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("currency")]
-            public string Currency { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("positions")]
-            public string Positions { get; set; } // Nested JSON string
-
-            [System.Text.Json.Serialization.JsonPropertyName("name_spd")]
-            public string NameSpd { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("name_to")]
-            public string NameTo { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("name_np")]
-            public string NameNp { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("street_to")]
-            public string StreetTo { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("house_to")]
-            public string HouseTo { get; set; }
-        }
-
-        private class CheckApiPosition
-        {
-            [System.Text.Json.Serialization.JsonPropertyName("product_name")]
-            public string ProductName { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("product_count")]
-            public string ProductCount { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("amount")]
-            public string Amount { get; set; }
         }
     }
 }

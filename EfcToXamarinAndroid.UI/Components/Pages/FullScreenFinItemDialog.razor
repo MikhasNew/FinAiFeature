@@ -101,81 +101,89 @@
 
         if (!result.Canceled && result.Data is string qrCode)
         {
-            var data = FnsQrParser.Parse(qrCode);
+            _isLoading = true;
+            StateHasChanged();
 
-            if (!string.IsNullOrEmpty(data.TransactionCode))
+            try
             {
-                _isLoading = true;
-                StateHasChanged();
+                // 1. Попытка получить чек через конфигурируемый сервис
+                // Используем дату из Item как подсказку, если в QR её нет
+                var receipt = await QrCodeService.GetReceiptByQrCodeAsync(qrCode, Item.Date);
 
-                try
+                if (receipt != null)
                 {
-                    // Используем дату из QR-кода, если она есть, иначе из Item
-                    var dateToUse = data.Date ?? Item.Date;
+                    _receipt = receipt;
+                    _pendingQrCode = null;
+
+                    // Обновляем поля из полученного чека
+                    if (Item.Id == default) Item.Date = receipt.ReceiptDate;
+                    if (Item.Sum == 0) Item.Sum = receipt.TotalSum;
+                    if (string.IsNullOrEmpty(Item.Description)) Item.Description = receipt.Subject;
+
+                    Snackbar.Add("Чек успешно загружен!", Severity.Success);
+                }
+                else
+                {
+                    // 2. Fallback: Старый парсер FNS (если новая конфигурация не сработала)
+                    var data = FnsQrParser.Parse(qrCode);
                     
-                    if (dateToUse == default)
+                    if (!string.IsNullOrEmpty(data.TransactionCode))
                     {
-                        Snackbar.Add("Укажите дату транзакции перед сканированием", Severity.Warning);
-                        _pendingQrCode = qrCode;
-                        return;
-                    }
-
-                    var receipt = await QrCodeService.GetReceiptByTransactionCodeAsync(dateToUse, data.TransactionCode);
-                    
-                    if (receipt != null)
-                    {
-                        _receipt = receipt;
-                        _pendingQrCode = null; // Сбрасываем, т.к. чек получен
-                        
-                        // Обновляем дату/время из чека (только для новых транзакций)
-                        if (Item.Id == default)
-                            Item.Date = receipt.ReceiptDate;
-
-                        // Обновляем сумму, если не была задана
-                        if (Item.Sum == 0)
-                            Item.Sum = receipt.TotalSum;
-
-                        // Обновляем описание
-                        if (string.IsNullOrEmpty(Item.Description))
-                            Item.Description = receipt.Subject;
-
-                        Snackbar.Add("Чек успешно загружен!", Severity.Success);
+                         // Попытка загрузить по коду транзакции (старый метод)
+                         var dateToUse = data.Date ?? Item.Date;
+                         if (dateToUse == default)
+                         {
+                             Snackbar.Add("Укажите дату транзакции перед сканированием", Severity.Warning);
+                             _pendingQrCode = qrCode;
+                         }
+                         else 
+                         {
+                             // Этот метод внутри тоже вызывает GetReceiptByQrCodeAsync, но может быть полезен 
+                             // если логика парсинга строки в сервисе отличается от FnsQrParser
+                             receipt = await QrCodeService.GetReceiptByTransactionCodeAsync(dateToUse, data.TransactionCode);
+                             if (receipt != null)
+                             {
+                                 _receipt = receipt;
+                                 _pendingQrCode = null;
+                                 if (Item.Id == default) Item.Date = receipt.ReceiptDate;
+                                 if (Item.Sum == 0) Item.Sum = receipt.TotalSum;
+                                 if (string.IsNullOrEmpty(Item.Description)) Item.Description = receipt.Subject;
+                                 Snackbar.Add("Чек успешно загружен (Legacy)!", Severity.Success);
+                             }
+                             else
+                             {
+                                 Snackbar.Add("Чек не найден (код транзакции извлечен, но API вернул пустоту).", Severity.Warning);
+                                 _pendingQrCode = qrCode;
+                             }
+                         }
                     }
                     else
                     {
-                        // Чек не найден — возможно, неверная дата
-                        Snackbar.Add("Чек не найден. Проверьте дату транзакции.", Severity.Warning);
-                        _pendingQrCode = qrCode;
+                        // 3. Если ничего не помогло - просто извлекаем дату/сумму если можем
+                        if (data.Date.HasValue || data.Sum.HasValue)
+                        {
+                            if (data.Date.HasValue) Item.Date = data.Date.Value;
+                            if (data.Sum.HasValue) Item.Sum = data.Sum.Value;
+                            Snackbar.Add("Данные из QR-кода применены (Чек не найден)", Severity.Info);
+                        }
+                        else
+                        {
+                            Snackbar.Add("Не удалось распознать QR-код ни одной конфигурацией.", Severity.Error);
+                        }
                     }
                 }
-                catch (HttpRequestException)
-                {
-                    Snackbar.Add("Нет подключения к интернету. QR-код сохранён.", Severity.Error);
-                    _pendingQrCode = qrCode;
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Ошибка: {ex.Message}", Severity.Error);
-                    _pendingQrCode = qrCode;
-                }
-                finally
-                {
-                    _isLoading = false;
-                }
             }
-            else
+            catch (Exception ex)
             {
-                // Старый формат QR — просто парсим дату и сумму
-                if (data.Date.HasValue)
-                    Item.Date = data.Date.Value;
-                if (data.Sum.HasValue)
-                    Item.Sum = data.Sum.Value;
-                    
-                Snackbar.Add("Данные из QR-кода применены", Severity.Info);
+                Snackbar.Add($"Ошибка при обработке QR: {ex.Message}", Severity.Error);
+                _pendingQrCode = qrCode;
             }
-
-            IsEditanle = true;
-            StateHasChanged();
+            finally
+            {
+                _isLoading = false;
+                IsEditanle = true;
+                StateHasChanged();
+            }
         }
     }
 

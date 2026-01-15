@@ -19,5 +19,10 @@ namespace EfcToXamarinAndroid.Core.Services
         /// Получает чек по коду транзакции и дате (через ch.info-center.by)
         /// </summary>
         Task<Receipt?> GetReceiptByTransactionCodeAsync(DateTime date, string code);
+
+        /// <summary>
+        /// Получает чек по данным из QR-кода, используя конфигурацию
+        /// </summary>
+        Task<Receipt?> GetReceiptByQrCodeAsync(string qrString, DateTime? dateHint = null);
     }
 }

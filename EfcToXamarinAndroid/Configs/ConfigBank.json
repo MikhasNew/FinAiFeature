@@ -184,7 +184,39 @@
   ],
   "ReceiptConfigurations": [
     {
+      "Name": "Belarus (ch.info-center.by)",
+      "IsActive": true,
+      "IsDefault": true,
+      "QrCodePattern": "^(?<code>[0-9A-Fa-f]{24})$",
+      "ApiConfig": {
+        "Url": "https://ch.info-center.by/ajax/check1.php",
+        "Method": "POST",
+        "ContentType": "FormData",
+        "ParameterMapping": {
+          "orig_date": "date",
+          "orig_ui": "code"
+        },
+        "DateFormat": "yyyy-MM-dd"
+      },
+      "JsonPaths": {
+        "StatusPath": "$.status",
+        "SuccessValue": "success",
+        "TotalSum": "$.message.total_amount",
+        "ShopName": "$.message.name_to",
+        "ShopInn": "$.message.unp",
+        "ReceiptDate": "$.message.issued_at",
+        "DateFormat": "dd/MM/yyyy, HH:mm:ss",
+        "Currency": "$.message.currency",
+        "AddressTemplate": "{name_np}, {street_to}, {house_to}",
+        "ItemsArray": "$.message.positions",
+        "ItemName": "product_name",
+        "ItemQuantity": "product_count",
+        "ItemAmount": "amount"
+      }
+    },
+    {
       "Name": "Cinema/Ticket",
+      "IsActive": true,
       "SenderEmail": "no-reply@cinema.by",
       "ParseRegex": {
         "ShopName": "Получатель платежа:\\s*(.+?)(?=\\r?\\n|УНП)",
@@ -199,7 +231,8 @@
       }
     },
     {
-      "Name": "Беларусбанк М-Банкинг (Email)",
+      "Name": "Belarusbank M-Banking (Email)",
+      "IsActive": true,
       "SenderEmail": "mikail.petrovik@gmail.com",
       "ParseRegex": {
         "ShopName": "Получатель платежа:\\s*(.+?)(?=,\\s*УНП)",

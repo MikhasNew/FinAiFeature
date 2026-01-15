@@ -5,6 +5,9 @@ using EfcToXamarinAndroid.Core.ViewModels;
 using EfcToXamarinAndroid.UI.Services;
 using EfcToXamarinAndroid.Core;
 
+// Fix encoding for Russian characters
+Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

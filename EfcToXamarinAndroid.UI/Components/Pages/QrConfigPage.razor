@@ -1,0 +1,253 @@
+@page "/qr-config"
+@using EfcToXamarinAndroid.Core.Configs.ManagerCore
+@using EfcToXamarinAndroid.Core.ViewModels
+@using EfcToXamarinAndroid.UI.Components.Dialogs
+@inject MainViewModel ViewModel
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h5" Class="mb-4">Настройки QR-кодов</MudText>
+    
+    <MudPaper Class="pa-4 mb-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-2">Конфигурация по умолчанию</MudText>
+        <MudSelect T="string" 
+                   Label="Провайдер проверки чеков" 
+                   @bind-Value="_selectedDefaultName"
+                   Variant="Variant.Outlined">
+            @foreach (var config in _configurations.Where(c => c.ApiConfig != null))
+            {
+                <MudSelectItem Value="@config.Name">@config.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Class="mt-2"
+                   OnClick="SetDefaultConfiguration">
+            Сохранить
+        </MudButton>
+    </MudPaper>
+    
+    <MudText Typo="Typo.h6" Class="mb-2">Все конфигурации</MudText>
+    
+    <MudTable Items="_configurations" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Название</MudTh>
+            <MudTh>Тип</MudTh>
+            <MudTh>Статус</MudTh>
+            <MudTh>Действия</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Название">
+                @context.Name
+                @if (context.IsDefault)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-2">По умолчанию</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Тип">
+                @GetConfigType(context)
+            </MudTd>
+            <MudTd DataLabel="Статус">
+                <MudSwitch T="bool" Value="context.IsActive" ValueChanged="(val) => ToggleActive(context, val)" Color="Color.Success" />
+            </MudTd>
+            <MudTd DataLabel="Действия">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                               Size="Size.Small" 
+                               OnClick="() => EditConfiguration(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" 
+                               Size="Size.Small" 
+                               OnClick="() => DuplicateConfiguration(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                               Size="Size.Small" 
+                               Color="Color.Error"
+                               OnClick="() => DeleteConfiguration(context)" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    
+    <MudButton Variant="Variant.Outlined" 
+               Color="Color.Primary" 
+               StartIcon="@Icons.Material.Filled.Add"
+               Class="mt-4"
+               OnClick="AddNewConfiguration">
+        Добавить конфигурацию
+    </MudButton>
+</MudContainer>
+
+@code {
+    private List<ReceiptConfiguration> _configurations = new();
+    private string _selectedDefaultName = "";
+    
+    protected override void OnInitialized()
+    {
+        LoadConfigurations();
+    }
+    
+    private void LoadConfigurations()
+    {
+        var configManager = ConfigurationManager.ConfigManager;
+        _configurations = configManager.BankConfigurationFromJson?.ReceiptConfigurations ?? new();
+        
+        var defaultConfig = _configurations.FirstOrDefault(c => c.IsDefault);
+        _selectedDefaultName = defaultConfig?.Name ?? "";
+    }
+    
+    private string GetConfigType(ReceiptConfiguration config)
+    {
+        if (config.ApiConfig != null) return "QR-код (API)";
+        if (!string.IsNullOrEmpty(config.SenderEmail)) return "Email";
+        if (!string.IsNullOrEmpty(config.UrlPattern)) return "URL";
+        return "Другое";
+    }
+    
+    private void SetDefaultConfiguration()
+    {
+        foreach (var config in _configurations)
+        {
+            config.IsDefault = config.Name == _selectedDefaultName;
+        }
+        SaveConfigurations();
+        Snackbar.Add("Конфигурация по умолчанию сохранена", Severity.Success);
+    }
+    
+    private void SaveConfigurations()
+    {
+        var configManager = ConfigurationManager.ConfigManager;
+        configManager.Save();
+    }
+    
+    private void ToggleActive(ReceiptConfiguration config, bool value)
+    {
+        config.IsActive = value;
+        SaveConfigurations();
+    }
+    
+    private async Task EditConfiguration(ReceiptConfiguration config)
+    {
+        var parameters = new DialogParameters<QrConfigEditDialog>
+        {
+            { x => x.Config, config },
+            { x => x.IsNew, false }
+        };
+        
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true, 
+            MaxWidth = MaxWidth.Medium, 
+            FullWidth = true 
+        };
+        
+        var dialog = await DialogService.ShowAsync<QrConfigEditDialog>("Редактирование", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            SaveConfigurations();
+            Snackbar.Add("Конфигурация сохранена", Severity.Success);
+            StateHasChanged();
+        }
+    }
+    
+    private async Task DeleteConfiguration(ReceiptConfiguration config)
+    {
+        bool? confirmed = await DialogService.ShowMessageBox(
+            "Удаление",
+            $"Удалить конфигурацию '{config.Name}'?",
+            yesText: "Удалить",
+            cancelText: "Отмена");
+            
+        if (confirmed == true)
+        {
+            _configurations.Remove(config);
+            SaveConfigurations();
+            Snackbar.Add("Конфигурация удалена", Severity.Info);
+        }
+    }
+    
+    private void DuplicateConfiguration(ReceiptConfiguration config)
+    {
+        var newConfig = new ReceiptConfiguration
+        {
+            Name = config.Name + " (копия)",
+            IsActive = false,
+            IsDefault = false,
+            QrCodePattern = config.QrCodePattern,
+            SenderEmail = config.SenderEmail,
+            UrlPattern = config.UrlPattern,
+            ApiConfig = config.ApiConfig != null ? new ReceiptApiConfig
+            {
+                Url = config.ApiConfig.Url,
+                Method = config.ApiConfig.Method,
+                ContentType = config.ApiConfig.ContentType,
+                DateFormat = config.ApiConfig.DateFormat,
+                ParameterMapping = config.ApiConfig.ParameterMapping != null 
+                    ? new Dictionary<string, string>(config.ApiConfig.ParameterMapping) 
+                    : new Dictionary<string, string>()
+            } : null,
+            JsonPaths = config.JsonPaths != null ? new ReceiptJsonPaths
+            {
+                StatusPath = config.JsonPaths.StatusPath,
+                SuccessValue = config.JsonPaths.SuccessValue,
+                TotalSum = config.JsonPaths.TotalSum,
+                ShopName = config.JsonPaths.ShopName,
+                ShopInn = config.JsonPaths.ShopInn,
+                Currency = config.JsonPaths.Currency,
+                ReceiptDate = config.JsonPaths.ReceiptDate,
+                DateFormat = config.JsonPaths.DateFormat,
+                Address = config.JsonPaths.Address,
+                AddressTemplate = config.JsonPaths.AddressTemplate,
+                ItemsArray = config.JsonPaths.ItemsArray,
+                ItemName = config.JsonPaths.ItemName,
+                ItemQuantity = config.JsonPaths.ItemQuantity,
+                ItemAmount = config.JsonPaths.ItemAmount,
+                ItemPrice = config.JsonPaths.ItemPrice
+            } : null
+        };
+        
+        _configurations.Add(newConfig);
+        SaveConfigurations();
+        Snackbar.Add("Конфигурация скопирована", Severity.Success);
+    }
+    
+    private async Task AddNewConfiguration()
+    {
+        var newConfig = new ReceiptConfiguration
+        {
+            Name = "Новая конфигурация",
+            IsActive = true,
+            ApiConfig = new ReceiptApiConfig
+            {
+                Url = "",
+                Method = "POST",
+                ContentType = "FormData",
+                ParameterMapping = new Dictionary<string, string>()
+            },
+            JsonPaths = new ReceiptJsonPaths()
+        };
+        
+        var parameters = new DialogParameters<QrConfigEditDialog>
+        {
+            { x => x.Config, newConfig },
+            { x => x.IsNew, true }
+        };
+        
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true, 
+            MaxWidth = MaxWidth.Medium, 
+            FullWidth = true 
+        };
+        
+        var dialog = await DialogService.ShowAsync<QrConfigEditDialog>("Новая конфигурация", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled && result.Data is ReceiptConfiguration savedConfig)
+        {
+            _configurations.Add(savedConfig);
+            SaveConfigurations();
+            Snackbar.Add("Новая конфигурация добавлена", Severity.Success);
+            StateHasChanged();
+        }
+    }
+}

@@ -51,6 +51,46 @@ namespace EfcToXamarinAndroid.Core.Configs.ManagerCore
                     jsonFile = reader.ReadToEnd();
                 }
                 configs = JsonConvert.DeserializeObject<AppConfiguration>(jsonFile);
+
+                // Ensure default QR configuration exists (migration logic)
+                var needsSave = false;
+                if (configs.ReceiptConfigurations == null)
+                {
+                    configs.ReceiptConfigurations = new System.Collections.Generic.List<ReceiptConfiguration>();
+                    needsSave = true;
+                }
+
+                if (!configs.ReceiptConfigurations.Exists(c => c.Name == "Belarus (ch.info-center.by)"))
+                {
+                    // Load default configs from resource to get the new one
+                    var assembly = Assembly.GetExecutingAssembly();
+                    string resourceName = "EfcToXamarinAndroid.Core.Configs.ConfigBank.json";
+                    try 
+                    {
+                         using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+                         using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+                         {
+                             var resourceJson = reader.ReadToEnd();
+                             var resourceConfigs = JsonConvert.DeserializeObject<AppConfiguration>(resourceJson);
+                             var defaultConfig = resourceConfigs?.ReceiptConfigurations?.Find(c => c.Name == "Belarus (ch.info-center.by)");
+                             
+                             if (defaultConfig != null)
+                             {
+                                 configs.ReceiptConfigurations.Insert(0, defaultConfig);
+                                 needsSave = true;
+                             }
+                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error migrating config: {ex.Message}");
+                    }
+                }
+
+                if (needsSave)
+                {
+                    Write(configs);
+                }
             }
 
             return configs;

@@ -69,6 +69,7 @@ namespace EfcToXamarinAndroid.Core
             Descripton = dataItem.Descripton;
             MCC = dataItem.MCC;
             MccDeskription = dataItem.MccDeskription;
+            PendingQrCode = dataItem.PendingQrCode;
             if (ParentId != 0) //если у записи есть предки, значит она пользовательская и можно изменять ее дату
             {
                 Date = dataItem.Date;
