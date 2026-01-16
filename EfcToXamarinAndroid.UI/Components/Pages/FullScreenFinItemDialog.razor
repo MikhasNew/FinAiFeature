@@ -66,6 +66,7 @@
 </MudContainer>
 
 @code {
+
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
     [Parameter]
@@ -126,36 +127,40 @@
                 {
                     // 2. Fallback: Старый парсер FNS (если новая конфигурация не сработала)
                     var data = FnsQrParser.Parse(qrCode);
-                    
+
                     if (!string.IsNullOrEmpty(data.TransactionCode))
                     {
-                         // Попытка загрузить по коду транзакции (старый метод)
-                         var dateToUse = data.Date ?? Item.Date;
-                         if (dateToUse == default)
-                         {
-                             Snackbar.Add("Укажите дату транзакции перед сканированием", Severity.Warning);
-                             _pendingQrCode = qrCode;
-                         }
-                         else 
-                         {
-                             // Этот метод внутри тоже вызывает GetReceiptByQrCodeAsync, но может быть полезен 
-                             // если логика парсинга строки в сервисе отличается от FnsQrParser
-                             receipt = await QrCodeService.GetReceiptByTransactionCodeAsync(dateToUse, data.TransactionCode);
-                             if (receipt != null)
-                             {
-                                 _receipt = receipt;
-                                 _pendingQrCode = null;
-                                 if (Item.Id == default) Item.Date = receipt.ReceiptDate;
-                                 if (Item.Sum == 0) Item.Sum = receipt.TotalSum;
-                                 if (string.IsNullOrEmpty(Item.Description)) Item.Description = receipt.Subject;
-                                 Snackbar.Add("Чек успешно загружен (Legacy)!", Severity.Success);
-                             }
-                             else
-                             {
-                                 Snackbar.Add("Чек не найден (код транзакции извлечен, но API вернул пустоту).", Severity.Warning);
-                                 _pendingQrCode = qrCode;
-                             }
-                         }
+                        // Попытка загрузить по коду транзакции (старый метод)
+                        var dateToUse = data.Date ?? Item.Date;
+                        if (dateToUse == default)
+                        {
+                            Snackbar.Add("Укажите дату транзакции перед сканированием", Severity.Warning);
+                            _pendingQrCode = qrCode;
+                        }
+                        else
+                        {
+                            // Этот метод внутри тоже вызывает GetReceiptByQrCodeAsync, но может быть полезен
+                            // если логика парсинга строки в сервисе отличается от FnsQrParser
+                            receipt = await QrCodeService.GetReceiptByTransactionCodeAsync(dateToUse, data.TransactionCode);
+                            if (receipt != null)
+                            {
+                                _receipt = receipt;
+                                _pendingQrCode = null;
+                                if (Item.Id == default) Item.Date = receipt.ReceiptDate;
+                                if (Item.Sum == 0) Item.Sum = receipt.TotalSum;
+
+                                if (string.IsNullOrEmpty(Item.Description))
+                                    Item.Description = receipt.ShopName;
+                                else
+                                    Item.Description = $"{Item.Description} ({receipt.ShopName}) ";
+                                Snackbar.Add("Чек успешно загружен (Legacy)!", Severity.Success);
+                            }
+                            else
+                            {
+                                Snackbar.Add("Чек не найден (код транзакции извлечен, но API вернул пустоту).", Severity.Warning);
+                                _pendingQrCode = qrCode;
+                            }
+                        }
                     }
                     else
                     {
