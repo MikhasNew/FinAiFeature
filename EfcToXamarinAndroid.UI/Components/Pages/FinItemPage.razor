@@ -49,28 +49,33 @@
                         <MudSelectItem Value="@(i)" />
                     }
                 </MudSelect>
-                <MudSelect Variant="Variant.Outlined"
-                           Dense="true"
-                           T="Int32"
-                           Label="MCC-Code"
-                           @bind-Value=@Item.MCC
-                           ReadOnly="!Editable">
-                    @foreach (var i in VM.GetMccCodes(Item.OperationType))
-                    {
-                        <MudSelectItem Value="@i">@i</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudSelect Variant="Variant.Outlined"
-                           Dense="true"
-                           T="string"
-                           Label="MCC-Description"
-                           @bind-Value=Item.MccDescription
-                           ReadOnly="!Editable">
-                    @foreach (var i in VM.GetMccDeskriptons(Item.OperationType))
-                    {
-                        <MudSelectItem Value="@(i)" />
-                    }
-                </MudSelect>
+               
+                <MudAutocomplete T="int"
+                                 Label="MCC-Code"
+                                 Variant="Variant.Outlined"
+                                 Dense="true"
+                                 @bind-Value="Item.MCC"
+                                 SearchFunc="@SearchMccCodes"
+                                 CoerceText = "true"
+                                 CoerceValue = "true"
+                                 ReadOnly="!Editable" 
+                                 Clearable="true"
+                                 Placeholder="Начните вводить для поиска..." />
+
+                <MudAutocomplete T="string"
+                                 Label="MCC-Description"
+                                 Variant="Variant.Outlined"
+                                 Dense="true"
+                                 @bind-Value="Item.MccDescription"
+                                 SearchFunc="@SearchMccDescriptions"
+                                 ReadOnly="!Editable"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="true"
+                                 CoerceValue="true"
+                                 Clearable="true"
+                                 Placeholder="Начните вводить для поиска..." />
+
+
                 <AddChipElement Editable="@(Editable)" @bind-ChipValues="ChipValues"></AddChipElement>
             </MudForm>
 
@@ -189,5 +194,28 @@
         {
             await SyncChips();
         }
+    }
+
+    private async Task<IEnumerable<int>> SearchMccCodes(string value, CancellationToken token)
+    {
+        var allCodes = VM.GetMccCodes(Item.OperationType);
+
+        if (string.IsNullOrEmpty(value))
+            return allCodes;
+
+        // Поиск кода, который начинается на введенные цифры или содержит их
+        return allCodes.Where(x => x.ToString().Contains(value));
+    }
+
+    private async Task<IEnumerable<string>> SearchMccDescriptions(string value, CancellationToken token)
+    {
+        // Получаем актуальный список описаний MCC на основе текущего типа операции
+        var allMccDescriptions = VM.GetMccDeskriptons(Item.OperationType);
+        // Если поле пустое, показываем весь список (или первые N элементов для скорости)
+        if (string.IsNullOrEmpty(value))
+            return allMccDescriptions;
+        // Фильтруем список: ищем вхождение введенного текста (игнорируя регистр)
+        return allMccDescriptions
+            .Where(x => x != null && x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 }

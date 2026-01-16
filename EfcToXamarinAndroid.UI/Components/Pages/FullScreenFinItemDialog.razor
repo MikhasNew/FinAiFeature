@@ -104,13 +104,11 @@
         {
             _isLoading = true;
             StateHasChanged();
-
             try
             {
                 // 1. Попытка получить чек через конфигурируемый сервис
                 // Используем дату из Item как подсказку, если в QR её нет
                 var receipt = await QrCodeService.GetReceiptByQrCodeAsync(qrCode, Item.Date);
-
                 if (receipt != null)
                 {
                     _receipt = receipt;
@@ -119,15 +117,14 @@
                     // Обновляем поля из полученного чека
                     if (Item.Id == default) Item.Date = receipt.ReceiptDate;
                     if (Item.Sum == 0) Item.Sum = receipt.TotalSum;
-                    if (string.IsNullOrEmpty(Item.Description)) Item.Description = receipt.Subject;
-
+                    if (string.IsNullOrEmpty(Item.Description)) Item.Description = receipt.ShopName;
+                    else Item.Description = $"{Item.Description} ({receipt.ShopName})";
                     Snackbar.Add("Чек успешно загружен!", Severity.Success);
                 }
                 else
                 {
                     // 2. Fallback: Старый парсер FNS (если новая конфигурация не сработала)
                     var data = FnsQrParser.Parse(qrCode);
-
                     if (!string.IsNullOrEmpty(data.TransactionCode))
                     {
                         // Попытка загрузить по коду транзакции (старый метод)
