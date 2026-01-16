@@ -22,12 +22,10 @@
                 Импорт
             </MudButton>
         </MudButtonGroup>
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   StartIcon="@Icons.Material.Filled.Add" 
-                   OnClick="AddRule">
-            Добавить правило
-        </MudButton>
+        <MudMenu Label="Добавить правило" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
+            <MudMenuItem OnClick="AddParsingRule" Icon="@Icons.Material.Filled.Email">Парсинг текста/Email</MudMenuItem>
+            <MudMenuItem OnClick="AddQrRule" Icon="@Icons.Material.Filled.QrCode">QR-код / API</MudMenuItem>
+        </MudMenu>
     </div>
 
     @if (_rules == null || !_rules.Any())
@@ -47,7 +45,14 @@
             <RowTemplate>
                 <MudTd DataLabel="Название">@context.Name</MudTd>
                 <MudTd DataLabel="Источник">
-                    @if (!string.IsNullOrEmpty(context.SenderEmail))
+                    @if (context.ApiConfig != null || !string.IsNullOrEmpty(context.QrCodePattern))
+                    {
+                         <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.QrCode">
+                            QR / API
+                            @if(context.IsDefault) { <span class="ml-1 font-bold">(Default)</span> }
+                        </MudChip>
+                    }
+                    else if (!string.IsNullOrEmpty(context.SenderEmail))
                     {
                         <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Email">
                             @context.SenderEmail
@@ -107,11 +112,11 @@
 @code {
     private List<ReceiptConfiguration> _rules => ConfigurationManager.ConfigManager.BankConfigurationFromJson.ReceiptConfigurations;
 
-    private async Task AddRule()
+    private async Task AddParsingRule()
     {
         var newRule = new ReceiptConfiguration
         {
-            Name = "Новое правило",
+            Name = "Новое правило парсинга",
             SenderEmail = "",
             ParseRegex = new ReceiptParseRegex()
         };
@@ -124,19 +129,58 @@
         if (!result.Canceled)
         {
             _rules.Add((ReceiptConfiguration)result.Data);
-            ConfigurationManager.ConfigManager.Save();
-            Snackbar.Add("Правило добавлено", Severity.Success);
-            StateHasChanged();
+            SaveAndRefresh();
         }
+    }
+
+    private async Task AddQrRule()
+    {
+        var newRule = new ReceiptConfiguration
+        {
+            Name = "Новое QR правило",
+            ApiConfig = new ReceiptApiConfig(),
+            JsonPaths = new ReceiptJsonPaths()
+        };
+
+        var parameters = new DialogParameters { ["Model"] = newRule, ["Title"] = "Добавить QR правило" };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<QrRuleDialog>("Настройка QR правила", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            _rules.Add((ReceiptConfiguration)result.Data);
+            SaveAndRefresh();
+        }
+    }
+
+    private void SaveAndRefresh()
+    {
+        ConfigurationManager.ConfigManager.Save();
+        Snackbar.Add("Сохранено", Severity.Success);
+        StateHasChanged();
     }
 
     private async Task EditRule(ReceiptConfiguration rule)
     {
         var clone = JsonConvert.DeserializeObject<ReceiptConfiguration>(JsonConvert.SerializeObject(rule));
         
-        var parameters = new DialogParameters { ["Model"] = clone, ["Title"] = $"Редактирование: {rule.Name}" };
-        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ReceiptRuleDialog>("Настройка правила", parameters, options);
+        bool isQrRule = rule.ApiConfig != null || !string.IsNullOrEmpty(rule.QrCodePattern);
+        
+        IDialogReference dialog;
+        DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        
+        if (isQrRule)
+        {
+             var parameters = new DialogParameters { ["Model"] = clone, ["Title"] = $"Редактирование QR: {rule.Name}" };
+             dialog = await DialogService.ShowAsync<QrRuleDialog>("Настройка QR правила", parameters, options);
+        }
+        else
+        {
+             var parameters = new DialogParameters { ["Model"] = clone, ["Title"] = $"Редактирование: {rule.Name}" };
+             dialog = await DialogService.ShowAsync<ReceiptRuleDialog>("Настройка правила", parameters, options);
+        }
+
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -145,9 +189,7 @@
             if (index != -1)
             {
                 _rules[index] = (ReceiptConfiguration)result.Data;
-                ConfigurationManager.ConfigManager.Save();
-                Snackbar.Add("Изменения сохранены", Severity.Success);
-                StateHasChanged();
+                SaveAndRefresh();
             }
         }
     }

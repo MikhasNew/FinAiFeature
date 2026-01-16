@@ -1,0 +1,261 @@
+@using MudBlazor
+@using EfcToXamarinAndroid.Core.Configs.ManagerCore
+@using EfcToXamarinAndroid.Core.Services
+@using EfcToXamarinAndroid.Core
+@using System.Text.RegularExpressions
+@using Newtonsoft.Json
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject IQrCodeService QrService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTabs Elevation="0" Outlined="true" PanelClass="pa-4" Style="min-height: 450px;">
+            <MudTabPanel Text="Основное">
+                <MudTextField @bind-Value="Model.Name" Label="Название правила" Required="true" Variant="Variant.Outlined" Class="mb-4" />
+                
+                <MudSwitch @bind-Value="Model.IsActive" Color="Color.Success" Label="Активно" Class="mb-2" />
+                <MudSwitch @bind-Value="Model.IsDefault" Color="Color.Primary" Label="Использовать по умолчанию для QR" Class="mb-4" 
+                          HelperText="Если включено, будет использоваться для всех QR-кодов, не подходящих под другие паттерны" />
+
+                <MudDivider Class="mb-4" />
+                
+                <MudTextField @bind-Value="Model.QrCodePattern" Label="Паттерн QR-кода (Regex)" Variant="Variant.Outlined" Lines="2"
+                              HelperText="Используйте именованные группы для извлечения параметров. Пример: t=(?<date>\w+)&s=(?<sum>\d+)" />
+                
+                <MudText Typo="Typo.caption" Color="Color.Info" Class="mt-1 d-block">
+                    Доступные стандартные группы: <b>date</b>, <b>sum</b>, <b>fn</b>, <b>i</b>, <b>fp</b>, <b>n</b>.
+                </MudText>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Настройки API">
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+                    Настройки запроса к внешнему API для получения данных чека.
+                </MudAlert>
+                
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="ApiConfig.Url" Label="URL API" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                     HelperText="Например: https://proverkacheka.com/api/v1/check/get" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string" Label="HTTP Метод" @bind-Value="ApiConfig.Method" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelectItem Value="@("GET")">GET</MudSelectItem>
+                            <MudSelectItem Value="@("POST")">POST</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string" Label="Content-Type" @bind-Value="ApiConfig.ContentType" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelectItem Value="@("FormData")">FormData (multipart/form-data)</MudSelectItem>
+                            <MudSelectItem Value="@("Json")">Json (application/json)</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                         <MudTextField @bind-Value="ApiConfig.DateFormat" Label="Формат даты при отправке" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                      HelperText="В каком формате отправлять дату в API (например: yyyyMMddTHHmm)" />
+                    </MudItem>
+                </MudGrid>
+                
+                <MudText Typo="Typo.subtitle2" Class="mt-6 mb-2">Маппинг параметров (API to QR)</MudText>
+                <MudPaper Class="pa-3" Outlined="true">
+                    @foreach (var param in _tempParams)
+                    {
+                        <div class="d-flex gap-2 mb-2 align-center">
+                            <MudTextField @bind-Value="param.ApiName" Label="Имя в API" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowForward" />
+                            <MudTextField @bind-Value="param.QrName" Label="Группа из QR" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => RemoveParam(param))" Size="Size.Small" />
+                        </div>
+                    }
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="AddParam" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">
+                        Добавить параметр
+                    </MudButton>
+                </MudPaper>
+            </MudTabPanel>
+
+            <MudTabPanel Text="JSON Парсинг">
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-4">
+                     JSONPath пути для извлечения данных из ответа API. Используйте $.field.subfield
+                </MudAlert>
+                <MudGrid>
+                     <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.StatusPath" Label="Путь к статусу" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.SuccessValue" Label="Значение успеха" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    
+                    <MudItem xs="12"><MudDivider Class="my-2"/></MudItem>
+                    
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.ShopName" Label="Магазин (путь)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.TotalSum" Label="Сумма (путь)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.ReceiptDate" Label="Дата (путь)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                     <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.DateFormat" Label="Формат даты (парсинг)" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Если дата приходит не в ISO формате" />
+                    </MudItem>
+                    
+                    <MudItem xs="12"><MudDivider Class="my-2"/></MudItem>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.subtitle2">Позиции (Товары)</MudText>
+                    </MudItem>
+                    
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="JsonPaths.ItemsArray" Label="Путь к массиву товаров" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.ItemName" Label="Название товара (ключ)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                     <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.ItemPrice" Label="Цена (ключ)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                     <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.ItemQuantity" Label="Количество (ключ)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                     <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="JsonPaths.ItemAmount" Label="Сумма (ключ)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Тест" Icon="@Icons.Material.Filled.Science">
+                 <MudTextField @bind-Value="_testQrString" 
+                              Label="QR строка" 
+                              Variant="Variant.Outlined" 
+                              Class="mb-4"
+                              Placeholder="t=20240415T1834&s=120.50&fn=..." />
+                 
+                 <MudButton OnClick="TestQrParsing" Variant="Variant.Filled" Color="Color.Primary" Class="mb-4">
+                     Распарсить QR
+                 </MudButton>
+
+                 @if (_extractedParams != null)
+                 {
+                     <MudText Typo="Typo.subtitle2" Class="mb-1">Извлеченные параметры:</MudText>
+                     <MudPaper Class="pa-2 mb-4 bg-gray-100">
+                         @foreach (var kvp in _extractedParams)
+                         {
+                             <div><b>@kvp.Key</b>: @kvp.Value</div>
+                         }
+                     </MudPaper>
+                     
+                     <MudButton OnClick="TestApiCall" Variant="Variant.Outlined" Color="Color.Secondary" Disabled="true">
+                         Тест API запроса (Не реализовано в UI)
+                     </MudButton>
+                 }
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Отмена</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Variant="Variant.Filled">Сохранить</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public ReceiptConfiguration Model { get; set; } = new();
+    [Parameter] public string Title { get; set; } = "Настройка QR правила";
+
+    private ReceiptApiConfig ApiConfig => Model.ApiConfig;
+    private ReceiptJsonPaths JsonPaths => Model.JsonPaths;
+
+    private List<ParamMapItem> _tempParams = new();
+    private string _testQrString = string.Empty;
+    private Dictionary<string, string>? _extractedParams;
+
+    protected override void OnInitialized()
+    {
+        // Ensure sub-objects exist
+        Model.ApiConfig ??= new ReceiptApiConfig();
+        Model.JsonPaths ??= new ReceiptJsonPaths();
+        
+        // Load params into temp list for editing
+        if (Model.ApiConfig.ParameterMapping != null)
+        {
+            foreach (var kvp in Model.ApiConfig.ParameterMapping)
+            {
+                _tempParams.Add(new ParamMapItem { ApiName = kvp.Key, QrName = kvp.Value });
+            }
+        }
+    }
+
+    private class ParamMapItem
+    {
+        public string ApiName { get; set; } = "";
+        public string QrName { get; set; } = "";
+    }
+
+    private void AddParam()
+    {
+        _tempParams.Add(new ParamMapItem());
+    }
+
+    private void RemoveParam(ParamMapItem item)
+    {
+        _tempParams.Remove(item);
+    }
+
+    private void TestQrParsing()
+    {
+        if (string.IsNullOrEmpty(Model.QrCodePattern) || string.IsNullOrEmpty(_testQrString)) return;
+
+        try 
+        {
+            var match = Regex.Match(_testQrString, Model.QrCodePattern);
+            if (match.Success)
+            {
+                _extractedParams = new Dictionary<string, string>();
+                foreach (Group group in match.Groups)
+                {
+                    if (!int.TryParse(group.Name, out _)) // Skip numbered groups
+                    {
+                        _extractedParams[group.Name] = group.Value;
+                    }
+                }
+                Snackbar.Add("QR успешно разобран", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Не найдено совпадений с паттерном", Severity.Warning);
+                _extractedParams = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Ошибка Regex: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void TestApiCall()
+    {
+        // Integration testing with actual API would go here
+    }
+
+    private void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Name))
+        {
+            Snackbar.Add("Введите название правила", Severity.Warning);
+            return;
+        }
+
+        // Save params back to dictionary
+        Model.ApiConfig.ParameterMapping = _tempParams
+            .Where(x => !string.IsNullOrWhiteSpace(x.ApiName) && !string.IsNullOrWhiteSpace(x.QrName))
+            .ToDictionary(x => x.ApiName, x => x.QrName);
+
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

@@ -36,6 +36,23 @@ namespace MauiAppWithMudBlazor
             builder.Services.AddSingleton<EfcToXamarinAndroid.Core.Parsers.ReceiptParser>(new EfcToXamarinAndroid.Core.Parsers.ReceiptParser(config.ReceiptConfigurations));
             builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 
+            // Load Google OAuth secrets
+            try
+            {
+                // Warning: Blocking async call on startup, but necessary for config
+                using var stream = FileSystem.OpenAppPackageFileAsync("google_secrets.json").Result;
+                EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.LoadFromStream(stream);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MauiProgram] Failed to load google_secrets.json: {ex.Message}");
+            }
+
+            // Email & Receipt Services
+            builder.Services.AddSingleton<OAuthService>();
+            builder.Services.AddSingleton<ReceiptProcessor>();
+            builder.Services.AddSingleton<IEmailService, EmailService>();
+
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging.AddDebug();

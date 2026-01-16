@@ -32,5 +32,33 @@ namespace EfcToXamarinAndroid.Core.Configs
                 }
             }
         }
+
+        /// <summary>
+        /// Loads configuration from a stream (for MAUI/mobile apps where file paths don't work)
+        /// </summary>
+        public static void LoadFromStream(System.IO.Stream stream)
+        {
+            if (stream == null) return;
+            
+            try
+            {
+                using (var reader = new System.IO.StreamReader(stream))
+                {
+                    var json = reader.ReadToEnd();
+                    var data = Newtonsoft.Json.Linq.JObject.Parse(json);
+                    var oauth = data["GoogleOAuth"];
+                    if (oauth != null)
+                    {
+                        Default.ClientId = oauth["ClientId"]?.ToString() ?? string.Empty;
+                        Default.ClientSecret = oauth["ClientSecret"]?.ToString() ?? string.Empty;
+                        System.Console.WriteLine("[GoogleAuthConfig] Loaded secrets from stream");
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                System.Console.WriteLine($"[GoogleAuthConfig] Error loading secrets from stream: {ex.Message}");
+            }
+        }
     }
 }

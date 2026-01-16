@@ -1,7 +1,7 @@
 @page "/qr-config"
 @using EfcToXamarinAndroid.Core.Configs.ManagerCore
 @using EfcToXamarinAndroid.Core.ViewModels
-@using EfcToXamarinAndroid.UI.Components.Dialogs
+
 @inject MainViewModel ViewModel
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -123,8 +123,12 @@
         SaveConfigurations();
     }
     
-    private async Task EditConfiguration(ReceiptConfiguration config)
+    private void EditConfiguration(ReceiptConfiguration config)
     {
+        // Dialog was deleted/not implemented yet
+        Snackbar.Add("Редактирование временно недоступно (диалог удален)", Severity.Warning);
+        
+        /* 
         var parameters = new DialogParameters<QrConfigEditDialog>
         {
             { x => x.Config, config },
@@ -147,6 +151,7 @@
             Snackbar.Add("Конфигурация сохранена", Severity.Success);
             StateHasChanged();
         }
+        */
     }
     
     private async Task DeleteConfiguration(ReceiptConfiguration config)
@@ -210,8 +215,12 @@
         Snackbar.Add("Конфигурация скопирована", Severity.Success);
     }
     
-    private async Task AddNewConfiguration()
+    private void AddNewConfiguration()
     {
+        // Dialog was deleted/not implemented yet
+        Snackbar.Add("Создание временно недоступно (диалог удален)", Severity.Warning);
+        
+        /*
         var newConfig = new ReceiptConfiguration
         {
             Name = "Новая конфигурация",
@@ -249,5 +258,6 @@
             Snackbar.Add("Новая конфигурация добавлена", Severity.Success);
             StateHasChanged();
         }
+        */
     }
 }
