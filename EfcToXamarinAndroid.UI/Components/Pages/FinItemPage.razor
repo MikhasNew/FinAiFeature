@@ -49,31 +49,23 @@
                         <MudSelectItem Value="@(i)" />
                     }
                 </MudSelect>
-               
+                @* Поле выбора кода MCC *@
                 <MudAutocomplete T="int"
                                  Label="MCC-Code"
                                  Variant="Variant.Outlined"
-                                 Dense="true"
-                                 @bind-Value="Item.MCC"
+                                 Value="Item.MCC"
+                                 ValueChanged="OnMccChanged"
                                  SearchFunc="@SearchMccCodes"
-                                 CoerceText = "true"
-                                 CoerceValue = "true"
-                                 ReadOnly="!Editable" 
-                                 Clearable="true"
-                                 Placeholder="Начните вводить для поиска..." />
+                                 ReadOnly="!Editable" />
 
+                @* Поле выбора описания MCC *@
                 <MudAutocomplete T="string"
                                  Label="MCC-Description"
                                  Variant="Variant.Outlined"
-                                 Dense="true"
-                                 @bind-Value="Item.MccDescription"
+                                 Value="Item.MccDescription"
+                                 ValueChanged="OnMccDescriptionChanged"
                                  SearchFunc="@SearchMccDescriptions"
-                                 ReadOnly="!Editable"
-                                 ResetValueOnEmptyText="true"
-                                 CoerceText="true"
-                                 CoerceValue="true"
-                                 Clearable="true"
-                                 Placeholder="Начните вводить для поиска..." />
+                                 ReadOnly="!Editable" />
 
 
                 <AddChipElement Editable="@(Editable)" @bind-ChipValues="ChipValues"></AddChipElement>
@@ -175,7 +167,7 @@
             foreach (var it in allTags)
                 dict.TryAdd(it, false);
         }
-        
+
         if (!string.IsNullOrEmpty(Item.Title))
         {
             var list = Item.Title.Split(" ").ToList().Distinct();
@@ -196,26 +188,59 @@
         }
     }
 
+
+
+    // Метод вызывается, когда пользователь выбрал КОД
+    private async Task OnMccChanged(int newCode)
+    {
+        Item.MCC = newCode;
+
+        // Ищем описание, соответствующее этому коду
+        // Предположим, в VM есть метод получения справочника
+        var reference = VM.GetMccDeskriptonsByCode(newCode);
+
+        Item.MccDescription = reference;
+        StateHasChanged();
+
+    }
+
+    // Метод вызывается, когда пользователь выбрал ОПИСАНИЕ
+    private async Task OnMccDescriptionChanged(string newDescription)
+    {
+        Item.MccDescription = newDescription;
+
+        // Ищем код, соответствующий этому описанию
+        var reference = VM.GetMccCodesByDeskription(newDescription);
+        Item.MCC = reference;
+        StateHasChanged();
+
+    }
+
+    // Вспомогательные методы поиска для Autocomplete (как в предыдущем ответе)
     private async Task<IEnumerable<int>> SearchMccCodes(string value, CancellationToken token)
     {
-        var allCodes = VM.GetMccCodes(Item.OperationType);
+        var codes = VM.GetMccCodes(Item.OperationType);
+        if (string.IsNullOrEmpty(value)) return codes;
 
-        if (string.IsNullOrEmpty(value))
-            return allCodes;
+        if (codes.Any())
 
-        // Поиск кода, который начинается на введенные цифры или содержит их
-        return allCodes.Where(x => x.ToString().Contains(value));
+            return codes.Where(x => x.ToString().Contains(value));
+
+        else return null;
     }
 
-    private async Task<IEnumerable<string>> SearchMccDescriptions(string value, CancellationToken token)
+    private Task<IEnumerable<string>> SearchMccDescriptions(string value, CancellationToken token)
     {
-        // Получаем актуальный список описаний MCC на основе текущего типа операции
-        var allMccDescriptions = VM.GetMccDeskriptons(Item.OperationType);
-        // Если поле пустое, показываем весь список (или первые N элементов для скорости)
-        if (string.IsNullOrEmpty(value))
-            return allMccDescriptions;
-        // Фильтруем список: ищем вхождение введенного текста (игнорируя регистр)
-        return allMccDescriptions
-            .Where(x => x != null && x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+        // Получаем список и страхуемся от того, что сам список VM.GetMccDeskriptons может быть null
+        var descs = VM.GetMccDeskriptons(Item.OperationType) ?? Enumerable.Empty<string>();
+
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult(descs);
+
+        // Добавляем проверку x != null внутри Where
+        var filtered = descs.Where(x => x != null && x.Contains(value, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(filtered);
     }
 }
+

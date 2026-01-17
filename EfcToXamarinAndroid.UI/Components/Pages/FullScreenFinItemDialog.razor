@@ -24,7 +24,7 @@
             </MudAppBar>
         </TitleContent>
         <DialogContent>
-            <FinItemPage Item="@Item" VM="@VM" Editable="@IsEditanle" />
+            <FinItemPage Item="@_editItem" VM="@VM" Editable="@IsEditanle" />
 
             @if (_receipt != null)
             {
@@ -81,8 +81,8 @@
 
     private async Task Submit()
     {
-        MudDialog.Close(DialogResult.Ok(Item));
-        await VM.UpdateItemValueAsync(Item.Id, Item, _receipt, _pendingQrCode);
+        MudDialog.Close(DialogResult.Ok(_editItem));
+        await VM.UpdateItemValueAsync(Item.Id, _editItem, _receipt, _pendingQrCode);
         NavManager.NavigateTo(NavManager.Uri, replace: true);
     }
 
@@ -108,17 +108,17 @@
             {
                 // 1. Попытка получить чек через конфигурируемый сервис
                 // Используем дату из Item как подсказку, если в QR её нет
-                var receipt = await QrCodeService.GetReceiptByQrCodeAsync(qrCode, Item.Date);
+                var receipt = await QrCodeService.GetReceiptByQrCodeAsync(qrCode, _editItem.Date);
                 if (receipt != null)
                 {
                     _receipt = receipt;
                     _pendingQrCode = null;
 
                     // Обновляем поля из полученного чека
-                    if (Item.Id == default) Item.Date = receipt.ReceiptDate;
-                    if (Item.Sum == 0) Item.Sum = receipt.TotalSum;
-                    if (string.IsNullOrEmpty(Item.Description)) Item.Description = receipt.ShopName;
-                    else Item.Description = $"{Item.Description} ({receipt.ShopName})";
+                    if (_editItem.Id == default) _editItem.Date = receipt.ReceiptDate;
+                    if (_editItem.Sum == 0) _editItem.Sum = receipt.TotalSum;
+                    if (string.IsNullOrEmpty(_editItem.Description)) _editItem.Description = receipt.ShopName;
+                    else _editItem.Description = $"{_editItem.Description} ({receipt.ShopName})";
                     Snackbar.Add("Чек успешно загружен!", Severity.Success);
                 }
                 else
@@ -128,7 +128,7 @@
                     if (!string.IsNullOrEmpty(data.TransactionCode))
                     {
                         // Попытка загрузить по коду транзакции (старый метод)
-                        var dateToUse = data.Date ?? Item.Date;
+                        var dateToUse = data.Date ?? _editItem.Date;
                         if (dateToUse == default)
                         {
                             Snackbar.Add("Укажите дату транзакции перед сканированием", Severity.Warning);
@@ -143,13 +143,13 @@
                             {
                                 _receipt = receipt;
                                 _pendingQrCode = null;
-                                if (Item.Id == default) Item.Date = receipt.ReceiptDate;
-                                if (Item.Sum == 0) Item.Sum = receipt.TotalSum;
+                                if (_editItem.Id == default) _editItem.Date = receipt.ReceiptDate;
+                                if (_editItem.Sum == 0) _editItem.Sum = receipt.TotalSum;
 
-                                if (string.IsNullOrEmpty(Item.Description))
-                                    Item.Description = receipt.ShopName;
+                                if (string.IsNullOrEmpty(_editItem.Description))
+                                    _editItem.Description = receipt.ShopName;
                                 else
-                                    Item.Description = $"{Item.Description} ({receipt.ShopName}) ";
+                                    _editItem.Description = $"{_editItem.Description} ({receipt.ShopName}) ";
                                 Snackbar.Add("Чек успешно загружен (Legacy)!", Severity.Success);
                             }
                             else
@@ -164,8 +164,8 @@
                         // 3. Если ничего не помогло - просто извлекаем дату/сумму если можем
                         if (data.Date.HasValue || data.Sum.HasValue)
                         {
-                            if (data.Date.HasValue) Item.Date = data.Date.Value;
-                            if (data.Sum.HasValue) Item.Sum = data.Sum.Value;
+                            if (data.Date.HasValue) _editItem.Date = data.Date.Value;
+                            if (data.Sum.HasValue) _editItem.Sum = data.Sum.Value;
                             Snackbar.Add("Данные из QR-кода применены (Чек не найден)", Severity.Info);
                         }
                         else
@@ -189,9 +189,32 @@
         }
     }
 
+    private FinanceItem _editItem;
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        
+        if (Item != null)
+        {
+            // Создаем клон для редактирования
+            _editItem = new FinanceItem
+            {
+                Id = Item.Id,
+                Date = Item.Date,
+                Sum = Item.Sum,
+                OperationType = Item.OperationType,
+                Description = Item.Description,
+                MccDescription = Item.MccDescription,
+                Title = Item.Title,
+                MCC = Item.MCC,
+                UnreachableText = Item.UnreachableText,
+                IsNewDataItem = Item.IsNewDataItem,
+                Balance = Item.Balance,
+                PendingQrCode = Item.PendingQrCode
+            };
+        }
+
         if (Item?.Id != null && Item.Id != 0)
         {
             _receipt = await DatesRepositorio.GetReceiptByDataItemIdAsync(Item.Id);

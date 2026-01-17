@@ -40,6 +40,9 @@ namespace EfcToXamarinAndroid.Core.ViewModels
         private string? _activeMccDescription;
         private string? _activeTag;
 
+
+        public Dictionary<int, string> MccCodes =>
+            MccConfigurationManager.ConfigManager.MccConfigurationFromJson;
         public List<FinanceItem> AllItems { get; private set; } = [];
         public Dictionary<OperacionTyps, List<FinanceItem>> FilteredItems { get; private set; } = new();
 
@@ -1263,6 +1266,22 @@ namespace EfcToXamarinAndroid.Core.ViewModels
 
         }
 
+        public int GetMccCodesByDeskription(string type)
+        {
+            var deskr = AllItems.FirstOrDefault(x => x.MccDescription == type);
+            if (deskr != null)
+                return deskr.MCC;
+            else
+               return MccCodes.FirstOrDefault(x => x.Value == type).Key;
+        }
+        public string GetMccDeskriptonsByCode(int type)
+        {
+            var deskr = AllItems.FirstOrDefault(x => x.MCC == type);
+            if (deskr!=null)
+                return deskr.MccDescription??string.Empty;
+            else
+                return MccCodes.FirstOrDefault(x => x.Key == type).Value;
+        }
 
         private List<FinanceItem> _currentFilteredList = new();
 
