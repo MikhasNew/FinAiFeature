@@ -83,6 +83,9 @@ namespace MauiAppWithMudBlazor
 
                     //��������� ���������� ��������� ��� WebView (������ ��� �����)
                     //platformWebView.SetLayerType(Android.Views.LayerType.Software, null);
+
+                    // Set custom WebChromeClient to handle permission requests (e.g., Camera for QR scan)
+                    platformWebView.SetWebChromeClient(new MauiAppWithMudBlazor.Platforms.Android.PermissionManagingWebChromeClient());
                 }
             });
 #else
