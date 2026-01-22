@@ -328,7 +328,11 @@
                                      infoTitle="@item.FormattedSum"
                                      infoTitleColor="@item.AmountColor"
                                      infoLabel="@item.ShortFormattedLabel"
+                                     IsSelected="@_selectedIds.Contains(item.Id)"
+                                     IsSelectionMode="@_isSelectionMode"
                                      OnItemClick="ItemClicked"
+                                     OnLongPress="OnItemLongPress"
+                                     OnSelectionToggle="OnSelectionToggle"
                                      OnRetryReceipt="RetryReceipt" />
                         </Virtualize>
 
@@ -357,8 +361,24 @@
         }
     </div>
 
+    @* Selection Mode Action Bar *@
+    @if (_isSelectionMode)
+    {
+        <div class="selection-action-bar">
+            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CancelSelection">
+                Отменить
+            </MudButton>
+            <MudSpacer />
+            <MudText Typo="Typo.body2" Style="color: white;">Выбрано: @_selectedIds.Count</MudText>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteSelectedAsync" Disabled="@(_selectedIds.Count == 0)">
+                Удалить
+            </MudButton>
+        </div>
+    }
+
      @* --- СЛОЙ 3: Нижняя навигация (Иконки как в оригинале) --- *@
-    <div class="bottom-nav">
+    <div class="bottom-nav" style="@(_isSelectionMode ? "display: none;" : "")">
         <MudIconButton Icon="@Icons.Material.Filled.List" Color="@(activeTabIndex == 0 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(0))" />
         <MudIconButton Icon="@Icons.Material.Filled.Payment" Color="@(activeTabIndex == 1 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(1))" />
         <MudIconButton Icon="@Icons.Material.Filled.AccountBalance" Color="@(activeTabIndex == 2 ? Color.Primary : Color.Default)" OnClick="@(() => TabChangedAsync(2))" />
@@ -436,6 +456,10 @@
 
     // 🚀 Debouncer для оптимизации пересчета статистики
     private Debouncer _statsDebouncer = new Debouncer(500);
+
+    // Selection mode state
+    private HashSet<int> _selectedIds = new();
+    private bool _isSelectionMode = false;
 
     private string TitleNetBalance => L10n.TitleNetBalance;
     private string LabelIncome => L10n.LabelIncome;
@@ -523,6 +547,58 @@
         _objRef?.Dispose();
 
         _statsDebouncer?.Dispose();
+    }
+
+    // === Selection Mode Handlers ===
+    private void OnItemLongPress(FinanceItem item)
+    {
+        _isSelectionMode = true;
+        _selectedIds.Clear();
+        _selectedIds.Add(item.Id);
+        StateHasChanged();
+    }
+
+    private void OnSelectionToggle(FinanceItem item)
+    {
+        if (_selectedIds.Contains(item.Id))
+        {
+            _selectedIds.Remove(item.Id);
+            if (_selectedIds.Count == 0)
+            {
+                _isSelectionMode = false;
+            }
+        }
+        else
+        {
+            _selectedIds.Add(item.Id);
+        }
+        StateHasChanged();
+    }
+
+    private void CancelSelection()
+    {
+        _selectedIds.Clear();
+        _isSelectionMode = false;
+        StateHasChanged();
+    }
+
+    private async Task DeleteSelectedAsync()
+    {
+        if (_selectedIds.Count == 0) return;
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Удаление",
+            $"Удалить {_selectedIds.Count} транзакций?",
+            yesText: "Удалить",
+            cancelText: "Отмена");
+
+        if (confirmed == true)
+        {
+            await VM.DeleteTransactionsAsync(_selectedIds);
+            _selectedIds.Clear();
+            _isSelectionMode = false;
+            Snackbar.Add("Транзакции удалены", Severity.Success);
+        }
     }
 
     private void SetSlide(int index)

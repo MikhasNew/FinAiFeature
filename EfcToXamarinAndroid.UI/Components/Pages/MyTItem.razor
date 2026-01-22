@@ -1,8 +1,16 @@
 @typeparam TItem
-<div class="transaction-item" @onclick="() => OnItemClick.InvokeAsync(Item)">
-    <div class="icon-container @(infoTitleColor == "green" ? "income" : "expense")">
-        @* 🚀 Inline SVG вместо тяжёлого MudIcon *@
-        @if (infoTitleColor == "green")
+<div class="transaction-item @(IsSelected ? "selected" : "")" 
+     @onclick="HandleClick"
+     @onpointerdown="StartLongPress"
+     @onpointerup="CancelLongPress"
+     @onpointerleave="CancelLongPress">
+    <div class="icon-container @GetIconContainerClass()">
+        @if (IsSelected)
+        {
+            @* Checkmark icon when selected *@
+            <svg class="item-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        }
+        else if (infoTitleColor == "green")
         {
             <svg class="item-icon" viewBox="0 0 24 24"><path d="M19 15l-1.41-1.41L13 18.17V2h-2v16.17l-4.59-4.58L5 15l7 7 7-7z"/></svg>
         }
@@ -49,11 +57,69 @@
     [Parameter] public EventCallback<TItem> OnItemClick { get; set; }
     [Parameter] public EventCallback<TItem> OnRetryReceipt { get; set; }
     
-    // 🚀 ShouldRender оптимизация: перерисовываем только при изменении данных
+    // Selection mode parameters
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public bool IsSelectionMode { get; set; }
+    [Parameter] public EventCallback<TItem> OnLongPress { get; set; }
+    [Parameter] public EventCallback<TItem> OnSelectionToggle { get; set; }
+    
+    // Long press detection
+    private System.Threading.Timer? _longPressTimer;
+    private const int LongPressDelayMs = 500;
+    private bool _wasLongPress = false;
+    
+    private void StartLongPress()
+    {
+        _wasLongPress = false;
+        _longPressTimer?.Dispose();
+        _longPressTimer = new System.Threading.Timer(async _ =>
+        {
+            _longPressTimer?.Dispose();
+            _longPressTimer = null;
+            _wasLongPress = true;
+            await InvokeAsync(() => OnLongPress.InvokeAsync(Item));
+        }, null, LongPressDelayMs, System.Threading.Timeout.Infinite);
+    }
+    
+    private void CancelLongPress()
+    {
+        _longPressTimer?.Dispose();
+        _longPressTimer = null;
+    }
+    
+    private async Task HandleClick()
+    {
+        CancelLongPress();
+        
+        // If long press already fired, don't handle as click
+        if (_wasLongPress)
+        {
+            _wasLongPress = false;
+            return;
+        }
+        
+        if (IsSelectionMode)
+        {
+            await OnSelectionToggle.InvokeAsync(Item);
+        }
+        else
+        {
+            await OnItemClick.InvokeAsync(Item);
+        }
+    }
+    
+    private string GetIconContainerClass()
+    {
+        if (IsSelected) return "selected";
+        return infoTitleColor == "green" ? "income" : "expense";
+    }
+    
+    // 🚀 ShouldRender оптимизация
     private string? _prevTitle;
     private string? _prevSum;
     private string? _prevLabel;
     private string? _prevPendingQr;
+    private bool _prevIsSelected;
     
     protected override bool ShouldRender()
     {
@@ -61,7 +127,8 @@
         var changed = _prevTitle != ItemTitle || 
                       _prevSum != infoTitle || 
                       _prevLabel != infoLabel ||
-                      _prevPendingQr != currentPendingQr;
+                      _prevPendingQr != currentPendingQr ||
+                      _prevIsSelected != IsSelected;
         
         if (changed)
         {
@@ -69,8 +136,10 @@
             _prevSum = infoTitle;
             _prevLabel = infoLabel;
             _prevPendingQr = currentPendingQr;
+            _prevIsSelected = IsSelected;
         }
         
         return changed;
     }
 }
+

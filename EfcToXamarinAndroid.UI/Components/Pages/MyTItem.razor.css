@@ -65,3 +65,16 @@
 .amount-text {
     font-weight: 600;
 }
+
+/* Selection mode styles */
+.transaction-item.selected {
+    background-color: rgba(25, 118, 210, 0.12);
+}
+
+.icon-container.selected {
+    background-color: var(--mud-palette-primary);
+}
+
+.icon-container.selected .item-icon {
+    fill: white;
+}

@@ -289,6 +289,31 @@ namespace EfcToXamarinAndroid.Core.ViewModels
             DataUpdated?.Invoke(this, EventArgs.Empty);
             await Task.CompletedTask;
         }
+
+        /// <summary>
+        /// Deletes multiple transactions by their IDs with optimistic local update.
+        /// </summary>
+        public async Task DeleteTransactionsAsync(IEnumerable<int> ids)
+        {
+            var idSet = ids.ToHashSet();
+            
+            // 1. Optimistic local update - remove from AllItems immediately
+            AllItems = AllItems.Where(x => !idSet.Contains(x.Id)).ToList();
+            UpdateFilteredCache();
+            UpdateStatistics();
+            DataUpdated?.Invoke(this, EventArgs.Empty);
+
+            // 2. Background: delete from Repository/DB
+            foreach (var id in idSet)
+            {
+                var dataItem = DatesRepositorio.DataItems.FirstOrDefault(x => x.Id == id);
+                if (dataItem != null)
+                {
+                    await DatesRepositorio.DeleteItem(dataItem);
+                }
+            }
+        }
+
         private void UpdateFilteredCache()
         {
             FilteredItems.Clear();
