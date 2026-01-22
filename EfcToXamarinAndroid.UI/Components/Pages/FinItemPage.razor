@@ -1,4 +1,4 @@
-@using System.Text.RegularExpressions
+п»ї@using System.Text.RegularExpressions
 @using System.ComponentModel.DataAnnotations
 @using EfcToXamarinAndroid.UI.Components.Models
 @using EfcToXamarinAndroid.Core
@@ -39,17 +39,17 @@
                                        ReadOnly="!Editable" />
                     </MudItem>
                 </MudGrid>
-                <MudSelect Variant="Variant.Outlined"
-                           Dense="true" T="string"
-                           Label="Discription"
-                           @bind-Value=Item.Description
-                           ReadOnly="!Editable">
-                    @foreach (var i in VM.GetDeskriptions(Item.OperationType))
-                    {
-                        <MudSelectItem Value="@(i)" />
-                    }
-                </MudSelect>
-                @* Поле выбора кода MCC *@
+
+                <MudAutocomplete T="string" 
+                    Variant="Variant.Outlined" 
+                    Label="РћРїРёСЃР°РЅРёРµ"
+                    @bind-Value="Item.Description" 
+                    SearchFunc="@SearchDescriptions"
+                    CoerceText="true" 
+                    CoerceValue="true" 
+                    ReadOnly="!Editable" />
+
+                @* РџРѕР»Рµ РІС‹Р±РѕСЂР° РєРѕРґР° MCC *@
                 <MudAutocomplete T="int"
                                  Label="MCC-Code"
                                  Variant="Variant.Outlined"
@@ -58,7 +58,7 @@
                                  SearchFunc="@SearchMccCodes"
                                  ReadOnly="!Editable" />
 
-                @* Поле выбора описания MCC *@
+                @* РџРѕР»Рµ РІС‹Р±РѕСЂР° РѕРїРёСЃР°РЅРёСЏ MCC *@
                 <MudAutocomplete T="string"
                                  Label="MCC-Description"
                                  Variant="Variant.Outlined"
@@ -190,13 +190,13 @@
 
 
 
-    // Метод вызывается, когда пользователь выбрал КОД
+    // РњРµС‚РѕРґ РІС‹Р·С‹РІР°РµС‚СЃСЏ, РєРѕРіРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІС‹Р±СЂР°Р» РљРћР”
     private async Task OnMccChanged(int newCode)
     {
         Item.MCC = newCode;
 
-        // Ищем описание, соответствующее этому коду
-        // Предположим, в VM есть метод получения справочника
+        // РС‰РµРј РѕРїРёСЃР°РЅРёРµ, СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РµРµ СЌС‚РѕРјСѓ РєРѕРґСѓ
+        // РџСЂРµРґРїРѕР»РѕР¶РёРј, РІ VM РµСЃС‚СЊ РјРµС‚РѕРґ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїСЂР°РІРѕС‡РЅРёРєР°
         var reference = VM.GetMccDeskriptonsByCode(newCode);
 
         Item.MccDescription = reference;
@@ -204,19 +204,19 @@
 
     }
 
-    // Метод вызывается, когда пользователь выбрал ОПИСАНИЕ
+    // РњРµС‚РѕРґ РІС‹Р·С‹РІР°РµС‚СЃСЏ, РєРѕРіРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІС‹Р±СЂР°Р» РћРџРРЎРђРќРР•
     private async Task OnMccDescriptionChanged(string newDescription)
     {
         Item.MccDescription = newDescription;
 
-        // Ищем код, соответствующий этому описанию
+        // РС‰РµРј РєРѕРґ, СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёР№ СЌС‚РѕРјСѓ РѕРїРёСЃР°РЅРёСЋ
         var reference = VM.GetMccCodesByDeskription(newDescription);
         Item.MCC = reference;
         StateHasChanged();
 
     }
 
-    // Вспомогательные методы поиска для Autocomplete (как в предыдущем ответе)
+    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РјРµС‚РѕРґС‹ РїРѕРёСЃРєР° РґР»СЏ Autocomplete (РєР°Рє РІ РїСЂРµРґС‹РґСѓС‰РµРј РѕС‚РІРµС‚Рµ)
     private async Task<IEnumerable<int>> SearchMccCodes(string value, CancellationToken token)
     {
         var codes = VM.GetMccCodes(Item.OperationType);
@@ -231,16 +231,24 @@
 
     private Task<IEnumerable<string>> SearchMccDescriptions(string value, CancellationToken token)
     {
-        // Получаем список и страхуемся от того, что сам список VM.GetMccDeskriptons может быть null
+        // РџРѕР»СѓС‡Р°РµРј СЃРїРёСЃРѕРє Рё СЃС‚СЂР°С…СѓРµРјСЃСЏ РѕС‚ С‚РѕРіРѕ, С‡С‚Рѕ СЃР°Рј СЃРїРёСЃРѕРє VM.GetMccDeskriptons РјРѕР¶РµС‚ Р±С‹С‚СЊ null
         var descs = VM.GetMccDeskriptons(Item.OperationType) ?? Enumerable.Empty<string>();
 
         if (string.IsNullOrWhiteSpace(value))
             return Task.FromResult(descs);
 
-        // Добавляем проверку x != null внутри Where
+        // Р”РѕР±Р°РІР»СЏРµРј РїСЂРѕРІРµСЂРєСѓ x != null РІРЅСѓС‚СЂРё Where
         var filtered = descs.Where(x => x != null && x.Contains(value, StringComparison.OrdinalIgnoreCase));
 
         return Task.FromResult(filtered);
     }
+    private Task<IEnumerable<string>> SearchDescriptions(string value, CancellationToken token)
+    {
+        var descs = VM.GetDeskriptions(Item.OperationType) ?? Enumerable.Empty<string>();
+        
+        if (string.IsNullOrEmpty(value))
+            return Task.FromResult(descs);
+            
+        return Task.FromResult(descs.Where(x => x != null && x.Contains(value, StringComparison.OrdinalIgnoreCase)));
+    }
 }
-

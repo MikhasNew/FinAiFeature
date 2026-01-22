@@ -161,10 +161,10 @@ namespace EfcToXamarinAndroid.UI.Components.Models
 
         // 4. Заголовки (безопасные строки)
         private string? _displayTitle;
-        public string DisplayTitle => _displayTitle ??= string.IsNullOrEmpty(_description) ? "Загрузка" : _description!;
+        public string DisplayTitle => _displayTitle ??= string.IsNullOrEmpty(_description) ? "Без описания" : _description!;
 
         private string? _displayDescription;
-        public string DisplayDescription => _displayDescription ??= string.IsNullOrEmpty(_mccDescription) ? "Без описания" : _mccDescription!;
+        public string DisplayDescription => _displayDescription ??= string.IsNullOrEmpty(_mccDescription) ? "Без описания категории" : _mccDescription!;
 
         // 5. Иконка
         private string? _displayIcon;
