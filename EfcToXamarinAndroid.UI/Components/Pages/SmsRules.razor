@@ -6,76 +6,90 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
-    <div class="d-flex align-center mb-6">
-        <MudText Typo="Typo.h5" Style="font-weight: bold;">Правила парсинга</MudText>
-        <MudSpacer />
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   StartIcon="@Icons.Material.Filled.Add" 
-                   OnClick="AddBank">
-            Добавить банк
-        </MudButton>
-    </div>
+@* Gradient Header *@
+<div class="rules-page-header">
+    <MudText Typo="Typo.h5" Style="color: white; font-weight: 700;">Правила парсинга SMS</MudText>
+    <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.7);">Настройте обработку банковских SMS</MudText>
+</div>
+
+@* Content Sheet *@
+<div class="rules-content-sheet">
+    <MudGrid Class="mb-4" Spacing="2">
+        <MudItem xs="12" sm="6" Class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Sms" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Color="Color.Primary">Банки (@(_banks?.Count ?? 0))</MudText>
+        </MudItem>
+        <MudItem xs="12" sm="6" Class="d-flex justify-start justify-sm-end">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add" 
+                       OnClick="AddBank">
+                Добавить банк
+            </MudButton>
+        </MudItem>
+    </MudGrid>
 
     @if (_banks == null || !_banks.Any())
     {
-        <MudAlert Severity="Severity.Warning">Конфигурации банков не найдены. Добавьте первую конфигурацию.</MudAlert>
+        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="rounded-lg">
+            <MudText Typo="Typo.body2">Конфигурации банков не найдены.</MudText>
+            <MudText Typo="Typo.caption" Style="opacity: 0.7;">Добавьте первую конфигурацию для автоматической обработки SMS.</MudText>
+        </MudAlert>
     }
     else
     {
-        <MudTable Items="@_banks" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="4" Dense="false" Class="mb-8">
+        <MudTable Items="@_banks" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="false" Class="mb-4 rounded-lg" Style="border: 1px solid var(--mud-palette-divider);">
             <HeaderContent>
                 <MudTh>Название банка</MudTh>
                 <MudTh>Отправитель (SMS ID)</MudTh>
-                <MudTh Style="width: 180px; text-align: center;">Действия</MudTh>
+                <MudTh Style="width: 140px; text-align: center;">Действия</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Название">@context.Name</MudTd>
+                <MudTd DataLabel="Название">
+                    <MudText Typo="Typo.body1" Style="font-weight: 500;">@context.Name</MudText>
+                </MudTd>
                 <MudTd DataLabel="Отправитель">
-                    <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Text">@context.SmsNumber</MudChip>
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Filled">@context.SmsNumber</MudChip>
                 </MudTd>
                 <MudTd Style="text-align: center;">
-                    <div class="d-flex justify-center">
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                    <div class="d-flex justify-center gap-1">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Edit" 
                                        Color="Color.Primary" 
                                        OnClick="@(() => EditBank(context))" 
-                                       Title="Редактировать" 
                                        Size="Size.Small" />
-                        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" 
+                        <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" 
                                        Color="Color.Default" 
                                        OnClick="@(() => DuplicateBank(context))" 
-                                       Title="Копировать" 
                                        Size="Size.Small" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" 
                                        Color="Color.Error" 
                                        OnClick="@(() => DeleteBank(context))" 
-                                       Title="Удалить" 
                                        Size="Size.Small" />
                     </div>
                 </MudTd>
             </RowTemplate>
             <PagerContent>
-                <MudTablePager InfoFormat="Всего {all_items}" RowsPerPageString="Рядов на странице:" />
+                <MudTablePager InfoFormat="Всего {all_items}" RowsPerPageString="Рядов:" />
             </PagerContent>
         </MudTable>
     }
 
-    <MudExpansionPanels MultiExpansion="true" Class="mt-4">
-        <MudExpansionPanel Text="Как это работает?">
+    <MudExpansionPanels MultiExpansion="true" Class="mt-4" Elevation="0">
+        <MudExpansionPanel Text="Как это работает?" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px;">
             <MudText Typo="Typo.body2">
                 При получении нового SMS сообщения приложение ищет отправителя в этом списке. 
                 Если совпадение найдено, текст SMS обрабатывается регулярными выражениями (Regex) для извлечения суммы, даты и типа операции.
             </MudText>
-            <MudText Typo="Typo.body2" Class="mt-2" Style="font-weight: bold;">Пример типичного процесса:</MudText>
+            <MudText Typo="Typo.body2" Class="mt-2" Style="font-weight: bold;">Типичный процесс:</MudText>
             <MudList T="string" Dense="true">
-                <MudListItem Text="1. Поиск банка по номеру отправителя (напр. 'Alfa-Bank')." />
-                <MudListItem Text="2. Запуск Regex для извлечения суммы, валюты и описания." />
-                <MudListItem Text="3. Определение типа (Оплата/Доход/Наличные) по ключевым словам." />
+                <MudListItem Text="1. Поиск банка по номеру отправителя (напр. 'Alfa-Bank')." Icon="@Icons.Material.Filled.Search" />
+                <MudListItem Text="2. Запуск Regex для извлечения суммы, валюты и описания." Icon="@Icons.Material.Filled.Code" />
+                <MudListItem Text="3. Определение типа (Оплата/Доход/Наличные) по ключевым словам." Icon="@Icons.Material.Filled.Category" />
             </MudList>
         </MudExpansionPanel>
     </MudExpansionPanels>
-</MudContainer>
+</div>
 
 @code {
     private List<BankConfiguration> _banks => ConfigurationManager.ConfigManager.BankConfigurationFromJson.Banks;

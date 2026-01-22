@@ -2,89 +2,130 @@
 @using EfcToXamarinAndroid.Core.Configs.ManagerCore
 @using EfcToXamarinAndroid.Core.Enums
 
-<MudContainer Class="pa-4">
-    <MudText Typo="Typo.h5">Настройки</MudText>
+@* Gradient Header *@
+<div class="settings-page-header">
+    <MudText Typo="Typo.h5" Style="color: white; font-weight: 700;">Настройки</MudText>
+    <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.7);">Персонализация приложения</MudText>
+</div>
 
-    <MudSelect T="DisplayPeriod" Label="Период отображения по умолчанию" @bind-Value="Config.DefaultPeriod" Class="mt-4">
-        @foreach (DisplayPeriod item in Enum.GetValues(typeof(DisplayPeriod)))
-        {
-            <MudSelectItem Value="@item">@GetDescription(item)</MudSelectItem>
-        }
-    </MudSelect>
+@* Content Sheet *@
+<div class="settings-content-sheet">
+    
+    @* General Settings Section *@
+    <div class="settings-section">
+        <div class="settings-section-title">
+            <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" />
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">Общие настройки</MudText>
+            <MudSpacer />
+            <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">Сохранить</MudButton>
+        </div>
+        
+        <MudSelect T="DisplayPeriod" Label="Период отображения по умолчанию" @bind-Value="Config.DefaultPeriod" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense">
+            @foreach (DisplayPeriod item in Enum.GetValues(typeof(DisplayPeriod)))
+            {
+                <MudSelectItem Value="@item">@GetDescription(item)</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
 
-    <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4">Сохранить</MudButton>
+    @* Email Settings Section *@
+    <div class="settings-section">
+        <div class="settings-section-title">
+            <MudIcon Icon="@Icons.Material.Filled.Email" Color="Color.Info" />
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">Email для чеков</MudText>
+        </div>
+        
+        <MudTextField Label="Email адрес" @bind-Value="Config.EmailSettings.Email" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" />
 
-    <MudDivider Class="my-4"/>
+        <MudGrid Spacing="2" Class="mb-3">
+            <MudItem xs="12" sm="9">
+                <MudTextField Label="IMAP Хост" @bind-Value="Config.EmailSettings.ImapHost" Placeholder="imap.gmail.com" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudNumericField Label="Порт" @bind-Value="Config.EmailSettings.ImapPort" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+        </MudGrid>
 
-    <MudText Typo="Typo.h5" Class="mt-4">Настройки Email (для чеков)</MudText>
-    <MudPaper Class="pa-4 mt-2">
-        <MudTextField Label="Email адрес" @bind-Value="Config.EmailSettings.Email" Variant="Variant.Outlined" Class="mb-4" />
-
-        <MudStack Row="true" Class="mb-4">
-            <MudTextField Label="IMAP Хост" @bind-Value="Config.EmailSettings.ImapHost" Placeholder="imap.gmail.com" Variant="Variant.Outlined" Margin="Margin.Dense" />
-            <MudNumericField Label="Порт" @bind-Value="Config.EmailSettings.ImapPort" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width: 100px;" />
-        </MudStack>
-
-        <MudSwitch Label="Использовать OAuth2 (Google)" Value="Config.EmailSettings.UseOAuth" ValueChanged="OnOAuthChanged" T="bool" Color="Color.Primary" Class="my-3"/>
+        <MudSwitch Label="Использовать OAuth2 (Google)" Value="Config.EmailSettings.UseOAuth" ValueChanged="OnOAuthChanged" T="bool" Color="Color.Primary" Class="my-2"/>
         
         @if (Config.EmailSettings.UseOAuth)
         {
-              <MudStack Row="true" Class="mt-2">
-                  <MudTextField @bind-Value="Config.EmailSettings.ClientId" Label="Client ID" Variant="Variant.Outlined" Margin="Margin.Dense" 
-                               HelperText="Оставьте пустым для встроенного конфига" />
-                  <MudTextField @bind-Value="Config.EmailSettings.ClientSecret" Label="Client Secret" Variant="Variant.Outlined" Margin="Margin.Dense" 
-                               InputType="InputType.Password" HelperText="Оставьте пустым для встроенного конфига" />
-              </MudStack>
-              
-              <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-4">
-                  <MudButton OnClick="SignInGoogle" Variant="Variant.Filled" StartIcon="@Icons.Custom.Brands.Google" Color="Color.Error">Войти через Google</MudButton>
-                  @if (!string.IsNullOrEmpty(Config.EmailSettings.AccessToken))
-                  {
-                      <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.Check">Токен получен</MudChip>
-                      @if (Config.EmailSettings.TokenExpiry.HasValue)
-                      {
-                          var isExpiringSoon = Config.EmailSettings.TokenExpiry.Value < DateTime.Now.AddDays(1);
-                          var isExpired = Config.EmailSettings.TokenExpiry.Value < DateTime.Now;
-                          <MudChip T="string" 
-                                   Color="@(isExpired ? Color.Error : isExpiringSoon ? Color.Warning : Color.Default)" 
-                                   Size="Size.Small"
-                                   Icon="@(isExpired ? Icons.Material.Filled.Error : Icons.Material.Filled.Schedule)">
-                              @(isExpired ? "Истёк" : $"До: {Config.EmailSettings.TokenExpiry.Value:dd.MM HH:mm}")
-                          </MudChip>
-                      }
-                  }
-              </MudStack>
-             
-             <MudTextField Label="Access Token (Debug)" @bind-Value="Config.EmailSettings.AccessToken" ReadOnly="true" Variant="Variant.Text" Class="mt-2"/>
+            <MudGrid Spacing="2" Class="mt-2">
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Config.EmailSettings.ClientId" Label="Client ID" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                 HelperText="Оставьте пустым для встроенного" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Config.EmailSettings.ClientSecret" Label="Client Secret" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                 InputType="InputType.Password" HelperText="Оставьте пустым для встроенного" />
+                </MudItem>
+            </MudGrid>
+            
+            <MudGrid Spacing="2" Class="mt-3">
+                <MudItem xs="12" sm="6">
+                    <MudButton OnClick="SignInGoogle" Variant="Variant.Filled" StartIcon="@Icons.Custom.Brands.Google" Color="Color.Error" Size="Size.Small" FullWidth="true">Войти через Google</MudButton>
+                </MudItem>
+                @if (!string.IsNullOrEmpty(Config.EmailSettings.AccessToken))
+                {
+                    <MudItem xs="6" sm="3">
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.Check">Токен OK</MudChip>
+                    </MudItem>
+                    @if (Config.EmailSettings.TokenExpiry.HasValue)
+                    {
+                        var isExpiringSoon = Config.EmailSettings.TokenExpiry.Value < DateTime.Now.AddDays(1);
+                        var isExpired = Config.EmailSettings.TokenExpiry.Value < DateTime.Now;
+                        <MudItem xs="6" sm="3">
+                            <MudChip T="string" 
+                                     Color="@(isExpired ? Color.Error : isExpiringSoon ? Color.Warning : Color.Default)" 
+                                     Size="Size.Small"
+                                     Icon="@(isExpired ? Icons.Material.Filled.Error : Icons.Material.Filled.Schedule)">
+                                @(isExpired ? "Истёк" : $"До: {Config.EmailSettings.TokenExpiry.Value:dd.MM HH:mm}")
+                            </MudChip>
+                        </MudItem>
+                    }
+                }
+            </MudGrid>
         }
         else
         {
-             <MudTextField Label="Пароль (App Password)" @bind-Value="Config.EmailSettings.Password" InputType="InputType.Password" />
+            <MudTextField Label="Пароль (App Password)" @bind-Value="Config.EmailSettings.Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2" />
         }
 
-        <MudCheckBox Label="Использовать SSL" @bind-Value="Config.EmailSettings.UseSsl" Color="Color.Primary" />
+        <MudCheckBox Label="Использовать SSL" @bind-Value="Config.EmailSettings.UseSsl" Color="Color.Primary" Dense="true" Class="mt-2" />
         
-        <MudText Typo="Typo.subtitle2" Class="mt-2">Фильтры</MudText>
-        <MudTextField Label="Папка (по умолчанию INBOX)" @bind-Value="Config.EmailSettings.FolderToScan" />
-        <MudTextField Label="Фильтр по отправителю" @bind-Value="Config.EmailSettings.SenderFilter" HelperText="Например: receipts@ofd.ru" />
+        <MudDivider Class="my-3" />
+        
+        <MudText Typo="Typo.caption" Style="font-weight: 600; opacity: 0.7;" Class="mb-2">ФИЛЬТРЫ</MudText>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6">
+                <MudTextField Label="Папка" @bind-Value="Config.EmailSettings.FolderToScan" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="INBOX" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField Label="Фильтр по отправителю" @bind-Value="Config.EmailSettings.SenderFilter" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="receipts@ofd.ru" />
+            </MudItem>
+        </MudGrid>
         
         @if (_isSyncing)
         {
-            <MudPaper Elevation="0" Class="pa-3 my-2" Style="background: var(--mud-palette-background-grey);">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudPaper Elevation="0" Class="pa-3 mt-3 rounded-lg" Style="background: var(--mud-palette-background-grey);">
+                <div class="d-flex align-center gap-2">
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
                     <MudText Typo="Typo.body2">@_syncStatus</MudText>
-                </MudStack>
+                </div>
                 <MudProgressLinear Indeterminate="true" Color="Color.Success" Class="mt-2" />
             </MudPaper>
         }
 
-        <MudStack Row="true" Class="mt-4">
-            <MudButton OnClick="TestConnection" Variant="Variant.Outlined" Color="Color.Secondary" Disabled="_isSyncing">Проверить соединение</MudButton>
-            <MudButton OnClick="SyncReceipts" Variant="Variant.Filled" Color="Color.Success" Disabled="_isSyncing">Синхронизировать чеки</MudButton>
-        </MudStack>
-    </MudPaper>
-</MudContainer>
+        <MudGrid Spacing="2" Class="mt-4">
+            <MudItem xs="12" sm="6">
+                <MudButton OnClick="TestConnection" Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" Disabled="_isSyncing" FullWidth="true" StartIcon="@Icons.Material.Filled.Wifi">Проверить</MudButton>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudButton OnClick="SyncReceipts" Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" Disabled="_isSyncing" FullWidth="true" StartIcon="@Icons.Material.Filled.Sync">Синхронизировать</MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+</div>
 
 @code {
     [Inject] private EfcToXamarinAndroid.Core.Services.IEmailService EmailService { get; set; }

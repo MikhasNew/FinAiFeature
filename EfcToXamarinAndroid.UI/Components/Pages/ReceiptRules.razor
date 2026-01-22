@@ -8,30 +8,42 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
-    <div class="d-flex align-center mb-6">
-        <MudText Typo="Typo.h5" Style="font-weight: bold;">Правила парсинга чеков</MudText>
-        <MudSpacer />
-        <MudButtonGroup Variant="Variant.Outlined" Class="mr-2">
-            <MudButton StartIcon="@Icons.Material.Filled.FileDownload" 
-                       OnClick="ExportRules" 
-                       Disabled="@(_rules == null || !_rules.Any())">
-                Экспорт
-            </MudButton>
-            <MudButton StartIcon="@Icons.Material.Filled.FileUpload" OnClick="ImportRules">
-                Импорт
-            </MudButton>
-        </MudButtonGroup>
-        <MudMenu Label="Добавить правило" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
-            <MudMenuItem OnClick="AddParsingRule" Icon="@Icons.Material.Filled.Email">Парсинг текста/Email</MudMenuItem>
-            <MudMenuItem OnClick="AddQrRule" Icon="@Icons.Material.Filled.QrCode">QR-код / API</MudMenuItem>
-        </MudMenu>
-    </div>
+@* Gradient Header *@
+<div class="rules-page-header">
+    <MudText Typo="Typo.h5" Style="color: white; font-weight: 700;">Правила парсинга чеков</MudText>
+    <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.7);">Настройте обработку Email и QR-кодов</MudText>
+</div>
+
+@* Content Sheet *@
+<div class="rules-content-sheet">
+    <MudGrid Class="mb-4" Spacing="2">
+        <MudItem xs="12" sm="6" Class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Rule" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Color="Color.Primary">Правила (@(_rules?.Count ?? 0))</MudText>
+        </MudItem>
+        <MudItem xs="12" sm="6" Class="d-flex justify-start justify-sm-end flex-wrap gap-2">
+            <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                <MudButton StartIcon="@Icons.Material.Filled.FileDownload" 
+                           OnClick="ExportRules" 
+                           Disabled="@(_rules == null || !_rules.Any())">
+                    Экспорт
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.FileUpload" OnClick="ImportRules">
+                    Импорт
+                </MudButton>
+            </MudButtonGroup>
+            <MudMenu Label="Добавить" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
+                <MudMenuItem OnClick="AddParsingRule" Icon="@Icons.Material.Filled.Email">Парсинг текста/Email</MudMenuItem>
+                <MudMenuItem OnClick="AddQrRule" Icon="@Icons.Material.Filled.QrCode">QR-код / API</MudMenuItem>
+            </MudMenu>
+        </MudItem>
+    </MudGrid>
 
     @if (_rules == null || !_rules.Any())
     {
-        <MudAlert Severity="Severity.Warning">
-            Правила парсинга чеков не настроены. Добавьте первое правило для обработки email-чеков.
+        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="rounded-lg">
+            <MudText Typo="Typo.body2">Правила парсинга чеков не настроены.</MudText>
+            <MudText Typo="Typo.caption" Style="opacity: 0.7;">Добавьте первое правило для обработки email-чеков или QR-кодов.</MudText>
         </MudAlert>
     }
     else
@@ -107,7 +119,7 @@
             </MudList>
         </MudExpansionPanel>
     </MudExpansionPanels>
-</MudContainer>
+</div>
 
 @code {
     private List<ReceiptConfiguration> _rules => ConfigurationManager.ConfigManager.BankConfigurationFromJson.ReceiptConfigurations;
