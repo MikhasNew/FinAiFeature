@@ -115,7 +115,11 @@
                     _pendingQrCode = null;
 
                     // Обновляем поля из полученного чека
-                    if (_editItem.Id == default) _editItem.Date = receipt.ReceiptDate;
+                    if (_editItem.Id == default) 
+                    {
+                        _editItem.Date = receipt.ReceiptDate;
+                        _editItem.IsNewDataItem = true;
+                    }
                     if (_editItem.Sum == 0) _editItem.Sum = receipt.TotalSum;
                     if (string.IsNullOrEmpty(_editItem.Description)) _editItem.Description = receipt.ShopName;
                     else _editItem.Description = $"{_editItem.Description} ({receipt.ShopName})";

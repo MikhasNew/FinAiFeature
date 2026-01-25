@@ -56,7 +56,8 @@
                                  Value="Item.MCC"
                                  ValueChanged="OnMccChanged"
                                  SearchFunc="@SearchMccCodes"
-                                 ReadOnly="!Editable" />
+                                 ReadOnly="!Editable"
+                                 CoerceValue = "true"/>
 
                 @* Поле выбора описания MCC *@
                 <MudAutocomplete T="string"
@@ -65,7 +66,8 @@
                                  Value="Item.MccDescription"
                                  ValueChanged="OnMccDescriptionChanged"
                                  SearchFunc="@SearchMccDescriptions"
-                                 ReadOnly="!Editable" />
+                                 ReadOnly="!Editable"
+                                 CoerceValue="true" />
 
 
                 <AddChipElement Editable="@(Editable)" @bind-ChipValues="ChipValues"></AddChipElement>
@@ -198,9 +200,11 @@
         // Ищем описание, соответствующее этому коду
         // Предположим, в VM есть метод получения справочника
         var reference = VM.GetMccDeskriptonsByCode(newCode);
-
-        Item.MccDescription = reference;
-        StateHasChanged();
+        if (reference != default)
+        {
+            Item.MccDescription = reference;
+            StateHasChanged();
+        }
 
     }
 
@@ -208,12 +212,13 @@
     private async Task OnMccDescriptionChanged(string newDescription)
     {
         Item.MccDescription = newDescription;
-
         // Ищем код, соответствующий этому описанию
         var reference = VM.GetMccCodesByDeskription(newDescription);
-        Item.MCC = reference;
-        StateHasChanged();
-
+        if(reference!=default)
+        {
+            Item.MCC = reference;
+            StateHasChanged();
+        }
     }
 
     // Вспомогательные методы поиска для Autocomplete (как в предыдущем ответе)
@@ -221,11 +226,8 @@
     {
         var codes = VM.GetMccCodes(Item.OperationType);
         if (string.IsNullOrEmpty(value)) return codes;
-
         if (codes.Any())
-
             return codes.Where(x => x.ToString().Contains(value));
-
         else return null;
     }
 

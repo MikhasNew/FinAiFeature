@@ -1,5 +1,9 @@
 @using EfcToXamarinAndroid.UI.Components.Models
-<MudPaper class="d-flex flex-grow-1 gap-1 mud-ripple" Elevation="1"   @onclick="() => OnItemClick.InvokeAsync(Item)">
+<MudPaper class="@GetItemClass()" Elevation="1" @onclick="() => OnItemClick.InvokeAsync(Item)">
+    @if (Item?.IsNewDataItem == true)
+    {
+        <div class="new-item-indicator"></div>
+    }
     <MudPaper Class="flex-none d-flex" Height="64px" Width="40px" Elevation="0">
         <MudIcon Class="item-icon" Icon="@Icons.Material.Filled.Payment" Size="Size.Large" />
     </MudPaper>
@@ -29,6 +33,29 @@
 </MudPaper>
 <MudDivider />
 
+<style>
+    .new-transaction-item {
+        position: relative;
+        background: linear-gradient(90deg, rgba(76, 175, 80, 0.15) 0%, transparent 30%);
+        animation: pulse-highlight 2s ease-in-out infinite;
+    }
+
+    .new-item-indicator {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, #4CAF50, #81C784);
+        border-radius: 2px 0 0 2px;
+    }
+
+    @@keyframes pulse-highlight {
+        0%, 100% { background: linear-gradient(90deg, rgba(76, 175, 80, 0.15) 0%, transparent 30%); }
+        50% { background: linear-gradient(90deg, rgba(76, 175, 80, 0.25) 0%, transparent 40%); }
+    }
+</style>
+
 @code {
     [Parameter] public string Icon { get; set; } = string.Empty;
     [Parameter] public string ItemTitle { get; set; } = string.Empty;
@@ -38,4 +65,10 @@
     [Parameter] public FinanceItem Item { get; set; }
     [Parameter] public EventCallback<FinanceItem> OnItemClick { get; set; }
     [Parameter] public EventCallback<FinanceItem> OnRetryReceipt { get; set; }
+
+    private string GetItemClass()
+    {
+        var baseClass = "d-flex flex-grow-1 gap-1 mud-ripple";
+        return Item?.IsNewDataItem == true ? $"{baseClass} new-transaction-item" : baseClass;
+    }
 }
