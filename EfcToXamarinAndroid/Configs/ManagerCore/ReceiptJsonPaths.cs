@@ -86,5 +86,10 @@ namespace EfcToXamarinAndroid.Core.Configs.ManagerCore
         /// Формат даты в ответе API (для парсинга), например: "dd/MM/yyyy, HH:mm:ss"
         /// </summary>
         public string? DateFormat { get; set; }
+
+        /// <summary>
+        /// Разделитель дробной части (например, ","). Если указан, будет заменен на "." перед парсингом.
+        /// </summary>
+        public string? DecimalSeparator { get; set; }
     }
 }

@@ -211,7 +211,8 @@
         "ItemsArray": "$.message.positions",
         "ItemName": "product_name",
         "ItemQuantity": "product_count",
-        "ItemAmount": "amount"
+        "ItemAmount": "amount",
+        "DecimalSeparator": "."
       }
     },
     {

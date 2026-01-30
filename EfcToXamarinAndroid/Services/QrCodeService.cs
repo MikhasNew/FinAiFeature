@@ -242,9 +242,9 @@ namespace EfcToXamarinAndroid.Core.Services
                 if (!string.IsNullOrEmpty(paths.TotalSum))
                 {
                     var sumToken = json.SelectToken(paths.TotalSum);
-                    if (sumToken != null && float.TryParse(sumToken.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out float sum))
+                    if (sumToken != null)
                     {
-                        receipt.TotalSum = sum;
+                        receipt.TotalSum = ParseFloatFromToken(sumToken, paths.DecimalSeparator);
                     }
                 }
 
@@ -336,28 +336,28 @@ namespace EfcToXamarinAndroid.Core.Services
 
                             if (!string.IsNullOrEmpty(paths.ItemQuantity))
                             {
-                                var qtyStr = itemToken[paths.ItemQuantity]?.ToString();
-                                if (double.TryParse(qtyStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double qty))
+                                var qtyToken = itemToken[paths.ItemQuantity];
+                                if (qtyToken != null)
                                 {
-                                    item.Quantity = qty;
+                                    item.Quantity = (double)ParseFloatFromToken(qtyToken, paths.DecimalSeparator);
                                 }
                             }
 
                             if (!string.IsNullOrEmpty(paths.ItemAmount))
                             {
-                                var amtStr = itemToken[paths.ItemAmount]?.ToString();
-                                if (float.TryParse(amtStr, NumberStyles.Any, CultureInfo.InvariantCulture, out float amt))
+                                var amtToken = itemToken[paths.ItemAmount];
+                                if (amtToken != null)
                                 {
-                                    item.Sum = amt;
+                                    item.Sum = ParseFloatFromToken(amtToken, paths.DecimalSeparator);
                                 }
                             }
 
                             if (!string.IsNullOrEmpty(paths.ItemPrice))
                             {
-                                var priceStr = itemToken[paths.ItemPrice]?.ToString();
-                                if (float.TryParse(priceStr, NumberStyles.Any, CultureInfo.InvariantCulture, out float price))
+                                var priceToken = itemToken[paths.ItemPrice];
+                                if (priceToken != null)
                                 {
-                                    item.Price = price;
+                                    item.Price = ParseFloatFromToken(priceToken, paths.DecimalSeparator);
                                 }
                             }
                             else if (item.Quantity > 0 && item.Sum > 0)
@@ -377,6 +377,29 @@ namespace EfcToXamarinAndroid.Core.Services
                 Console.WriteLine($"Error parsing JSON response: {ex.Message}");
                 return null;
             }
+        }
+
+        private float ParseFloatFromToken(JToken token, string? decimalSeparator)
+        {
+            if (token.Type == JTokenType.Float || token.Type == JTokenType.Integer)
+            {
+                return token.ToObject<float>();
+            }
+
+            var strValue = token.ToString();
+            if (string.IsNullOrEmpty(strValue)) return 0f;
+
+            if (!string.IsNullOrEmpty(decimalSeparator))
+            {
+                strValue = strValue.Replace(decimalSeparator, ".");
+            }
+
+            if (float.TryParse(strValue, NumberStyles.Any, CultureInfo.InvariantCulture, out float result))
+            {
+                return result;
+            }
+
+            return 0f;
         }
     }
 }
