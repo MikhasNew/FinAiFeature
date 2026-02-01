@@ -342,14 +342,26 @@ namespace EfcToXamarinAndroid.Core.Services
 
             if (needsRefresh && !string.IsNullOrEmpty(settings.RefreshToken))
             {
-                Console.WriteLine("[EmailService] Access token expired or missing. Refreshing...");
+                Console.WriteLine($"[EmailService] Access token expired or missing. Refreshing via {settings.OAuthProvider}...");
                 try
                 {
-                    // Prefer settings if entered manually, else use loaded from file
-                    var clientId = !string.IsNullOrEmpty(settings.ClientId) ? settings.ClientId : Configs.GoogleAuthConfig.Default.ClientId;
-                    var clientSecret = !string.IsNullOrEmpty(settings.ClientSecret) ? settings.ClientSecret : Configs.GoogleAuthConfig.Default.ClientSecret;
+                    // Определяем провайдера и получаем credentials
+                    string clientId;
+                    string clientSecret;
+                    string providerName = settings.OAuthProvider ?? "Google";
 
-                    var response = await _oauthService.RefreshTokenAsync(settings.RefreshToken, clientId, clientSecret);
+                    if (providerName.Equals("Yandex", StringComparison.OrdinalIgnoreCase))
+                    {
+                        clientId = !string.IsNullOrEmpty(settings.ClientId) ? settings.ClientId : Configs.YandexAuthConfig.Default.ClientId;
+                        clientSecret = !string.IsNullOrEmpty(settings.ClientSecret) ? settings.ClientSecret : Configs.YandexAuthConfig.Default.ClientSecret;
+                    }
+                    else // Google
+                    {
+                        clientId = !string.IsNullOrEmpty(settings.ClientId) ? settings.ClientId : Configs.GoogleAuthConfig.Default.ClientId;
+                        clientSecret = !string.IsNullOrEmpty(settings.ClientSecret) ? settings.ClientSecret : Configs.GoogleAuthConfig.Default.ClientSecret;
+                    }
+
+                    var response = await _oauthService.RefreshTokenAsync(providerName, settings.RefreshToken, clientId, clientSecret);
                     
                     settings.AccessToken = response.AccessToken;
                     settings.TokenExpiry = DateTime.Now.AddSeconds(response.ExpiresIn);

@@ -247,6 +247,56 @@
         "OrderNumber": "Заказ\\s*№(\\d+)",
         "Subject": "Оплата билетов на:\\s*(.+?)(?=Сумма)"
       }
+    },
+    {
+      "Name": "Yandex Mail - Cinema/Билеты",
+      "IsActive": true,
+      "SenderEmail": "no-reply@cinema.by",
+      "ParseRegex": {
+        "ShopName": "Получатель платежа:\\s*(.+?)(?=\\r?\\n|УНП)",
+        "ReceiptDate": "Дата:\\s*([\\d\\.\\s:]+)",
+        "TotalSum": "Сумма всего\\s*:\\s*([\\d\\.,]+)",
+        "Currency": "(BYN|руб)",
+        "RegNumber": "Рег\\. номер:\\s*(\\d+)",
+        "CardNumber": "Карта:\\s*([\\d\\*]+)",
+        "EripPayerNumber": "Номер плательщика ЕРИП:\\s*(\\d+)",
+        "OrderNumber": "Заказ №(\\d+)",
+        "Subject": "Оплата билетов на:\\s*(.+)"
+      }
+    },
+    {
+      "Name": "Yandex Mail - ЕРИП Платежи",
+      "IsActive": true,
+      "SenderEmail": "noreply@erip.by",
+      "ParseRegex": {
+        "ShopName": "Получатель платежа:\\s*(.+?)(?=\\r?\\n|УНП)",
+        "ShopInn": "УНП\\s*(\\d+)",
+        "ReceiptDate": "Дата:\\s*(\\d{2}\\.\\d{2}\\.\\d{4}\\s\\d{2}:\\d{2})",
+        "TotalSum": "Сумма всего\\s*:\\s*([\\d\\.,]+)",
+        "Currency": "(BYN|руб)",
+        "RegNumber": "Рег\\.\\s*номер:\\s*(\\d+)",
+        "CardNumber": "Карта:\\s*([\\d\\*]+)",
+        "EripPayerNumber": "Номер плательщика ЕРИП:\\s*(\\d+)",
+        "OrderNumber": "Заказ\\s*№(\\d+)",
+        "Subject": "(Товар|Услуга):\\s*(.+)"
+      }
+    },
+    {
+      "Name": "Yandex Mail - M-Banking",
+      "IsActive": true,
+      "SenderEmail": "noreply@belarusbank.by",
+      "ParseRegex": {
+        "ShopName": "Получатель платежа:\\s*(.+?)(?=,\\s*УНП)",
+        "ShopInn": "УНП\\s*(\\d+)",
+        "ReceiptDate": "Дата:\\s*(\\d{2}\\.\\d{2}\\.\\d{4}\\s\\d{2}:\\d{2})",
+        "TotalSum": "Сумма всего\\s*:\\s*(\\d+)",
+        "Currency": "BYN",
+        "RegNumber": "Рег\\.\\s*номер:\\s*(\\d+)",
+        "CardNumber": "Карта:\\s*([\\d\\*]+)",
+        "EripPayerNumber": "Номер плательщика ЕРИП:\\s*(\\d+)",
+        "OrderNumber": "Заказ\\s*№(\\d+)",
+        "Subject": "Оплата билетов на:\\s*(.+?)(?=Сумма)"
+      }
     }
   ]
 }

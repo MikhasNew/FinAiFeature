@@ -11,7 +11,7 @@
         @if (_isProcessing)
         {
             <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-            <MudText Class="mt-4">Авторизация Google...</MudText>
+            <MudText Class="mt-4">Авторизация @(_providerName ?? "Google")...</MudText>
             <MudText Typo="Typo.caption">Обмен кода на токен</MudText>
         }
         else if (_errorMessage != null)
@@ -26,10 +26,15 @@
 
 @code {
     private bool _isProcessing = true;
+    private bool _hasProcessed = false;
     private string? _errorMessage;
+    private string? _providerName;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender || _hasProcessed) return;
+        _hasProcessed = true;
+        
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         var query = new Dictionary<string, string>();
         if (!string.IsNullOrEmpty(uri.Query))
@@ -47,26 +52,33 @@
         {
             try
             {
-                // Redirect URI must match exactly what was sent
-                // Assuming we are running on localhost:5000 for WebDebugger
-                // We should dynamically construct this or use the configured one
                 var redirectUri = Navigation.BaseUri + "oauth-callback"; 
                 Console.WriteLine($"[OAuthCallback] Using Redirect URI: {redirectUri}");
 
                 var config = ConfigurationManager.ConfigManager.BankConfigurationFromJson.EmailSettings;
                 
-                // Prefer settings if entered manually, else use loaded from file
-                var clientId = !string.IsNullOrEmpty(config.ClientId) ? config.ClientId : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientId;
-                var clientSecret = !string.IsNullOrEmpty(config.ClientSecret) ? config.ClientSecret : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientSecret;
+                var providerName = config.OAuthProvider ?? "Google";
+                _providerName = providerName;
+                
+                string clientId, clientSecret;
+                if (providerName.Equals("Yandex", StringComparison.OrdinalIgnoreCase))
+                {
+                    clientId = !string.IsNullOrEmpty(config.ClientId) ? config.ClientId : EfcToXamarinAndroid.Core.Configs.YandexAuthConfig.Default.ClientId;
+                    clientSecret = !string.IsNullOrEmpty(config.ClientSecret) ? config.ClientSecret : EfcToXamarinAndroid.Core.Configs.YandexAuthConfig.Default.ClientSecret;
+                }
+                else
+                {
+                    clientId = !string.IsNullOrEmpty(config.ClientId) ? config.ClientId : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientId;
+                    clientSecret = !string.IsNullOrEmpty(config.ClientSecret) ? config.ClientSecret : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientSecret;
+                }
 
                 if (clientId == "YOUR_CLIENT_ID_HERE" || clientSecret == "YOUR_CLIENT_SECRET_HERE")
                 {
-                    throw new Exception("Client ID/Secret are not configured in GoogleAuthConfig.cs");
+                    throw new Exception($"Client ID/Secret для {providerName} не настроены");
                 }
 
-                var tokens = await OAuthService.ExchangeCodeForTokenAsync(code, clientId, clientSecret, redirectUri);
+                var tokens = await OAuthService.ExchangeCodeForTokenAsync(providerName, code, clientId, clientSecret, redirectUri);
 
-                // Save tokens
                 config.AccessToken = tokens.AccessToken;
                 if (!string.IsNullOrEmpty(tokens.RefreshToken))
                 {
@@ -76,24 +88,27 @@
                 
                 ConfigurationManager.ConfigManager.Save();
 
-                Snackbar.Add("Успешный вход через Google!", Severity.Success);
+                Snackbar.Add($"Успешный вход через {providerName}!", Severity.Success);
                 Navigation.NavigateTo("/settings");
             }
             catch (Exception ex)
             {
                 _errorMessage = ex.Message;
                 _isProcessing = false;
+                StateHasChanged();
             }
         }
         else if (query.TryGetValue("error", out var error))
         {
-            _errorMessage = $"Google вернул ошибку: {error}";
+            _errorMessage = $"Провайдер вернул ошибку: {error}";
             _isProcessing = false;
+            StateHasChanged();
         }
         else
         {
             _errorMessage = "Код авторизации не найден.";
             _isProcessing = false;
+            StateHasChanged();
         }
     }
 }

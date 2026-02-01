@@ -15,6 +15,12 @@ namespace EfcToXamarinAndroid.Core.Configs.ManagerCore
 
         // OAuth2 Settings
         public bool UseOAuth { get; set; } = false;
+        
+        /// <summary>
+        /// OAuth провайдер: "Google" или "Yandex"
+        /// </summary>
+        public string OAuthProvider { get; set; } = "Google";
+        
         public string? ClientId { get; set; }
         public string? ClientSecret { get; set; }
         public string? AccessToken { get; set; }

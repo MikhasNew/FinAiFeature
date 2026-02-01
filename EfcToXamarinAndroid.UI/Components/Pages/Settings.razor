@@ -46,7 +46,16 @@
             </MudItem>
         </MudGrid>
 
-        <MudSwitch Label="Использовать OAuth2 (Google)" Value="Config.EmailSettings.UseOAuth" ValueChanged="OnOAuthChanged" T="bool" Color="Color.Primary" Class="my-2"/>
+        <MudSwitch Label="Использовать OAuth2" Value="Config.EmailSettings.UseOAuth" ValueChanged="OnOAuthChanged" T="bool" Color="Color.Primary" Class="my-2"/>
+        
+        @if (Config.EmailSettings.UseOAuth)
+        {
+            <MudSelect T="string" Label="OAuth Провайдер" Value="Config.EmailSettings.OAuthProvider" ValueChanged="OnProviderChanged" 
+                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
+                <MudSelectItem Value="@("Google")">Google</MudSelectItem>
+                <MudSelectItem Value="@("Yandex")">Яндекс</MudSelectItem>
+            </MudSelect>
+        }
         
         @if (Config.EmailSettings.UseOAuth)
         {
@@ -63,7 +72,7 @@
             
             <MudGrid Spacing="2" Class="mt-3">
                 <MudItem xs="12" sm="6">
-                    <MudButton OnClick="SignInGoogle" Variant="Variant.Filled" StartIcon="@Icons.Custom.Brands.Google" Color="Color.Error" Size="Size.Small" FullWidth="true">Войти через Google</MudButton>
+                    <MudButton OnClick="SignInOAuth" Variant="Variant.Filled" StartIcon="@GetProviderIcon()" Color="@GetProviderColor()" Size="Size.Small" FullWidth="true">Войти через @Config.EmailSettings.OAuthProvider</MudButton>
                 </MudItem>
                 @if (!string.IsNullOrEmpty(Config.EmailSettings.AccessToken))
                 {
@@ -144,20 +153,61 @@
         Config.EmailSettings.UseOAuth = useOAuth;
         if (useOAuth && string.IsNullOrEmpty(Config.EmailSettings.ImapHost))
         {
-            Config.EmailSettings.ImapHost = "imap.gmail.com";
+            Config.EmailSettings.ImapHost = GetDefaultImapHost();
             Config.EmailSettings.ImapPort = 993;
             Config.EmailSettings.UseSsl = true;
         }
     }
 
-    private void SignInGoogle()
+    private void OnProviderChanged(string provider)
     {
-        // Prefer settings if entered manually, else use loaded from file
-        var clientId = !string.IsNullOrEmpty(Config.EmailSettings.ClientId) ? Config.EmailSettings.ClientId : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientId;
+        Config.EmailSettings.OAuthProvider = provider;
+        Config.EmailSettings.ImapHost = GetDefaultImapHost();
+        Config.EmailSettings.ImapPort = 993;
+        Config.EmailSettings.UseSsl = true;
+        // Сбросить токены при смене провайдера
+        Config.EmailSettings.AccessToken = null;
+        Config.EmailSettings.RefreshToken = null;
+        Config.EmailSettings.TokenExpiry = null;
+    }
+
+    private string GetDefaultImapHost() => Config.EmailSettings.OAuthProvider switch
+    {
+        "Yandex" => "imap.yandex.com",
+        _ => "imap.gmail.com"
+    };
+
+    private string GetProviderIcon() => Config.EmailSettings.OAuthProvider switch
+    {
+        "Yandex" => Icons.Material.Filled.Mail,
+        _ => Icons.Custom.Brands.Google
+    };
+
+    private Color GetProviderColor() => Config.EmailSettings.OAuthProvider switch
+    {
+        "Yandex" => Color.Warning,
+        _ => Color.Error
+    };
+
+    private void SignInOAuth()
+    {
+        // Определяем провайдера из настроек
+        var providerName = Config.EmailSettings.OAuthProvider ?? "Google";
+        
+        // Получаем credentials в зависимости от провайдера
+        string clientId;
+        if (providerName.Equals("Yandex", StringComparison.OrdinalIgnoreCase))
+        {
+            clientId = !string.IsNullOrEmpty(Config.EmailSettings.ClientId) ? Config.EmailSettings.ClientId : EfcToXamarinAndroid.Core.Configs.YandexAuthConfig.Default.ClientId;
+        }
+        else // Google
+        {
+            clientId = !string.IsNullOrEmpty(Config.EmailSettings.ClientId) ? Config.EmailSettings.ClientId : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientId;
+        }
         
         if (string.IsNullOrEmpty(clientId) || clientId == "YOUR_CLIENT_ID_HERE")
         {
-             Snackbar.Add("Ошибка: Client ID не настроен (проверьте google_secrets.json или введите в поле выше)", Severity.Error);
+             Snackbar.Add($"Ошибка: Client ID для {providerName} не настроен (проверьте {providerName.ToLower()}_secrets.json или введите в поле выше)", Severity.Error);
              return;
         }
 
@@ -166,7 +216,7 @@
         var baseUri = Navigation.BaseUri;
         var redirectUri = baseUri + callbackPath;
 
-        var authUrl = OAuthService.GenerateAuthUrl(clientId, redirectUri);
+        var authUrl = OAuthService.GenerateAuthUrl(providerName, clientId, redirectUri);
         
         // Save current state just in case
         Save();
