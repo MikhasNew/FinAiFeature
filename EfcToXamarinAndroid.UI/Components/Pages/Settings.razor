@@ -1,6 +1,7 @@
 ﻿@page "/settings"
 @using EfcToXamarinAndroid.Core.Configs.ManagerCore
 @using EfcToXamarinAndroid.Core.Enums
+@using Microsoft.Extensions.DependencyInjection
 
 @* Gradient Header *@
 <div class="settings-page-header">
@@ -141,6 +142,7 @@
     [Inject] private EfcToXamarinAndroid.Core.Services.OAuthService OAuthService { get; set; }
     [Inject] private NavigationManager Navigation { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
+    [Inject] private IServiceProvider Services { get; set; }
     
     private AppConfiguration Config => ConfigurationManager.ConfigManager.BankConfigurationFromJson;
     private bool _isSyncing = false;
@@ -189,20 +191,22 @@
         _ => Color.Error
     };
 
-    private void SignInOAuth()
+    private async Task SignInOAuth()
     {
         // Определяем провайдера из настроек
         var providerName = Config.EmailSettings.OAuthProvider ?? "Google";
         
         // Получаем credentials в зависимости от провайдера
-        string clientId;
+        string clientId, clientSecret;
         if (providerName.Equals("Yandex", StringComparison.OrdinalIgnoreCase))
         {
             clientId = !string.IsNullOrEmpty(Config.EmailSettings.ClientId) ? Config.EmailSettings.ClientId : EfcToXamarinAndroid.Core.Configs.YandexAuthConfig.Default.ClientId;
+            clientSecret = !string.IsNullOrEmpty(Config.EmailSettings.ClientSecret) ? Config.EmailSettings.ClientSecret : EfcToXamarinAndroid.Core.Configs.YandexAuthConfig.Default.ClientSecret;
         }
         else // Google
         {
             clientId = !string.IsNullOrEmpty(Config.EmailSettings.ClientId) ? Config.EmailSettings.ClientId : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientId;
+            clientSecret = !string.IsNullOrEmpty(Config.EmailSettings.ClientSecret) ? Config.EmailSettings.ClientSecret : EfcToXamarinAndroid.Core.Configs.GoogleAuthConfig.Default.ClientSecret;
         }
         
         if (string.IsNullOrEmpty(clientId) || clientId == "YOUR_CLIENT_ID_HERE")
@@ -211,18 +215,62 @@
              return;
         }
 
-        // Determine Redirect URI
-        var callbackPath = "oauth-callback";
-        var baseUri = Navigation.BaseUri;
-        var redirectUri = baseUri + callbackPath;
+        // Try to get Native Authenticator (Maui)
+        var authenticator = Services.GetService<EfcToXamarinAndroid.Core.Services.IWebBrowserAuthenticator>();
+        
+        if (authenticator != null)
+        {
+            // Native Flow (Android/iOS/WinUI)
+            // Use Custom Scheme Callback
+            var callbackScheme = "com.companyname.mauiappwithmudblazor";
+            // Note: callbackUrl usually needs to be just the scheme or scheme://something
+            // WebAuthenticator documentation says: "The callback Url that the app expects to receive"
+            // For Android, this filters the intent.
+            var callbackUrl = $"{callbackScheme}://callback";
+            
+            var authUrl = OAuthService.GenerateAuthUrl(providerName, clientId, callbackUrl);
+            
+            try 
+            {
+                var result = await authenticator.AuthenticateAsync(new Uri(authUrl), new Uri(callbackUrl));
+                if (result != null && result.TryGetValue("code", out var code))
+                {
+                    // Have code! Exchange it!
+                    var tokens = await OAuthService.ExchangeCodeForTokenAsync(providerName, code, clientId, clientSecret, callbackUrl);
+                    
+                    Config.EmailSettings.AccessToken = tokens.AccessToken;
+                    if (!string.IsNullOrEmpty(tokens.RefreshToken))
+                    {
+                        Config.EmailSettings.RefreshToken = tokens.RefreshToken;
+                    }
+                    Config.EmailSettings.TokenExpiry = DateTime.Now.AddSeconds(tokens.ExpiresIn);
+                    
+                    Save();
+                    Snackbar.Add($"Успешный вход через {providerName}!", Severity.Success);
+                    StateHasChanged();
+                }
+            }
+            catch(Exception ex)
+            {
+                Snackbar.Add($"Auth Error: {ex.Message}", Severity.Error);
+            }
+        }
+        else
+        {
+            // Web Flow (Blazor Server / Browser)
+            // Determine Redirect URI
+            var callbackPath = "oauth-callback";
+            var baseUri = Navigation.BaseUri;
+            var redirectUri = baseUri + callbackPath;
 
-        var authUrl = OAuthService.GenerateAuthUrl(providerName, clientId, redirectUri);
-        
-        // Save current state just in case
-        Save();
-        
-        // Navigate
-        Navigation.NavigateTo(authUrl);
+            var authUrl = OAuthService.GenerateAuthUrl(providerName, clientId, redirectUri);
+            
+            // Save current state just in case
+            Save();
+            
+            // Navigate
+            Navigation.NavigateTo(authUrl);
+        }
     }
 
     private async Task TestConnection()

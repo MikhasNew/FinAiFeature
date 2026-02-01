@@ -52,6 +52,7 @@ namespace MauiAppWithMudBlazor
             builder.Services.AddSingleton<OAuthService>();
             builder.Services.AddSingleton<ReceiptProcessor>();
             builder.Services.AddSingleton<IEmailService, EmailService>();
+            builder.Services.AddSingleton<IWebBrowserAuthenticator, MauiWebBrowserAuthenticator>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
