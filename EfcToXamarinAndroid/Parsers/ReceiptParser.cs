@@ -22,6 +22,12 @@ namespace EfcToXamarinAndroid.Core.Parsers
                 (isEmail && c.SenderEmail == sourceIdentifier) || 
                 (!isEmail && !string.IsNullOrEmpty(c.UrlPattern) && Regex.IsMatch(sourceIdentifier, c.UrlPattern)));
 
+            // Fallback: try to find a generic configuration (SenderEmail == "*")
+            if (config == null && isEmail)
+            {
+                config = _configurations.Find(c => c.SenderEmail == "*");
+            }
+
             if (config == null || config.ParseRegex == null)
             {
                 return null;
@@ -44,16 +50,14 @@ namespace EfcToXamarinAndroid.Core.Parsers
             // Parse Receipt Level Data
             if (!string.IsNullOrEmpty(regex.ShopName))
             {
-                receipt.ShopName = Regex.Match(content, regex.ShopName).Groups[1].Value.Trim();
-                if (string.IsNullOrEmpty(receipt.ShopName)) 
-                    receipt.ShopName = Regex.Match(content, regex.ShopName).Value.Trim();
+                receipt.ShopName = GetRegexValue(content, regex.ShopName);
             }
 
             if (!string.IsNullOrEmpty(regex.ShopInn))
-                receipt.ShopInn = Regex.Match(content, regex.ShopInn).Value.Trim();
+                receipt.ShopInn = GetRegexValue(content, regex.ShopInn);
 
             if (!string.IsNullOrEmpty(regex.Address))
-                receipt.Address = Regex.Match(content, regex.Address).Value.Trim();
+                receipt.Address = GetRegexValue(content, regex.Address);
 
             if (!string.IsNullOrEmpty(regex.ReceiptDate))
             {
@@ -66,8 +70,11 @@ namespace EfcToXamarinAndroid.Core.Parsers
 
             if (!string.IsNullOrEmpty(regex.TotalSum))
             {
-                string val = GetRegexValue(content, regex.TotalSum);
-                receipt.TotalSum = float.TryParse(val.Replace(",", "."), NumberStyles.Any, ci, out float sum) ? sum : 0;
+                // Support comma and dot
+                string val = GetRegexValue(content, regex.TotalSum).Replace(",", ".");
+                // Clean up any non-numeric chars if necessary, but TryParse covers most
+                // Regex usually extracts just the number, but let's be safe
+                receipt.TotalSum = float.TryParse(val, NumberStyles.Any, ci, out float sum) ? sum : 0;
             }
 
             if (!string.IsNullOrEmpty(regex.Currency))
@@ -124,7 +131,19 @@ namespace EfcToXamarinAndroid.Core.Parsers
             var match = Regex.Match(input, pattern, RegexOptions.IgnoreCase);
             if (match.Success)
             {
-                return match.Groups.Count > 1 ? match.Groups[1].Value.Trim() : match.Value.Trim();
+                // Return the first successful capturing group (skipping group 0 which is the whole match)
+                if (match.Groups.Count > 1)
+                {
+                    for (int i = 1; i < match.Groups.Count; i++)
+                    {
+                        if (match.Groups[i].Success)
+                        {
+                            return match.Groups[i].Value.Trim();
+                        }
+                    }
+                }
+                // Fallback to whole match if no groups defined
+                return match.Value.Trim();
             }
             return string.Empty;
         }

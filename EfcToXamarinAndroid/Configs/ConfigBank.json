@@ -184,6 +184,22 @@
   ],
   "ReceiptConfigurations": [
     {
+      "Name": "Generic PDF Parser",
+      "IsActive": true,
+      "SenderEmail": "*",
+      "ParseRegex": {
+        "ShopName": "Получатель платежа:\\s*(.+?)(?=\\r?\\n|УНП)",
+        "ReceiptDate": "Дата:\\s*([\\d\\.\\s:]+)",
+        "TotalSum": "(?:Сумма всего\\s*:\\s*([0-9.,]+)\\s*(?:BYN|руб)|(?:Total|Sum|Itogo|Итого|Всего|Сумма)[\\s:.]*([0-9]+[.,][0-9]{2}))",
+        "Currency": "(BYN|руб)",
+        "RegNumber": "Рег\\. номер:\\s*(\\d+)",
+        "CardNumber": "Карта:\\s*([\\d\\*]+)",
+        "EripPayerNumber": "Номер плательщика ЕРИП:\\s*(\\d+)",
+        "OrderNumber": "Заказ №(\\d+)",
+        "Subject": "(?:Оплата билетов на|Товар|Услуга):\\s*(.+)"
+      }
+    },
+    {
       "Name": "Belarus (ch.info-center.by)",
       "IsActive": true,
       "IsDefault": true,

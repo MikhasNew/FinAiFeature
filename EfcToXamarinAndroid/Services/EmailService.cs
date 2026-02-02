@@ -163,10 +163,7 @@ namespace EfcToXamarinAndroid.Core.Services
                                         
                                         var receipt = _receiptParser.Parse(text, sender, true);
 
-                                        // Fallback: try generic parser for PDF receipts if no config matched
-                                        if (receipt == null)
-                                            receipt = ParseTestPdf(text);
-
+                                        // Fallback is now handled by ReceiptParser Generic Config
                                         if (receipt != null && receipt.TotalSum > 0)
                                         {
                                             Console.WriteLine($"[EmailService] Parsed valid receipt from PDF. Sum: {receipt.TotalSum}, Date: {receipt.ReceiptDate}");
@@ -206,74 +203,6 @@ namespace EfcToXamarinAndroid.Core.Services
             }
 
             return receipts;
-        }
-        private Receipt ParseTestPdf(string text)
-        {
-            var receipt = new Receipt { RawData = text, ReceiptDate = DateTime.Now };
-
-            // Helper to get value
-            string GetValue(string input, string pattern, System.Text.RegularExpressions.RegexOptions options = System.Text.RegularExpressions.RegexOptions.None)
-            {
-                var match = System.Text.RegularExpressions.Regex.Match(input, pattern, options);
-                return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
-            }
-
-            // 1. Reg Number
-            receipt.RegNumber = GetValue(text, @"Рег\. номер:\s*(\d+)");
-
-            // 2. Date
-            string dateStr = GetValue(text, @"Дата:\s*([\d\.\s:]+)");
-            if (DateTime.TryParseExact(dateStr, "dd.MM.yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date))
-                receipt.ReceiptDate = date;
-
-            // 3. Card
-            receipt.CardNumber = GetRegexValue(text, @"Карта:\s*([\d\*]+)");
-
-            // 4. ERIP
-            receipt.EripPayerNumber = GetValue(text, @"Номер плательщика ЕРИП:\s*(\d+)");
-
-            // 5. Receiver
-            receipt.ShopName = GetValue(text, @"Получатель платежа:\s*(.+?)(?=\r?\n|УНП)", System.Text.RegularExpressions.RegexOptions.Singleline).Trim();
-
-            // 6. Order Number
-            receipt.OrderNumber = GetValue(text, @"Заказ №(\d+)");
-
-            // 7. Subject (Product/Service)
-            receipt.Subject = GetValue(text, @"Оплата билетов на:\s*(.+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
-            if (string.IsNullOrEmpty(receipt.Subject))
-                receipt.Subject = GetValue(text, @"Товар:\s*(.+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
-            if (string.IsNullOrEmpty(receipt.Subject))
-                receipt.Subject = GetValue(text, @"Услуга:\s*(.+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
-
-            // 8. Sum
-            string amountStr = GetValue(text, @"Сумма всего\s*:\s*([\d\.,]+)\s*(BYN|руб)");
-            if (float.TryParse(amountStr.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var amount))
-            {
-                receipt.TotalSum = amount;
-                receipt.Currency = "BYN";
-            }
-
-            // If we didn't find sum with previous regex, try the general one as last resort
-            if (receipt.TotalSum == 0)
-            {
-                 var sumMatch = System.Text.RegularExpressions.Regex.Match(text, @"(Total|Sum|Itogo|Итого|Всего|Сумма)[\s:.]*([0-9]+[.,][0-9]{2})", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                 if (sumMatch.Success && float.TryParse(sumMatch.Groups[2].Value.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float sum))
-                 {
-                     receipt.TotalSum = sum;
-                 }
-            }
-
-            return receipt.TotalSum > 0 ? receipt : null;
-        }
-
-        private string GetRegexValue(string input, string pattern)
-        {
-            var match = System.Text.RegularExpressions.Regex.Match(input, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            if (match.Success)
-            {
-                return match.Groups.Count > 1 ? match.Groups[1].Value.Trim() : match.Value.Trim();
-            }
-            return string.Empty;
         }
 
         /// <summary>
