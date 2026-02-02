@@ -64,6 +64,7 @@ namespace EfcToXamarinAndroid.Core.Services
             {
                 using (var client = new ImapClient())
                 {
+                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
                     await ConnectAsync(client, settings);
                     await client.DisconnectAsync(true);
                     return true;
@@ -100,6 +101,7 @@ namespace EfcToXamarinAndroid.Core.Services
             {
                 using (var client = new ImapClient())
                 {
+                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
                     // Здесь ConnectAsync должен уметь работать с OAuth2
                     await ConnectAsync(client, settings);
 
