@@ -23,6 +23,9 @@
         </MudItem>
         <MudItem xs="12" sm="6" Class="d-flex justify-start justify-sm-end flex-wrap gap-2">
             <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="ResetToDefaults" Color="Color.Error">
+                    Сброс
+                </MudButton>
                 <MudButton StartIcon="@Icons.Material.Filled.FileDownload" 
                            OnClick="ExportRules" 
                            Disabled="@(_rules == null || !_rules.Any())">
@@ -314,6 +317,22 @@
             {
                 Snackbar.Add($"Ошибка парсинга JSON: {ex.Message}", Severity.Error);
             }
+        }
+    }
+
+    private async Task ResetToDefaults()
+    {
+        bool? confirmed = await DialogService.ShowMessageBox(
+            "Сброс настроек", 
+            "Это удалит ВСЕ текущие настройки и загрузит их из файла приложения по умолчанию (ConfigBank.json). Вы уверены?", 
+            yesText: "Сбросить", noText: "Отмена");
+
+        if (confirmed == true)
+        {
+            ConfigurationManager.ConfigManager.ResetToDefault();
+            // Force refresh UI list
+            StateHasChanged();
+            Snackbar.Add("Настройки сброшены к значениям по умолчанию", Severity.Success);
         }
     }
 }

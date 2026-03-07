@@ -114,5 +114,15 @@ namespace EfcToXamarinAndroid.Core.Configs.ManagerCore
             Write(BankConfigurationFromJson);
             ConfigurationManagerChanged?.Invoke(this, EventArgs.Empty);
         }
+
+        public void ResetToDefault()
+        {
+            if (File.Exists(localFileName))
+            {
+                File.Delete(localFileName);
+            }
+            BankConfigurationFromJson = Read();
+            ConfigurationManagerChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 }
