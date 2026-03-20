@@ -1,4 +1,4 @@
-﻿{
+{
   "Banks": [
     {
       "Name": "Belarusbank",
@@ -229,6 +229,23 @@
         "ItemQuantity": "product_count",
         "ItemAmount": "amount",
         "DecimalSeparator": "."
+      }
+    },
+    {
+      "Name": "iKassa (receipts.cloud.ikassa.by)",
+      "IsActive": true,
+      "UrlPattern": "^https?://receipts\\.cloud\\.ikassa\\.by/render/[0-9A-Za-z]+$",
+      "ParseRegex": {
+        "ShopName": "МАГАЗИН\\s*\"([^\"]+)\"",
+        "ShopInn": "УНП\\s*(\\d+)",
+        "ReceiptDate": "(\\d{2}\\.\\d{2}\\.\\d{4}\\s+\\d{2}:\\d{2})",
+        "TotalSum": "(?:ИТОГО К ОПЛАТЕ|Сумма)\\s+([\\d.,]+)",
+        "Currency": "(BYN|руб)",
+        "ItemLine": "(?m)^(.+?)\\s+(\\d+[.,]\\d+)\\s*\\*\\s*[\\d.,]+\\s+([\\d.,]+)[\\s]*$",
+        "ItemName": "^(.+?)\\s+",
+        "ItemPrice": "(\\d+[.,]\\d+)\\s*\\*",
+        "ItemQuantity": "\\*\\s*([\\d.,]+)\\s+",
+        "ItemSum": "\\s+([\\d.,]+)[\\s]*$"
       }
     },
     {

@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EfcToXamarinAndroid.Core.Configs.ManagerCore;
 using EfcToXamarinAndroid.Core.Parsers;
+using HtmlAgilityPack;
 using Newtonsoft.Json.Linq;
 
 namespace EfcToXamarinAndroid.Core.Services
@@ -29,8 +30,26 @@ namespace EfcToXamarinAndroid.Core.Services
         {
             try
             {
-                var html = await _httpClient.GetStringAsync(url);
-                return await ParseRawReceiptDataAsync(html, url);
+                var response = await _httpClient.GetStringAsync(url);
+                var content = response;
+
+                // Если ответ — HTML, извлекаем текст для regex-парсинга (iKassa и др.)
+                if (response.TrimStart().StartsWith("<", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var doc = new HtmlDocument();
+                        doc.LoadHtml(response);
+                        var body = doc.DocumentNode.SelectSingleNode("//body");
+                        content = body?.InnerText ?? doc.DocumentNode.InnerText ?? response;
+                    }
+                    catch
+                    {
+                        /* fallback: парсим сырой ответ */
+                    }
+                }
+
+                return await ParseRawReceiptDataAsync(content, url);
             }
             catch (Exception ex)
             {
@@ -51,6 +70,22 @@ namespace EfcToXamarinAndroid.Core.Services
 
         public async Task<Receipt?> GetReceiptByQrCodeAsync(string qrString, DateTime? dateHint = null)
         {
+            // Если строка — URL и есть активная конфигурация с UrlPattern (например, iKassa) — fetch URL и парсим текст
+            if (!string.IsNullOrWhiteSpace(qrString) &&
+                Uri.TryCreate(qrString, UriKind.Absolute, out var uri) &&
+                (uri.Scheme == "http" || uri.Scheme == "https"))
+            {
+                var urlConfig = _configuration.ReceiptConfigurations?
+                    .FirstOrDefault(c => c.IsActive &&
+                        !string.IsNullOrEmpty(c.UrlPattern) &&
+                        Regex.IsMatch(qrString, c.UrlPattern));
+                if (urlConfig != null)
+                {
+                    return await GetReceiptByUrlAsync(qrString);
+                }
+            }
+
+            // Старая логика: дефолтная QR-конфигурация (ch.info-center.by) → ApiConfig → JSON
             var config = GetDefaultQrConfiguration();
             if (config == null)
             {
